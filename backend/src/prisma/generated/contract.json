@@ -1238,8 +1238,29 @@
                   "kind": "scalar"
                 }
               },
+              "isActive": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "isEmailVerified": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "password": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "refreshToken": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -1260,6 +1281,20 @@
               },
               "updatedAt": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "verificationToken": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "verificationTokenExpiresAt": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "kind": "scalar"
@@ -1346,14 +1381,29 @@
                 "id": {
                   "column": "id"
                 },
+                "isActive": {
+                  "column": "isActive"
+                },
+                "isEmailVerified": {
+                  "column": "isEmailVerified"
+                },
                 "password": {
                   "column": "password"
+                },
+                "refreshToken": {
+                  "column": "refreshToken"
                 },
                 "role": {
                   "column": "role"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
+                },
+                "verificationToken": {
+                  "column": "verificationToken"
+                },
+                "verificationTokenExpiresAt": {
+                  "column": "verificationTokenExpiresAt"
                 }
               },
               "namespaceId": "public",
@@ -2636,10 +2686,33 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "isActive": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "isEmailVerified": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
                 "password": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "refreshToken": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "role": {
                   "codecId": "pg/text@1",
@@ -2656,6 +2729,16 @@
                   "codecId": "pg/timestamptz-temporal@1",
                   "nativeType": "timestamptz",
                   "nullable": false
+                },
+                "verificationToken": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "verificationTokenExpiresAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
                 }
               },
               "foreignKeys": [
@@ -3151,7 +3234,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "a92f3a700f334cbc5fe559de26f1224c99e53e8140c32270a192b38095744e04"
+    "storageHash": "316de1e8d9642428af4648bcae6927da9aa3df855b50b4a3456412f7e40dd902"
   },
   "execution": {
     "executionHash": "8c3fcd7d25f1afd9c04140136961bbc6eb0c068e810d0d63d29b90669d17285d",

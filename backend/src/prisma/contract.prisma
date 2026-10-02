@@ -104,6 +104,11 @@ model User {
   fullName  String
   role      UserRole
   companyId String? // null for PLATFORM_ADMIN
+  refreshToken String?
+  verificationToken String?
+  verificationTokenExpiresAt DateTime?
+  isEmailVerified Boolean @default(false)
+  isActive Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt temporal.updatedAt()  
 

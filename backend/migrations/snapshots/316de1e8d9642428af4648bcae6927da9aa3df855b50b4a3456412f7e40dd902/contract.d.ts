@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'a92f3a700f334cbc5fe559de26f1224c99e53e8140c32270a192b38095744e04'>;
+  StorageHashBase<'316de1e8d9642428af4648bcae6927da9aa3df855b50b4a3456412f7e40dd902'>;
 export type ExecutionHash =
   ExecutionHashBase<'8c3fcd7d25f1afd9c04140136961bbc6eb0c068e810d0d63d29b90669d17285d'>;
 export type ProfileHash =
@@ -331,6 +331,11 @@ export type FieldOutputTypes = {
       readonly fullName: CodecTypes['pg/text@1']['output'];
       readonly role: 'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT';
       readonly companyId: CodecTypes['pg/text@1']['output'] | null;
+      readonly refreshToken: CodecTypes['pg/text@1']['output'] | null;
+      readonly verificationToken: CodecTypes['pg/text@1']['output'] | null;
+      readonly verificationTokenExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly isEmailVerified: CodecTypes['pg/bool@1']['output'];
+      readonly isActive: CodecTypes['pg/bool@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
@@ -460,6 +465,11 @@ export type FieldInputTypes = {
       readonly fullName: CodecTypes['pg/text@1']['input'];
       readonly role: 'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT';
       readonly companyId: CodecTypes['pg/text@1']['input'] | null;
+      readonly refreshToken: CodecTypes['pg/text@1']['input'] | null;
+      readonly verificationToken: CodecTypes['pg/text@1']['input'] | null;
+      readonly verificationTokenExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly isEmailVerified: CodecTypes['pg/bool@1']['input'];
+      readonly isActive: CodecTypes['pg/bool@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
@@ -588,9 +598,14 @@ export type StorageColumnTypes = {
       readonly email: CodecTypes['pg/text@1']['output'] | null;
       readonly fullName: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
+      readonly isActive: CodecTypes['pg/bool@1']['output'];
+      readonly isEmailVerified: CodecTypes['pg/bool@1']['output'];
       readonly password: CodecTypes['pg/text@1']['output'];
+      readonly refreshToken: CodecTypes['pg/text@1']['output'] | null;
       readonly role: 'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT';
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly verificationToken: CodecTypes['pg/text@1']['output'] | null;
+      readonly verificationTokenExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
     };
     readonly vehicles: {
       readonly companyId: CodecTypes['pg/text@1']['output'];
@@ -717,9 +732,14 @@ export type StorageColumnInputTypes = {
       readonly email: CodecTypes['pg/text@1']['input'] | null;
       readonly fullName: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
+      readonly isActive: CodecTypes['pg/bool@1']['input'];
+      readonly isEmailVerified: CodecTypes['pg/bool@1']['input'];
       readonly password: CodecTypes['pg/text@1']['input'];
+      readonly refreshToken: CodecTypes['pg/text@1']['input'] | null;
       readonly role: 'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT';
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly verificationToken: CodecTypes['pg/text@1']['input'] | null;
+      readonly verificationTokenExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
     };
     readonly vehicles: {
       readonly companyId: CodecTypes['pg/text@1']['input'];
@@ -779,6 +799,11 @@ export namespace Models {
     fullName: CodecTypes['pg/text@1']['output'];
     role: 'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT';
     companyId: CodecTypes['pg/text@1']['output'] | null;
+    refreshToken: CodecTypes['pg/text@1']['output'] | null;
+    verificationToken: CodecTypes['pg/text@1']['output'] | null;
+    verificationTokenExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+    isEmailVerified: CodecTypes['pg/bool@1']['output'];
+    isActive: CodecTypes['pg/bool@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     approvedExecutions: public_AIExecution[];
@@ -1545,6 +1570,39 @@ type ContractBase = Omit<
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
+                };
+                readonly refreshToken: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly verificationToken: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly verificationTokenExpiresAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
+                readonly isEmailVerified: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly isActive: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
+                  };
                 };
                 readonly createdAt: {
                   readonly nativeType: 'timestamptz';
@@ -2558,6 +2616,29 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly refreshToken: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly verificationToken: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly verificationTokenExpiresAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly isEmailVerified: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly isActive: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly createdAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -2630,6 +2711,13 @@ type ContractBase = Omit<
                 readonly fullName: { readonly column: 'fullName' };
                 readonly role: { readonly column: 'role' };
                 readonly companyId: { readonly column: 'companyId' };
+                readonly refreshToken: { readonly column: 'refreshToken' };
+                readonly verificationToken: { readonly column: 'verificationToken' };
+                readonly verificationTokenExpiresAt: {
+                  readonly column: 'verificationTokenExpiresAt';
+                };
+                readonly isEmailVerified: { readonly column: 'isEmailVerified' };
+                readonly isActive: { readonly column: 'isActive' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
