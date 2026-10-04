@@ -351,9 +351,9 @@ Components should consume semantic design tokens.
 Avoid repeatedly hard-coding values such as:
 
 ```text
-#2563EB
-#E2E8F0
-#0F172A
+#0F9F95
+#E3EAF0
+#102A43
 ```
 
 throughout components.
@@ -495,40 +495,11 @@ Decoration must never compete with operational information.
 
 ## 8.4. Brand Foundation
 
-Fleetora's official primary brand direction is blue, supported by cool neutral tones. The following five brand tokens are locked.
+Fleetora's official theme is navy + teal on light neutral surfaces. The approved palette and semantic roles are defined in [FLEETORA_THEME.md](../.agents/design/FLEETORA_THEME.md); reusable CSS variables live in `app/globals.css`.
 
-Teal is not an alternative primary direction. It may be introduced only if this canonical document explicitly assigns it a semantic or accent purpose.
+Brand navy (`#102A43`) supports brand identity and structural UI. Sidebar navy (`#0B1F33`) is reserved for primary navigation. Teal (`#0F9F95`) is the primary action and interactive emphasis color, with `#0B817A` for hover and active states. Teal is not a general page background or operational status color.
 
-### Primary
-
-`#2563EB`
-
-### Primary Hover
-
-`#1D4ED8`
-
-### Primary Active
-
-`#1E40AF`
-
-### Primary Subtle
-
-`#EFF6FF`
-
-### Primary Soft
-
-`#DBEAFE`
-
-The primary color represents:
-
-- primary actions
-- active navigation
-- selected states
-- focus
-- links
-- important interactive elements
-
-Do not use primary blue as decoration without semantic purpose.
+Use the semantic tokens `brand-navy`, `sidebar-navy`, `primary`, `primary-hover`, and `primary-active`. Do not reintroduce the former primary-blue palette.
 
 ---
 
@@ -536,39 +507,31 @@ Do not use primary blue as decoration without semantic purpose.
 
 ## 8.5. Neutral Palette
 
-Fleetora uses cool neutral tones.
+Fleetora uses light neutral tones from the approved theme.
 
 ```text
 Neutral 0      #FFFFFF
-Neutral 25     #FCFCFD
-Neutral 50     #F8FAFC
-Neutral 100    #F1F5F9
-Neutral 200    #E2E8F0
-Neutral 300    #CBD5E1
-Neutral 400    #94A3B8
-Neutral 500    #64748B
-Neutral 600    #475569
-Neutral 700    #334155
-Neutral 800    #1E293B
-Neutral 900    #0F172A
-Neutral 950    #020617
+Neutral 50     #F5F7FA
+Neutral 200    #E3EAF0
+Neutral 500    #62748A
+Neutral 900    #172B4D
 ```
 
 Typical usage:
 
 ```text
-Application background    Neutral 50
+Application background    #F5F7FA
 Primary surface           Neutral 0
-Secondary surface         Neutral 25
-Subtle surface            Neutral 100
+Secondary surface         Page background
+Subtle surface            Page background
 
-Default border            Neutral 200
-Strong border             Neutral 300
+Default border            #E3EAF0
+Strong border             Use the `border-strong` semantic token where needed.
 
-Primary text              Neutral 900
-Secondary text            Neutral 600
-Muted text                Neutral 500
-Disabled text             Neutral 400
+Primary text              #172B4D
+Secondary text            #62748A
+Muted text                #62748A
+Disabled text             Secondary text with disabled control semantics
 ```
 
 Light theme semantic aliases:
@@ -584,7 +547,7 @@ muted-foreground    Muted text
 border              Default border
 border-strong       Strong border
 secondary           Subtle surface
-secondary-foreground Neutral 700
+secondary-foreground Brand navy
 primary-foreground  Neutral 0
 focus-ring          Primary
 ```
@@ -597,71 +560,16 @@ Do not use pure black for normal application text.
 
 ## 8.6. Semantic Colors
 
-Semantic colors communicate system meaning. `danger` and `destructive` name the same semantic family; destructive filled buttons use its Strong color with primary-foreground text, while badges and messages use its Foreground on Background.
-
-They must not be used merely for decoration.
-
-### Success
+Operational state colors are reserved for badges, indicators, and alerts. Use them only to communicate the corresponding state, with text labels so color is never the sole signal. They are not primary actions or decorative accents.
 
 ```text
-Foreground     #15803D
-Strong         #16A34A
-Background     #F0FDF4
-Border         #BBF7D0
+Success / delivered       #168A55
+In progress               #2878C7
+Pending / attention       #C77B11
+Failed / delayed          #C2414B
 ```
 
-Use for:
-
-- delivered
-- completed
-- successful operations
-- healthy states
-- successful confirmations
-
-### Warning
-
-```text
-Foreground     #B45309
-Strong         #D97706
-Background     #FFFBEB
-Border         #FDE68A
-```
-
-Use for:
-
-- attention required
-- moderate delivery risk
-- approaching deadlines
-- operational warnings
-- rescheduling where appropriate
-
-### Danger
-
-```text
-Foreground     #B91C1C
-Strong         #DC2626
-Background     #FEF2F2
-Border         #FECACA
-```
-
-Use for:
-
-- failed delivery
-- destructive actions
-- critical risk
-- validation failures
-- serious operational exceptions
-
-### Info
-
-```text
-Foreground     #1D4ED8
-Strong         #2563EB
-Background     #EFF6FF
-Border         #BFDBFE
-```
-
-Use for informational states and contextual system messages.
+Use the semantic `success`, `in-progress`, `warning`, and `destructive` tokens and their subtle state surfaces defined in `app/globals.css`. Destructive controls and validation errors use the failure family only when the action or state is genuinely destructive or failed.
 
 ---
 
@@ -863,17 +771,9 @@ Avoid large 20–30px radii on ordinary dashboard components.
 
 ## 8.12. Borders
 
-Default border:
+Default border uses the `border` token (`#E3EAF0`).
 
-```text
-1px solid #E2E8F0
-```
-
-Strong border:
-
-```text
-1px solid #CBD5E1
-```
+Strong border uses the `border-strong` token.
 
 Use borders to separate information before adding shadows.
 
@@ -944,12 +844,12 @@ Collapsed width:
 Use a dark navy/slate sidebar with these semantic tokens:
 
 ```text
-sidebar-background          #0F172A
-sidebar-foreground          #CBD5E1
-sidebar-muted               #94A3B8
-sidebar-active-background   #1E293B
-sidebar-active-foreground   #FFFFFF
-sidebar-active-indicator    Primary
+sidebar-background          sidebar-navy token
+sidebar-foreground          sidebar-foreground token
+sidebar-muted               muted-foreground token
+sidebar-active-background   brand-navy token
+sidebar-active-foreground   white
+sidebar-active-indicator    primary teal token
 ```
 
 The sidebar should feel stable and quiet. Do not use gradients.
@@ -1006,8 +906,8 @@ Cards should represent meaningful groups of information.
 Default card:
 
 ```text
-Background      #FFFFFF
-Border          #E2E8F0
+Background      surface token
+Border          border token
 Radius          10px
 Shadow          none or very subtle
 Padding         20–24px

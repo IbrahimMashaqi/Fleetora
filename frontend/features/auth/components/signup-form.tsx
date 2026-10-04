@@ -10,6 +10,46 @@ import type { SignupState } from "../signup.types";
 const initialState: SignupState = { status: "idle" };
 const companyWorkspaceAreas = ["Users", "Workers", "Vehicles", "Warehouses", "Shipments"] as const;
 
+function SignupProgress({ currentStep }: { currentStep: 1 | 2 }) {
+  const steps = ["Account details", "Verify email"] as const;
+
+  return (
+    <ol aria-label="Signup progress" className="mb-7 flex items-center">
+      {steps.map((label, index) => {
+        const step = (index + 1) as 1 | 2;
+        const isCurrent = step === currentStep;
+        const isComplete = step < currentStep;
+
+        return (
+          <li key={label} aria-current={isCurrent ? "step" : undefined} className="flex min-w-0 flex-1 items-center last:flex-none">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span
+                aria-hidden="true"
+                className={`grid size-8 shrink-0 place-items-center rounded-full border text-sm font-semibold ${
+                  isCurrent
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : isComplete
+                      ? "border-primary bg-primary-subtle text-primary"
+                      : "border-border bg-surface-secondary text-muted-foreground"
+                }`}
+              >
+                {step}
+              </span>
+              <span className={`text-sm ${isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                <span className="sm:hidden">{step === 1 ? "Account" : "Verify"}</span>
+                <span className="hidden sm:inline">{label}</span>
+              </span>
+            </div>
+            {step === 1 && (
+              <span aria-hidden="true" className={`mx-3 h-px min-w-3 flex-1 ${isComplete ? "bg-primary" : "bg-border"}`} />
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 export function SignupForm() {
   const [state, action, pending] = useActionState(signupAction, initialState);
   const [showPassword, setShowPassword] = useState(false);
@@ -20,7 +60,7 @@ export function SignupForm() {
     <main className="grid min-h-svh grid-cols-1 bg-background text-foreground lg:grid-cols-[minmax(0,1.08fr)_minmax(28rem,0.92fr)] lg:grid-rows-[4rem_minmax(0,1fr)]">
       <header className="flex h-16 items-center border-b border-border bg-surface px-4 sm:px-8 lg:col-span-2 lg:row-start-1 lg:px-12 xl:px-16">
         <div className="flex items-center gap-3">
-          <span aria-hidden="true" className="grid size-9 place-items-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">
+          <span aria-hidden="true" className="grid size-9 place-items-center rounded-md bg-brand-navy text-sm font-semibold text-primary-foreground">
             F
           </span>
           <span>
@@ -37,6 +77,7 @@ export function SignupForm() {
         <div className="mx-auto w-full max-w-md rounded-lg border border-border bg-surface p-5 sm:p-8">
           {state.status === "success" ? (
             <div role="status" className="space-y-4">
+              <SignupProgress currentStep={2} />
               <span className="inline-block rounded-md bg-primary-subtle px-3 py-1 text-sm font-medium text-primary">
                 Account created
               </span>
@@ -52,8 +93,8 @@ export function SignupForm() {
             </div>
           ) : (
             <>
+              <SignupProgress currentStep={1} />
               <div className="mb-6">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Account details</p>
                 <h1 id="signup-title" className="mt-2 text-2xl font-semibold leading-8 tracking-tight">
                   Create your account
                 </h1>
@@ -179,7 +220,7 @@ export function SignupForm() {
               </svg>
               <span className="text-sm font-medium">Company workspace</span>
             </figcaption>
-            <ul aria-label="Company workspace areas" className="grid grid-cols-2 gap-x-4 gap-y-1 px-4 py-3 sm:px-5">
+            <ul aria-label="Company workspace areas" className="grid grid-cols-2 gap-x-4 gap-y-1 px-4 py-3 lg:grid-cols-3 sm:px-5">
               {companyWorkspaceAreas.map((area) => (
                 <li key={area} className="flex min-w-0 items-center gap-2.5 py-2 text-sm text-secondary-foreground">
                   <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-primary" />

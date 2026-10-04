@@ -2,11 +2,9 @@
 
 ## 1. Purpose
 
-This document is a supporting reference for AI workflows.
+This document is the authoritative source for Fleetora's approved color palette and semantic color roles.
 
-The canonical source for all visual values and rules is [frontend/DESIGN_SYSTEM.md](../../frontend/DESIGN_SYSTEM.md), including its section 8 visual specification.
-
-The detailed visual specification has been consolidated there. This reference retains supporting operational guidance and links to the canonical sections; it does not define independent tokens.
+`frontend/app/globals.css` implements these semantic theme tokens in the frontend. It is an implementation of this specification, not a competing authority. Other visual values and component rules remain covered by [frontend/DESIGN_SYSTEM.md](../../frontend/DESIGN_SYSTEM.md).
 
 Product behavior, authorization rules, API contracts, and business logic belong elsewhere.
 
@@ -26,19 +24,43 @@ See the [canonical core visual principles](../../frontend/DESIGN_SYSTEM.md#visua
 
 ## 4. Brand Foundation
 
-See the [canonical brand foundation](../../frontend/DESIGN_SYSTEM.md#visual-4).
+| Token / role | Value |
+| --- | --- |
+| Brand navy | `#102A43` |
+| Sidebar navy | `#0B1F33` |
+| Primary teal | `#0F9F95` |
+| Teal hover | `#0B817A` |
+
+Navy is for brand and structural UI. Sidebar navy is for primary navigation structure. Teal is the primary action and interactive emphasis color.
 
 ---
 
 ## 5. Neutral Palette
 
-See the [canonical neutral palette](../../frontend/DESIGN_SYSTEM.md#visual-5).
+| Token / role | Value |
+| --- | --- |
+| Page background | `#F5F7FA` |
+| Surface | `#FFFFFF` |
+| Main text | `#172B4D` |
+| Secondary text | `#62748A` |
+| Borders | `#E3EAF0` |
+
+Use light neutrals for application backgrounds and white for the primary surface.
 
 ---
 
 ## 6. Semantic Colors
 
-See the [canonical semantic colors](../../frontend/DESIGN_SYSTEM.md#visual-6).
+Operational status colors are reserved for badges, indicators, and alerts. Do not use them as primary action colors.
+
+| Operational state | Value |
+| --- | --- |
+| Success / delivered | `#168A55` |
+| In progress | `#2878C7` |
+| Pending / attention | `#C77B11` |
+| Failed / delayed | `#C2414B` |
+
+The palette in this document is authoritative for Fleetora theme colors. `frontend/app/globals.css` implements these semantic tokens; it does not define a separate palette.
 
 ---
 
@@ -244,19 +266,19 @@ Initial / neutral states
 → Neutral
 
 Planning / processing
-→ Blue
+→ In progress (`#2878C7`)
 
 Active delivery
-→ Blue / primary
+→ In progress (`#2878C7`)
 
 Successful completion
-→ Green
+→ Success / delivered (`#168A55`)
 
 Attention / rescheduled
-→ Amber
+→ Pending / attention (`#C77B11`)
 
 Failure
-→ Red
+→ Failed / delayed (`#C2414B`)
 
 On hold / inactive
 → Neutral or amber depending on domain meaning
