@@ -13,6 +13,7 @@
   --border: #E3EAF0;
   --border-strong: #CBD5E1;
   --input: #E3EAF0;
+  --form-border: #CBD5E1;
   --primary: #0F9F95;
   --primary-hover: #0B817A;
   --primary-active: #0B817A;
@@ -54,6 +55,7 @@
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-input: var(--input);
+  --color-form-border: var(--form-border);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-active: var(--primary-active);
