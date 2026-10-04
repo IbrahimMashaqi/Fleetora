@@ -21,38 +21,9 @@ The objective is simple:
 
 # 2. Source of Truth Hierarchy
 
-Before making decisions, use the following hierarchy.
+Follow the source-of-truth and conflict rules in the root `AGENTS.md` and the applicable local `AGENTS.md`. Inspect current code to establish what is implemented; consult approved product/domain documentation when the task depends on intended behavior.
 
-```text
-1. User's current explicit request
-2. Applicable AGENTS.md files
-3. Existing implementation and established project patterns
-4. Approved Fleetora product/domain documentation
-5. Engineering/design standards
-6. Installed skills and framework documentation
-7. External documentation when necessary
-8. General model knowledge
-```
-
-Important:
-
-Existing code describes the current implementation.
-
-Product documentation describes the intended product.
-
-Neither should silently overwrite the other.
-
-If they conflict in a way that affects:
-
-- database design
-- security
-- tenant isolation
-- business rules
-- public API contracts
-- authentication
-- major architecture
-
-identify the conflict before making a destructive or architectural decision.
+Do not silently resolve a conflict that affects database design, security, tenant isolation, business rules, public API contracts, authentication, or major architecture. Use the DECISION PATH in this document when that conflict remains material after inspection.
 
 ---
 
@@ -113,30 +84,19 @@ Do not spread a change across multiple applications unless the task actually req
 
 ---
 
-# 5. Read Local Instructions First
+# 5. Read the Narrowest Relevant Context
 
-Before editing a file, determine which instructions apply to it.
+Always read the root `AGENTS.md` and the `AGENTS.md` that applies to the files being changed. For cross-stack work, read the local rules for each affected application.
 
-For backend work:
+Then inspect the affected implementation and only the adjacent contracts, tests, schemas, or documentation that the change depends on:
 
-```text
-root AGENTS.md
-→ backend/AGENTS.md
-→ backend engineering standard
-```
+- Read `frontend/DESIGN_SYSTEM.md` and the Fleetora design language for visual work.
+- Read the actual backend/API contract when adding or changing API integration.
+- Read Prisma/schema and migration guidance when persistence or relationships are involved.
+- Read product documentation when intended domain behavior is not established in current code or approved requirements.
+- Follow file-specific framework instructions. For example, `frontend/AGENTS.md` currently requires the relevant installed Next.js guide before frontend code changes; read the narrow relevant guide it calls for.
 
-For frontend work:
-
-```text
-root AGENTS.md
-→ frontend/AGENTS.md
-→ frontend/DESIGN_SYSTEM.md (canonical visuals)
-→ .agents/design/FLEETORA_DESIGN_LANGUAGE.md (philosophy)
-```
-
-For cross-stack work, read the relevant rules for both sides.
-
-Do not assume instructions from one application automatically apply to another.
+Reuse unchanged context already inspected in the current session. Do not repeatedly reread broad documents, unrelated modules, or all tests when the task does not depend on them.
 
 ---
 
@@ -295,9 +255,9 @@ Do not modify files unless explicitly asked.
 
 # 11. PLAN Mode
 
-Use PLAN when the change has meaningful architectural impact.
+Use PLAN when a separate sequence of work reduces architectural, coordination, or implementation risk. Sensitive subject matter calls for deeper inspection and the required safety checks, but does not automatically require a standalone plan for a clear, localized change.
 
-Typical triggers:
+Examples that may justify a plan, depending on scope and complexity:
 
 - database schema changes
 - authentication changes
@@ -426,95 +386,50 @@ Do not mix large refactoring with unrelated feature development.
 
 ---
 
-# 16. Task Classification
+# 16. FAST PATH and DECISION PATH
 
-Before coding, classify the task.
+Choose a path by impact and unresolved risk, not by whether work involves frontend code, a new component, or multiple valid implementation details.
 
-### Small
+## FAST PATH
 
-Examples:
-
-- copy change
-- minor style fix
-- isolated validation adjustment
-- small bug with obvious cause
-
-Workflow:
+Use FAST PATH when the task is clear and scoped, reversible, consistent with Fleetora architecture and approved behavior, and does not change a sensitive contract or unresolved domain decision.
 
 ```text
-Inspect
-→ Implement
-→ Validate
+Inspect relevant context
+→ Load only relevant skills
+→ Implement the smallest coherent change
+→ Run proportional verification
+→ Review the diff and report concisely
 ```
 
-### Medium
+On this path:
 
-Examples:
+- Make reasonable reversible choices from Fleetora conventions and continue without approval checkpoints.
+- Derive routine UI composition, visual hierarchy, responsive behavior, and component choices from Fleetora's design system and UI/UX guidance. Do not ask the user to choose between routine layout alternatives.
+- Do not require brainstorming solely because work is frontend, visual, or introduces a component.
+- Create a plan only when complexity, dependencies, or risk make one useful; a component or endpoint alone is not a plan trigger.
+- Read only relevant context and skills. Reuse unchanged findings from the current session.
+- Do not add dependencies or abstractions without a concrete need.
+- Do not run broad suites, builds, or repeated checks when narrower evidence is sufficient.
 
-- new component
-- endpoint
-- DTO
-- filter
-- focused service behavior
+## DECISION PATH
 
-Workflow:
+Use DECISION PATH for work that touches a sensitive surface below or has a material unresolved decision affecting it:
 
-```text
-Inspect
-→ Short plan
-→ Implement
-→ Test
-→ Review
-```
+- database schema, data model, migrations, or destructive data operations
+- authentication, authorization, security boundaries, or tenant isolation
+- public API contracts or cross-module architecture
+- domain/business behavior or workflow semantics not established by requirements
+- major dependency choices or difficult-to-reverse architecture
+- conflicting authoritative project rules
 
-### Large / Sensitive
+First inspect applicable rules, current implementation, and approved requirements. A sensitive task requires the investigation and verification appropriate to its risk, but it does not automatically require a user question or standalone plan. If the requested behavior and approved rules resolve the decision, implement within that scope. Multiple valid reversible implementations do not qualify by themselves; choose the simplest compliant option.
 
-Examples:
+If a material decision remains unresolved, stop dependent implementation and ask the minimum question needed to unblock it. Explain what is blocked and why it matters. Do not ask a series of preference questions. Continue independent work where possible. Keep existing database, security, tenant-isolation, and product safeguards intact.
 
-- schema changes
-- auth
-- tenant isolation
-- RBAC
-- state machine
-- major dashboard architecture
-- cross-stack feature
+# 17. Superpowers Constraint
 
-Workflow:
-
-```text
-Discover
-→ Plan
-→ Resolve decisions
-→ Implement incrementally
-→ Test
-→ Review
-```
-
----
-
-# 17. Do Not Code Through Uncertainty
-
-Not every unknown requires stopping.
-
-Codex may make ordinary implementation decisions when they are:
-
-- local
-- reversible
-- consistent with existing patterns
-- not security-sensitive
-- not product-defining
-
-Codex should stop and surface a decision when uncertainty affects:
-
-- domain meaning
-- tenant ownership
-- authentication
-- authorization
-- database cardinality
-- destructive migration
-- public API contract
-- security guarantees
-- major architecture
+Keep Superpowers available and follow a specialized workflow when its trigger genuinely applies. Repository instructions cannot disable a mandatory plugin workflow. The installed brainstorming skill currently says it must run before creative work and requires an explicit approval gate for its bounded path; its companion using-superpowers skill says direct current-user instructions take precedence over skills. Therefore, Fleetora rules alone cannot promise to bypass that plugin gate. Its broad creative-work trigger can still capture routine UI or component work; bypassing that gate requires an explicit current-user instruction under the plugin's own precedence. Honor an applicable mandatory plugin instruction unless the current user explicitly directs otherwise, and do not invoke brainstorming merely because a task is frontend when the user's instruction or the skill's applicable scope says it is not required. Verification-before-completion still requires fresh evidence for any success claim; the scope and cost of verification should follow the risk matrix below.
 
 ---
 
@@ -571,23 +486,14 @@ If these questions matter and are unanswered, the feature is not ready.
 
 # 20. Frontend Workflow
 
-For frontend tasks:
+For frontend tasks, read root and frontend rules, then inspect the affected route/components and nearby patterns. Keep further inspection tied to the change:
 
-```text
-1. Read frontend/AGENTS.md
-2. Read relevant installed Next.js documentation
-3. Read frontend/DESIGN_SYSTEM.md (canonical visual specification)
-4. Read .agents/design/FLEETORA_DESIGN_LANGUAGE.md (design philosophy)
-5. Inspect existing components/layout
-6. Identify existing reusable primitives
-7. Select UI/UX skill when design work is involved
-8. Define page information hierarchy
-9. Implement responsive behavior
-10. Implement states
-11. Validate accessibility
-12. Run frontend checks
-13. Inspect final UI/code diff
-```
+- For visual work, apply the canonical design system, Fleetora design language, and UI/UX guidance.
+- For API integration, inspect the actual contract and affected loading/error/success behavior.
+- For framework-sensitive code, follow the installed Next.js guidance required by `frontend/AGENTS.md`, using the relevant guide rather than broad unrelated docs.
+- Load only the frontend, UI/UX, design-system, accessibility, or other skills that materially apply.
+- Implement the smallest change, preserve established behavior, check the relevant responsive and accessibility dimensions, and select validation from Section 28.
+- Review the final diff for scope and unintended contract or state changes.
 
 Do not generate an isolated "pretty dashboard" that ignores the Fleetora design system.
 
@@ -764,24 +670,21 @@ Do not chase coverage percentage while missing critical business behavior.
 
 ---
 
-# 28. Validation Ladder
+# 28. Proportional Verification
 
-After implementation, use the cheapest relevant checks first.
+Use the cheapest checks that adequately cover the changed scope. Run commands from the affected package and use existing scripts; do not install dependencies or invent a test harness just to satisfy a checklist. A check is required when the applicable local rules, changed behavior, or risk calls for it. Broader checks are optional unless that risk or a user request justifies them.
 
-Conceptually:
+| Change scope | Minimum useful evidence | Add broader verification when |
+|---|---|---|
+| Agent/workflow documentation only | Review the focused diff, links, and consistency across affected instructions; no product test, lint, type check, or build is implied. | Documentation tooling or link validation is specifically part of the task. |
+| Local styling, copy, or isolated component with unchanged behavior | Review the diff and the affected UI/responsive/accessibility details. Run a focused check if one exists and is useful; use lint/type checks when the code change warrants them. | Shared tokens/components or multiple routes are affected. |
+| Feature behavior or API integration | Relevant feature tests when available, plus type/lint checks appropriate to the changed package. | Framework boundaries, shared integration, or broad user journeys changed; add the relevant suite/build. |
+| Backend business logic | Focused unit/integration coverage for the changed rule, plus applicable backend type/build checks. | The behavior crosses modules or materially affects workflows; expand relevant integration coverage. |
+| Database/schema/migration | Prisma validation and the repository-required schema/generation checks, migration review, and tests for affected persistence behavior. | Existing data, multiple relations, or rollout compatibility raises migration risk. |
+| Authentication, authorization, security, or tenant isolation | Focused negative/security tests and checks of each affected enforcement layer; preserve backend and database safeguards. Tenant-sensitive behavior must retain cross-tenant failure coverage. | The boundary spans modules or clients; add broader integration/build checks for those boundaries. |
+| Cross-cutting or release-risk change | Targeted checks in each touched package and a diff review. | Run broader suites and production builds when they provide meaningful coverage of the changed boundaries or are explicitly requested. |
 
-```text
-Targeted test
-→ Type check
-→ Lint
-→ Relevant test suite
-→ Build
-→ Broader verification when justified
-```
-
-Do not run expensive unrelated checks repeatedly during every tiny edit.
-
-Before declaring significant work complete, run the appropriate project validation.
+Do not weaken sensitive verification to save time. Avoid repeating unchanged checks during iterative edits; run fresh verification before making a claim that a check passes. Report the checks actually run and any that remain relevant but unrun.
 
 ---
 
@@ -1045,18 +948,11 @@ Do not claim completion when required validation remains broken.
 
 ---
 
-# 41. User Approval Boundaries
+# 41. Questions and Approval Boundaries
 
-Explicit approval should be obtained before actions such as:
+Do not ask for approval to carry out the clearly requested, scoped work or for ordinary reversible implementation choices. Ask only after relevant inspection leaves a material product, security, contract, architecture, or data decision unresolved, as defined in Section 16. Ask the minimum question needed; do not bundle unrelated preferences.
 
-- destructive database changes
-- major architecture replacement
-- deleting substantial functionality
-- changing unresolved domain decisions
-- introducing significant infrastructure
-- performing security-sensitive shortcuts
-
-Routine implementation inside an already approved design does not need repeated permission for every line.
+Retain explicit approval boundaries already established by Fleetora rules for destructive database/data operations and other difficult-to-reverse actions. A request to implement a feature does not authorize silently changing its API contract, security guarantees, or unresolved domain behavior.
 
 ---
 
@@ -1195,7 +1091,7 @@ Return only shipments belonging to the authenticated company.
 Support pagination and status filtering.
 
 Validation:
-Add relevant tests and run backend checks.
+Run the focused tests and checks appropriate to the change's risk. Expand verification for database, security, tenant-isolation, or cross-module impact.
 ```
 
 This is much stronger than:
@@ -1235,7 +1131,7 @@ Do not invent missing requirements.
 
 # 48. Planning Prompt Pattern
 
-For sensitive work:
+For multi-step or architecture-level DECISION PATH work. A sensitive domain alone is not a plan trigger; retain its required investigation and safety checks even when a focused implementation needs no separate plan.
 
 ```text
 Plan only. Do not modify files.
@@ -1320,31 +1216,25 @@ Do not report cosmetic preferences unless they materially affect maintainability
 
 # 51. Fleetora Engineering Loop
 
-The default Fleetora development loop is:
+Choose the path by task risk. The routine loop is:
 
 ```text
 UNDERSTAND
     ↓
-INSPECT
+INSPECT RELEVANT SCOPE
     ↓
-SELECT EXPERTISE
+LOAD RELEVANT SKILLS
     ↓
-READ RELEVANT SOURCES
+IMPLEMENT
     ↓
-IDENTIFY RISKS
-    ↓
-PLAN WHEN NEEDED
-    ↓
-IMPLEMENT SMALL
-    ↓
-TEST
+VERIFY PROPORTIONALLY
     ↓
 REVIEW DIFF
     ↓
 REPORT
 ```
 
-Repeat.
+Use the DECISION PATH and plan when material uncertainty or complexity requires them. Repeat only the steps needed to close the task.
 
 ---
 

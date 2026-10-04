@@ -497,38 +497,21 @@ A tenant-sensitive feature is not complete if cross-tenant failure behavior is u
 
 # 20. Before Changing Code
 
-Before implementation:
+Inspect the affected module and adjacent code first. Read related DTOs, services, repositories, guards, tests, and schema when the change touches or depends on them; do not expand into unrelated layers by default.
 
-1. read the relevant module
-2. inspect related DTOs, services, repositories, guards, and schema
-3. check relevant documentation
-4. identify existing patterns
-5. identify security and tenant implications
-6. determine whether the requested behavior is already decided
+Check relevant Fleetora documentation and existing patterns. For persistence, auth, authorization, tenant-owned data, or domain behavior, inspect the corresponding schema, trusted context, and enforcement paths before implementation. Determine whether the requested behavior is already established.
 
-Do not begin with a rewrite.
-
-Prefer the smallest coherent change that satisfies the requirement.
+Do not begin with a rewrite. Prefer the smallest coherent change that satisfies the requirement.
 
 ---
 
 # 21. After Changing Code
 
-Verify the smallest relevant scope first.
+Verify the smallest relevant scope first, using the risk matrix in `../docs/CODEX_WORKFLOW.md`. Depending on the change, run focused tests, type checking, linting, the backend build, or Prisma validation/generation checks. Do not run every check by default for a localized change.
 
-Depending on the change, run:
+For database changes, inspect the resulting schema/migration changes before considering the task complete. Security, authentication, authorization, and tenant-isolation changes retain their required focused negative tests and enforcement checks.
 
-- relevant tests
-- type checking
-- linting
-- backend build
-- Prisma validation/generation checks
-
-For database changes, inspect the resulting schema/migration changes before considering the task complete.
-
-Do not claim a change works if it has not been verified.
-
-If verification cannot be run, state that explicitly.
+Do not claim a change works if it has not been verified. If relevant verification cannot be run, state that explicitly.
 
 ---
 
