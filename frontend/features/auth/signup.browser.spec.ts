@@ -43,7 +43,7 @@ test.afterAll(async () => {
 async function fillSignup(page: Page) {
   await page.goto("/signup");
   await page.getByLabel("Full name").fill("Amina Hassan");
-  await page.getByLabel("Email address").fill("amina@example.com");
+  await page.getByLabel("Work email").fill("amina@example.com");
   await page.getByLabel("Password", { exact: true }).fill("Passw0rd");
 }
 
@@ -66,7 +66,7 @@ test("disables the form while signup is pending", async ({ page }) => {
   await fillSignup(page);
   await page.getByRole("button", { name: "Create account", exact: true }).click();
   await expect(page.getByRole("button", { name: "Creating account..." })).toBeDisabled();
-  await expect(page.getByLabel("Email address")).toBeDisabled();
+  await expect(page.getByLabel("Work email")).toBeDisabled();
   await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
   expect(requests).toHaveLength(1);
 });
@@ -86,8 +86,8 @@ test("shows duplicate email inline and retains non-sensitive input", async ({ pa
   await page.getByRole("button", { name: "Create account", exact: true }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("This email is already in use");
   await expect(page.getByLabel("Full name")).toHaveValue("Amina Hassan");
-  await expect(page.getByLabel("Email address")).toHaveValue("amina@example.com");
-  await expect(page.getByLabel("Email address")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByLabel("Work email")).toHaveValue("amina@example.com");
+  await expect(page.getByLabel("Work email")).toHaveAttribute("aria-invalid", "true");
   await expect(page.getByLabel("Password", { exact: true })).toHaveValue("");
 });
 
@@ -118,7 +118,7 @@ test("supports password visibility, keyboard use, and a small viewport", async (
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute("type", "password");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  expect(await page.getByRole("button", { name: "Create account", exact: true }).evaluate((button) => getComputedStyle(button).backgroundColor)).toBe("rgb(37, 99, 235)");
+  expect(await page.getByRole("button", { name: "Create account", exact: true }).evaluate((button) => getComputedStyle(button).backgroundColor)).toBe("rgb(15, 159, 149)");
   await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: "Create account", exact: true })).toBeFocused();
 });
@@ -128,7 +128,7 @@ test("frames account creation in the company workspace across desktop and mobile
   await page.goto("/signup");
 
   const formTitle = page.getByRole("heading", { name: "Create your account" });
-  const workspaceTitle = page.getByRole("heading", { name: "Your company workspace starts here" });
+  const workspaceTitle = page.getByRole("heading", { name: "Your company workspace" });
   await expect(formTitle).toBeVisible();
   await expect(workspaceTitle).toBeVisible();
 
