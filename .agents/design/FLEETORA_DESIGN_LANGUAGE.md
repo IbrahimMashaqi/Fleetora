@@ -2,7 +2,7 @@
 
 ## 1. Product Design Direction
 
-This document defines design philosophy and product visual language. [frontend/DESIGN_SYSTEM.md](../../frontend/DESIGN_SYSTEM.md) is the sole authority for tokens and component visual rules. This document does not define an alternative palette, typography, spacing, or theme.
+This document defines design philosophy and product visual language. [FLEETORA_THEME.md](FLEETORA_THEME.md) is the authoritative source for Fleetora's palette and semantic color roles; `frontend/app/globals.css` implements its semantic theme tokens. [frontend/DESIGN_SYSTEM.md](../../frontend/DESIGN_SYSTEM.md) remains the reference for component visual rules and other design-system guidance.
 
 Fleetora is a professional logistics operations product.
 
@@ -217,9 +217,9 @@ Color must communicate meaning.
 
 # 9. Brand Accent
 
-Fleetora's official primary brand direction is blue.
+Fleetora's approved palette uses navy for brand and structural UI, sidebar navy for primary navigation structure, and teal for primary actions and interactive emphasis.
 
-Use the locked primary colors in the [canonical brand foundation](../../frontend/DESIGN_SYSTEM.md#visual-4). Keep the accent recognizable without dominating operational surfaces.
+Use the colors and roles in [FLEETORA_THEME.md](FLEETORA_THEME.md). Keep the accent recognizable without dominating operational surfaces.
 
 Use canonical design tokens and validate their application for accessibility.
 
@@ -254,16 +254,16 @@ Conceptual mapping:
 
 ```text
 Success / delivered / healthy
-→ green
+→ Success / delivered (`#168A55`)
 
 Warning / delayed / attention
-→ amber
+→ Pending / attention (`#C77B11`)
 
 Danger / failed / destructive / critical
-→ red
+→ Failed / delayed (`#C2414B`)
 
-Informational / active / neutral operational state
-→ blue or brand-compatible informational tone
+In progress / active operational state
+→ In progress (`#2878C7`)
 ```
 
 Never rely on color alone.

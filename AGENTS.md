@@ -32,7 +32,13 @@ For every task:
 7. Validate the result.
 8. Report what changed and any unresolved issue.
 
-Do not start coding before understanding the affected architecture.
+Do not start coding before understanding the affected scope. Read wider architecture when the task touches it.
+
+## Task Paths
+
+Use `docs/CODEX_WORKFLOW.md` for the canonical FAST PATH, DECISION PATH, and proportional verification model. Default to FAST PATH when the request is clear, scoped, reversible, and supported by established Fleetora rules or patterns.
+
+Routine implementation choices—including UI composition and responsive details—do not need user approval. Do not add a brainstorming interview, plan, or checkpoint solely because a task is frontend work or introduces a component. Escalate only for a material unresolved decision. Preserve all applicable security, tenant-isolation, database-safety, and product rules. This repository-level fast path does not erase a mandatory Superpowers plugin gate; see the workflow note. The plugin's own rules give precedence to a current explicit user instruction.
 
 ---
 
@@ -274,30 +280,11 @@ Do not redesign unrelated areas unless requested.
 
 ## Decision Handling
 
-Do not ask questions for trivial implementation details that can be
-safely inferred from existing project patterns.
+Proceed autonomously when ambiguity is limited to reversible implementation details and existing requirements, code, or project rules support a reasonable choice. Do not ask the user to approve routine component composition, naming, spacing, responsive behavior, or other local choices.
 
-Ask before making decisions that materially affect:
+Use the DECISION PATH in `docs/CODEX_WORKFLOW.md` only when investigation leaves a material decision unresolved—for example, one affecting database design, authentication, authorization, tenant isolation, API contracts, business behavior, major architecture, destructive operations, or another difficult-to-reverse outcome.
 
-- database architecture
-- tenant model
-- User/Worker/Merchant relationships
-- authentication model
-- role/permission model
-- Platform Admin scope
-- public API contracts
-- destructive migrations
-- major dependency choices
-- major architecture changes
-
-When asking, explain:
-
-- what decision is required
-- why it matters
-- the realistic options
-- your recommended option
-
-Do not dump unnecessary architecture questions on the user.
+When blocked, ask the minimum question needed to resolve that decision and explain its impact. Continue independent work that does not depend on the answer. Do not turn a choice between acceptable reversible implementations into a user decision.
 
 ---
 
@@ -346,33 +333,11 @@ Avoid:
 
 ## Validation
 
-After changes, run the smallest relevant validation.
+Choose the least costly checks that provide adequate evidence for the changed scope, using the risk matrix in `docs/CODEX_WORKFLOW.md`. Do not run every test, lint, type-check, and build command by default for a localized change.
 
-Examples:
+Keep required tests and broader checks for behavior, cross-cutting changes, and release-risk work. Database, authentication, authorization, and tenant-isolation changes retain their focused safety checks; proportional verification does not lower those standards.
 
-Frontend:
-
-- lint
-- type checking
-- build
-- relevant tests
-
-Backend:
-
-- lint
-- type checking
-- unit/integration tests
-- build
-
-Database:
-
-- Prisma validation
-- relevant tests
-- migration review when applicable
-
-Do not claim something works if it was not verified.
-
-Clearly state what was and was not tested.
+Do not claim something works if it was not verified. Clearly state what was and was not tested.
 
 ---
 

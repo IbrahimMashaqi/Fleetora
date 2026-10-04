@@ -4,7 +4,7 @@
 
 This is a supporting AI workflow reference.
 
-[frontend/DESIGN_SYSTEM.md](../../../../frontend/DESIGN_SYSTEM.md) is the sole source of truth for visual values and component rules. Read its section 8 before applying this guidance; this reference does not define an independent theme.
+[FLEETORA_THEME.md](../../../design/FLEETORA_THEME.md) is the authoritative source for Fleetora's color palette and semantic color roles. `frontend/app/globals.css` implements those semantic theme tokens; it is not a competing authority. [frontend/DESIGN_SYSTEM.md](../../../../frontend/DESIGN_SYSTEM.md) remains the reference for component visual rules and other design-system guidance.
 
 Do not invent alternative palettes, typography, spacing systems, or component styles per feature.
 
@@ -56,33 +56,33 @@ Use semantic design tokens.
 
 # 3. Brand Direction
 
-Fleetora's official primary brand direction is blue. Use the locked brand tokens in the [canonical visual specification](../../../../frontend/DESIGN_SYSTEM.md#visual-4).
+Fleetora's approved brand and interactive colors are navy and teal. Use the palette and roles in [FLEETORA_THEME.md](../../../design/FLEETORA_THEME.md).
 
-Use primary color for actions, active navigation, links, focus, and selected controls. It should not dominate large surfaces.
+Use teal for primary actions and interactive emphasis. Navy is for brand and structural UI; sidebar navy is for primary navigation structure.
 
 ---
 
 # 4. Core Palette
 
-Use the brand values in the [canonical visual specification](../../../../frontend/DESIGN_SYSTEM.md#visual-4). Do not duplicate or extend the palette independently.
+Use the brand values in [FLEETORA_THEME.md](../../../design/FLEETORA_THEME.md). Do not duplicate or extend the palette independently.
 
 ---
 
 # 5. Neutral Palette
 
-Use the cool neutral palette and surface aliases in the [canonical visual specification](../../../../frontend/DESIGN_SYSTEM.md#visual-5).
+Use the light neutral palette and surface aliases in [FLEETORA_THEME.md](../../../design/FLEETORA_THEME.md).
 
 ---
 
 # 6. Semantic Colors
 
-Use the success, warning, danger/destructive, and info families in the [canonical visual specification](../../../../frontend/DESIGN_SYSTEM.md#visual-6). Semantic colors communicate successful states, attention, failures, and information.
+Use the operational status colors in [FLEETORA_THEME.md](../../../design/FLEETORA_THEME.md) for statuses, badges, indicators, and alerts only. Do not use status colors as primary action colors.
 
 ---
 
 # 7. Light Theme Semantic Tokens
 
-Use the surface, text, border, secondary, and focus aliases in the [canonical visual specification](../../../../frontend/DESIGN_SYSTEM.md#visual-5), together with the canonical brand and semantic families.
+Use the surface, text, border, brand, and status roles in [FLEETORA_THEME.md](../../../design/FLEETORA_THEME.md). `frontend/app/globals.css` implements these semantic tokens.
 
 ---
 
@@ -117,7 +117,7 @@ Cards and important working surfaces use the surface token.
 
 # 9. Sidebar
 
-Use the dark navy/slate sidebar and semantic tokens in the [canonical visual specification](../../../../frontend/DESIGN_SYSTEM.md#visual-14).
+Use the sidebar navy and semantic tokens in [FLEETORA_THEME.md](../../../design/FLEETORA_THEME.md).
 
 The sidebar should feel stable and quiet. Do not use gradients or make every item visually loud. Active navigation must be recognizable.
 
@@ -307,7 +307,7 @@ Use one simple, outlined, modern icon family that remains readable at small size
 Chart colors should be restrained.
 
 Primary series:
-Blue
+Teal
 
 Additional series should use accessible semantic or muted complementary colors.
 
@@ -471,8 +471,8 @@ Fleetora visual identity:
 
 Light operational dashboard
 + dark navy sidebar
-+ blue primary actions
-+ slate neutral surfaces
++ teal primary actions
++ light neutral surfaces
 + restrained semantic colors
 + compact status badges
 + medium information density

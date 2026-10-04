@@ -801,44 +801,29 @@ Do not treat suggested branch or commit naming as architecture requirements.
 
 ## Before Making Changes
 
-Always:
+Inspect the affected implementation and its nearby patterns first. Then inspect only what the change depends on:
 
-1. inspect the relevant existing code
-2. inspect the installed dependencies
-3. understand the current feature structure
-4. inspect reusable components
-5. inspect the actual backend API contract
-6. check relevant Fleetora documentation
-7. determine whether the change belongs to `app`, `features`, `components`, `lib`, or another layer
-8. consider loading/error/empty behavior
-9. consider authorization and tenant implications
-10. make the smallest clean change that solves the requirement
+- Check installed dependencies when selecting or changing a library or component.
+- Inspect reusable components and feature structure when the change touches UI or code organization.
+- Verify the actual backend contract when adding or changing API integration.
+- Review loading/error/empty and authorization/tenant behavior when the affected workflow uses those states or boundaries.
+- Read the Fleetora rules and design sources relevant to the task.
 
-Do not begin by rewriting existing architecture.
+Choose the existing layer that owns the change and make the smallest clean implementation. Do not begin by rewriting existing architecture.
 
 ---
 
 ## Before Finishing
 
-For the affected scope, check:
+Use the FAST PATH / DECISION PATH and verification matrix in `../docs/CODEX_WORKFLOW.md`. For affected code, run the smallest relevant checks; do not treat every item below as a command that must run for every change.
 
-- TypeScript errors
-- ESLint errors
-- build errors
-- relevant tests
-- loading state
-- error state
-- empty state
-- responsive behavior
-- accessibility
-- authentication behavior
-- authorization-aware UI behavior
-- API error handling
-- consistency with the design system
+- Run relevant tests when behavior changes and tests exist.
+- Use TypeScript and ESLint checks when appropriate for the changed code and available scripts.
+- Run a production build for broad framework/integration changes, release-risk work, or when specifically required—not automatically for isolated copy or styling.
+- For visual changes, review the affected responsive behavior, accessibility, and design-system use.
+- Verify loading, error, empty, success, authentication, authorization, and API behavior when those states or boundaries are present and affected.
 
-Do not claim the feature works if relevant verification was not performed.
-
-If a check could not be run, state that clearly.
+Do not claim the feature works if relevant verification was not performed. If a relevant check could not be run, state that clearly.
 
 ---
 
@@ -906,7 +891,7 @@ Before designing or substantially modifying Fleetora UI, read:
 
 `../.agents/design/FLEETORA_DESIGN_LANGUAGE.md`
 
-Use it for design philosophy and product visual language. Read [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) for the canonical visual specification; the design language does not define competing tokens.
+Use it for design philosophy and product visual language. Read [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) for component and layout guidance and `../.agents/design/FLEETORA_THEME.md` for Fleetora's authoritative palette and semantic color roles. Do not introduce a competing theme.
 
 For UI tasks, combine it with the relevant project skills:
 
