@@ -127,10 +127,13 @@ test("frames account creation in the company workspace across desktop and mobile
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/signup");
 
-  const formTitle = page.getByRole("heading", { name: "Create your account" });
+  const formTitle = page.getByRole("heading", { name: "Create your Fleetora account" });
   const workspaceTitle = page.getByRole("heading", { name: "Your company workspace" });
   await expect(formTitle).toBeVisible();
   await expect(workspaceTitle).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Connected operations" })).toBeVisible();
+  await expect(page.getByText("Vehicle assignments", { exact: true })).toBeVisible();
+  await expect(page.locator('img[src*="fleetora-logo"]')).toHaveCount(1);
 
   const desktopForm = await formTitle.boundingBox();
   const desktopWorkspace = await workspaceTitle.boundingBox();
