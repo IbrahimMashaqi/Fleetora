@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Length } from 'class-validator';
+import { IsNotEmpty, IsString, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class VerifyEmailDto {
@@ -10,6 +10,6 @@ export class VerifyEmailDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  @Length(64, 64)
+  @Matches(/^[a-f0-9]{64}$/)
   token!: string;
 }

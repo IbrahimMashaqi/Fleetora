@@ -5,10 +5,13 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   projects: [
-    { name: "action", testMatch: "signup.action.spec.ts" },
+    {
+      name: "action",
+      testMatch: ["signup.action.spec.ts", "verification.action.spec.ts"],
+    },
     {
       name: "browser",
-      testMatch: "signup.browser.spec.ts",
+      testMatch: ["signup.browser.spec.ts", "verification.browser.spec.ts"],
       use: {
         baseURL: "http://localhost:3100",
         browserName: "chromium",

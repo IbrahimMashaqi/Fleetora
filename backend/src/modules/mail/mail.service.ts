@@ -9,15 +9,17 @@ export class MailService {
     email: string,
     name: string,
     verificationTokenLink: string,
+    expiresInMinutes = 15,
   ) {
     await this.mailerService.sendMail({
       to: email,
-      subject: 'Nextask | Account Verification 🔑',
+      subject: 'Fleetora | Verify your email',
       template: 'confirm-email',
-      from: '"Nextask Team" <onboarding@resend.dev>',
+      from: '"Fleetora" <onboarding@resend.dev>',
       context: {
         name: name,
         url: verificationTokenLink,
+        expiresInMinutes,
       },
     });
   }

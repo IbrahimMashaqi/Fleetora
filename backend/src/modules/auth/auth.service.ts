@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -12,13 +14,15 @@ import { TokenPayload, UserRole } from './token/token.payload.js';
 import { TokenService } from './token/token.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { instantToMs } from '../../common/utils/temporal.js';
-import { randomBytes } from 'crypto';
+import { randomBytes, timingSafeEqual } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   private readonly PASSWORD_SALT_ROUNDS: number;
   private readonly VERIFICATION_CODE_EXPIRY_MINUTES: number;
+  private readonly FRONTEND_URL: string;
+  private readonly VERIFICATION_RESEND_COOLDOWN_MS = 60_000;
 
   constructor(
     private readonly authRepository: AuthRepository,
@@ -30,6 +34,8 @@ export class AuthService {
       this.configService.get<number>('SALT_ROUNDS') ?? 10;
     this.VERIFICATION_CODE_EXPIRY_MINUTES =
       this.configService.get<number>('VERIFICATION_CODE_EXPIRY_MINUTES') ?? 15;
+    this.FRONTEND_URL =
+      this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
   }
 
   private async buildAuthResponse(user: {
@@ -88,13 +94,26 @@ export class AuthService {
     return this.buildAuthResponse(user);
   }
 
-  async sendVerificationEmail(user: any, token: string, expiresAt: Date) {
+  async sendVerificationEmail(
+    user: { id: string; email: string | null; fullName: string },
+    token: string,
+    expiresAt: Date,
+  ) {
+    if (!user.email) {
+      throw new BadRequestException('User email is required for verification');
+    }
     await this.authRepository.saveVerificationCode(user.id, token, expiresAt);
-    const verificationLink = `http://localhost:3000/auth/verify-email?token=${token}&userId=${user.id}`;
+    const verificationLink = new URL(
+      '/auth/verify-email',
+      this.FRONTEND_URL,
+    );
+    verificationLink.searchParams.set('token', token);
+    verificationLink.searchParams.set('userId', user.id);
     await this.mailService.sendVerificationEmail(
       user.email,
       user.fullName ?? 'User',
-      verificationLink,
+      verificationLink.toString(),
+      this.VERIFICATION_CODE_EXPIRY_MINUTES,
     );
   }
   async signup(createUserDto: CreateUserDto) {
@@ -138,10 +157,19 @@ export class AuthService {
         'No verification code found. Please request a new one.',
       );
     }
-    if (user.verificationToken !== token) {
+    const storedToken = user.verificationToken;
+    if (
+      !/^[a-f0-9]{64}$/.test(storedToken) ||
+      !/^[a-f0-9]{64}$/.test(token) ||
+      storedToken.length !== token.length ||
+      !timingSafeEqual(
+        Buffer.from(storedToken, 'hex'),
+        Buffer.from(token, 'hex'),
+      )
+    ) {
       throw new ForbiddenException('Invalid verification code');
     }
-    if (instantToMs(user.verificationTokenExpiresAt) < Date.now()) {
+    if (instantToMs(user.verificationTokenExpiresAt) <= Date.now()) {
       throw new ForbiddenException(
         'Verification code has expired. Please request a new one.',
       );
@@ -160,6 +188,25 @@ export class AuthService {
     if (user.isEmailVerified) {
       return { message: 'Email is already verified. You can sign in.' };
     }
+
+    const now = Date.now();
+    const lastSentAt = user.verificationTokenExpiresAt
+      ? instantToMs(user.verificationTokenExpiresAt) -
+        this.VERIFICATION_CODE_EXPIRY_MINUTES * 60_000
+      : null;
+    if (
+      lastSentAt !== null &&
+      now - lastSentAt < this.VERIFICATION_RESEND_COOLDOWN_MS
+    ) {
+      const retryAfterSeconds = Math.ceil(
+        (this.VERIFICATION_RESEND_COOLDOWN_MS - (now - lastSentAt)) / 1000,
+      );
+      throw new HttpException(
+        `Please wait ${retryAfterSeconds} seconds before requesting another verification email.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date();
     expiresAt.setMinutes(

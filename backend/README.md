@@ -23,6 +23,8 @@
 
 ## Description
 
+Set `FRONTEND_URL` to the frontend origin so verification emails link to the correct app route.
+
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
 ## Project setup
