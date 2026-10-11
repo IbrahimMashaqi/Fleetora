@@ -55,17 +55,17 @@ test.afterAll(async () => {
   );
 });
 
-test("verifies through the existing account-bound backend route", async () => {
+test("redeems through an account-bound explicit POST body", async () => {
   const token = "a".repeat(64);
   await expect(verifyEmailAction("user-123", token)).resolves.toEqual({
     status: "verified",
   });
   expect(requests).toHaveLength(1);
-  expect(requests[0].method).toBe("GET");
-  const requestUrl = new URL(requests[0].path!, apiUrl);
-  expect(requestUrl.pathname).toBe("/auth/verify-email");
-  expect(requestUrl.searchParams.get("userId")).toBe("user-123");
-  expect(requestUrl.searchParams.get("token")).toBe(token);
+  expect(requests[0]).toMatchObject({
+    method: "POST",
+    path: "/auth/verify-email",
+    body: { userId: "user-123", token },
+  });
 });
 
 test("maps expired, invalid, and already-verified responses", async () => {

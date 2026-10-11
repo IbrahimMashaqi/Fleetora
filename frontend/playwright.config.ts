@@ -11,7 +11,7 @@ export default defineConfig({
     },
     {
       name: "browser",
-      testMatch: ["signup.browser.spec.ts", "verification.browser.spec.ts"],
+      testMatch: ["signup.browser.spec.ts", "verification.browser.spec.ts", "login.browser.spec.ts", "dashboard.browser.spec.ts"],
       use: {
         baseURL: "http://localhost:3100",
         browserName: "chromium",

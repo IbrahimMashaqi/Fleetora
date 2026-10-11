@@ -33,10 +33,10 @@ export default function VerifyEmailLoading() {
             Account verification
           </p>
           <h1 className="mt-2 text-2xl font-semibold leading-8 tracking-tight">
-            Checking your email
+            Verify your email
           </h1>
           <p className="mt-3 leading-6 text-muted-foreground">
-            We’re securely checking your verification link.
+            Review the link and continue to confirm your email address.
           </p>
         </div>
       </section>

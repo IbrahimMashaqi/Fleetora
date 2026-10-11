@@ -23,7 +23,62 @@
 
 ## Description
 
-Set `FRONTEND_URL` to the frontend origin so verification emails link to the correct app route.
+Set `FRONTEND_URL` to the trusted frontend origin so verification and password reset emails link to the correct app routes. Development defaults to `http://localhost:3000`; production must set `FRONTEND_URL` to an HTTPS origin. The backend rejects a missing production value or a URL with credentials, query parameters, or a fragment. Reset links are never derived from request headers.
+
+### Password recovery throttling
+
+The password recovery endpoint applies a bounded process-local safeguard before
+performing account lookup. It uses HMAC digests of the normalized email and the
+Express `request.ip`; it does not store raw email addresses or source addresses
+in limiter keys. Defaults are three requests per source/account pair, five per
+account across sources, and 50 per source in a 15-minute window, with at most
+10,000 counters. These values can be overridden with
+`RECOVERY_RATE_LIMIT_PAIR_MAX`, `RECOVERY_RATE_LIMIT_ACCOUNT_MAX`,
+`RECOVERY_RATE_LIMIT_SOURCE_MAX`, `RECOVERY_RATE_LIMIT_WINDOW_MS`, and
+`RECOVERY_RATE_LIMIT_MAX_ENTRIES`. `RECOVERY_RATE_LIMIT_KEY` is optional and
+otherwise uses `ACCESS_TOKEN_SECRET` as the HMAC key.
+
+Fleetora does not currently enable Express proxy trust, so arbitrary
+`X-Forwarded-For` headers are ignored and the direct peer address is used.
+Before deploying behind a proxy, configure an exact trusted proxy topology and
+verify `request.ip`; do not enable blanket proxy trust.
+
+The process-local implementation is a development and single-instance safety
+net. A production deployment with multiple backend instances requires an
+approved shared, atomic rate-limit store and an implementation of the existing
+`RecoveryRateLimiter` interface. Password recovery email delivery is also
+synchronous today. A durable queue and worker are required before claiming that
+known and unknown accounts have comparable response timing; do not replace it
+with an in-memory or fire-and-forget task.
+
+### Disposable authentication integration database
+
+The real PostgreSQL authentication tests never read `DATABASE_URL`. Their
+dedicated command fails closed unless all three variables below are set in the
+current shell:
+
+```powershell
+$env:FLEETORA_TEST_DATABASE_URL = '<local test-only connection URL>'
+$env:FLEETORA_TEST_DATABASE_NAME = 'fleetora_auth_test'
+$env:FLEETORA_ALLOW_DESTRUCTIVE_AUTH_TESTS = 'true'
+```
+
+Create a local PostgreSQL role whose name ends in `_test` and a database whose
+name ends in `_test`, grant that role ownership only of that database, and do
+not place development or production data in it. The safety gate accepts only
+`localhost`, `127.0.0.1`, or `::1`, verifies that the configured database name
+matches the URL, and requires the explicit destructive-test flag.
+
+After independently confirming the target, initialize only that database with
+the current contract, then run the isolated suite:
+
+```powershell
+npx prisma db init --db $env:FLEETORA_TEST_DATABASE_URL
+npm run test:auth:integration
+```
+
+The suite verifies `current_database()` before creating deterministic fixtures,
+deletes only its fixed fixture IDs, and runs serially with bounded timeouts.
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 

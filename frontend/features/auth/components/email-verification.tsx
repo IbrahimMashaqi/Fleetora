@@ -4,7 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { resendVerificationAction } from "../verification.action";
+import { resendVerificationAction, verifyEmailAction } from "../verification.action";
+import { useOneTimeTokenFragment } from "../one-time-token-fragment";
 import type {
   ResendVerificationState,
   VerificationState,
@@ -43,7 +44,9 @@ function StatusMark({ state }: { state: VerificationState["status"] }) {
       ? "✓"
       : state === "invalid"
         ? "×"
-        : "!";
+        : state === "confirmation-required"
+          ? "i"
+          : "!";
 
   return (
     <span
@@ -52,7 +55,7 @@ function StatusMark({ state }: { state: VerificationState["status"] }) {
         state === "invalid" || state === "error"
           ? "bg-danger-background text-danger-foreground"
           : "bg-primary-subtle text-primary"
-      }`}
+      } ${state === "verified" || state === "already-verified" ? "auth-success-mark" : ""}`}
     >
       {mark}
     </span>
@@ -62,11 +65,21 @@ function StatusMark({ state }: { state: VerificationState["status"] }) {
 export function EmailVerification({
   userId,
   initialState,
+  legacyTokenInQuery,
 }: {
   userId: string;
   initialState: VerificationState;
+  legacyTokenInQuery: boolean;
 }) {
   const [state, setState] = useState(initialState);
+  const tokenSnapshot = useOneTimeTokenFragment(userId, legacyTokenInQuery);
+  const token = tokenSnapshot.token;
+  const displayState =
+    state.status === "confirmation-required" &&
+    tokenSnapshot.ready &&
+    !/^[a-f0-9]{64}$/i.test(token)
+      ? { status: "invalid" as const }
+      : state;
   const [resendState, setResendState] =
     useState<ResendVerificationState | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -81,8 +94,12 @@ export function EmailVerification({
     return () => window.clearTimeout(timeout);
   }, [secondsRemaining]);
 
-  function verifyAgain() {
-    window.location.reload();
+  function confirmEmail() {
+    if (!userId || !/^[a-f0-9]{64}$/i.test(token) || isPending) return;
+    startTransition(async () => {
+      const result = await verifyEmailAction(userId, token);
+      setState(result);
+    });
   }
 
   function resendEmail() {
@@ -103,17 +120,20 @@ export function EmailVerification({
   let title = "We couldn’t verify your email";
   let description =
     "There was a temporary problem checking this link. Try again, or request a new email.";
-  if (state.status === "verified") {
+  if (displayState.status === "confirmation-required") {
+    title = "Verify your email";
+    description = "Continue to confirm your email address and activate your Fleetora account.";
+  } else if (displayState.status === "verified") {
     title = "Email verified";
     description = "Your Fleetora account is ready. You may now sign in.";
-  } else if (state.status === "already-verified") {
+  } else if (displayState.status === "already-verified") {
     title = "Email already verified";
     description = "This Fleetora account is already verified. You may sign in.";
-  } else if (state.status === "expired") {
+  } else if (displayState.status === "expired") {
     title = "This link has expired";
     description =
       "This verification link is no longer active. Request a new email to continue.";
-  } else if (state.status === "invalid") {
+  } else if (displayState.status === "invalid") {
     title = "This link isn’t valid";
     description =
       "The verification link may be incomplete or no longer active. Request a new email to continue.";
@@ -121,7 +141,7 @@ export function EmailVerification({
 
   const canResend =
     Boolean(userId) &&
-    (state.status === "expired" || state.status === "invalid");
+    (displayState.status === "expired" || displayState.status === "invalid");
   const resendMessage =
     resendState?.status === "sent"
       ? "A new verification email has been sent. Check your inbox and spam folder."
@@ -137,9 +157,9 @@ export function EmailVerification({
       <section className="mx-auto flex w-full max-w-3xl flex-1 items-center px-4 py-12 sm:px-8">
         <div
           aria-busy={isPending}
-          className="mx-auto w-full max-w-lg rounded-xl border border-border bg-surface p-6 shadow-sm sm:p-9"
+          className="auth-enter mx-auto w-full max-w-lg rounded-xl border border-border bg-surface p-6 shadow-sm sm:p-9"
         >
-          <StatusMark state={state.status} />
+          <StatusMark state={displayState.status} />
           <p className="mt-6 text-sm font-semibold text-primary">
             Account verification
           </p>
@@ -153,24 +173,42 @@ export function EmailVerification({
             {description}
           </p>
 
-          {(state.status === "verified" ||
-            state.status === "already-verified") && (
-            <p
-              role="status"
-              className="mt-6 rounded-md bg-success-background p-3 text-sm text-success"
-            >
-              Your email address has been confirmed.
-            </p>
+          {(displayState.status === "verified" ||
+            displayState.status === "already-verified") && (
+            <>
+              <p
+                role="status"
+                className="auth-success-state mt-6 rounded-md bg-success-background p-3 text-sm text-success"
+              >
+                Your email address has been confirmed.
+              </p>
+              <Button asChild className="auth-action-button mt-7 w-full sm:w-auto">
+                <Link href="/login">Continue to Login</Link>
+              </Button>
+            </>
           )}
 
-          {state.status === "error" && (
+          {displayState.status === "confirmation-required" && (
+            <Button
+              type="button"
+              disabled={isPending || !tokenSnapshot.ready || !/^[a-f0-9]{64}$/i.test(token)}
+              onClick={confirmEmail}
+              className="auth-action-button mt-7 w-full sm:w-auto"
+            >
+              {isPending
+                ? <><span aria-hidden="true" className="auth-spinner size-4" />Verifying...</>
+                : "Confirm email address"}
+            </Button>
+          )}
+
+          {displayState.status === "error" && (
             <Button
               type="button"
               disabled={isPending}
-              onClick={verifyAgain}
-              className="mt-7 w-full sm:w-auto"
+              onClick={confirmEmail}
+              className="auth-action-button mt-7 w-full sm:w-auto"
             >
-              {isPending ? "Checking..." : "Try again"}
+              {isPending ? <><span aria-hidden="true" className="auth-spinner size-4" />Checking...</> : "Try again"}
             </Button>
           )}
 
@@ -181,10 +219,10 @@ export function EmailVerification({
                 variant="outline"
                 disabled={isPending || secondsRemaining > 0}
                 onClick={resendEmail}
-                className="w-full sm:w-auto"
+                className="auth-action-button w-full sm:w-auto"
               >
                 {isPending
-                  ? "Sending..."
+                  ? <><span aria-hidden="true" className="auth-spinner size-4" />Sending...</>
                   : secondsRemaining > 0
                     ? `Resend email in ${secondsRemaining}s`
                     : "Resend verification email"}
@@ -192,7 +230,7 @@ export function EmailVerification({
               {resendMessage && (
                 <p
                   role={resendState?.status === "error" ? "alert" : "status"}
-                  className={`mt-3 text-sm ${
+                  className={`auth-feedback mt-3 text-sm ${
                     resendState?.status === "error"
                       ? "text-danger-foreground"
                       : "text-muted-foreground"

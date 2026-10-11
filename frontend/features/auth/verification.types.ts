@@ -1,4 +1,5 @@
 export type VerificationState =
+  | { status: "confirmation-required" }
   | { status: "verified" }
   | { status: "already-verified" }
   | { status: "expired" }

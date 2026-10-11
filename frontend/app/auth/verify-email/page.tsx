@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { EmailVerification } from "@/features/auth/components/email-verification";
-import { verifyEmailAction } from "@/features/auth/verification.action";
 
 export const metadata: Metadata = {
   title: "Verify your email",
+  referrer: "no-referrer",
 };
 
 export default async function VerifyEmailPage({
@@ -13,8 +13,16 @@ export default async function VerifyEmailPage({
 }) {
   const params = await searchParams;
   const userId = typeof params.userId === "string" ? params.userId : "";
-  const token = typeof params.token === "string" ? params.token : "";
-  const initialState = await verifyEmailAction(userId, token);
+  const legacyTokenInQuery = typeof params.token === "string";
+  const initialState = userId && !legacyTokenInQuery
+    ? { status: "confirmation-required" as const }
+    : { status: "invalid" as const };
 
-  return <EmailVerification userId={userId} initialState={initialState} />;
+  return (
+    <EmailVerification
+      userId={userId}
+      initialState={initialState}
+      legacyTokenInQuery={legacyTokenInQuery}
+    />
+  );
 }

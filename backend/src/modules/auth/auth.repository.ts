@@ -6,7 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { dateToInstant } from '../../common/utils/temporal.js';
+import { dateToInstant, instantToMs } from '../../common/utils/temporal.js';
+import { matchesOneTimeTokenVerifier } from './token/one-time-token.js';
 
 @Injectable()
 export class AuthRepository {
@@ -41,22 +42,148 @@ export class AuthRepository {
     return this.prisma.User.where({ id: userId }).first();
   }
 
-  async saveVerificationCode(
+  async findSessionContextById(userId: string) {
+    return this.prisma.User.where({ id: userId })
+      .select(
+        'id',
+        'fullName',
+        'email',
+        'role',
+        'companyId',
+        'isActive',
+        'isEmailVerified',
+      )
+      .include('company', (company) =>
+        company.select('id', 'name', 'suspended'),
+      )
+      .first();
+  }
+
+  async isCompanyActiveForUser(user: {
+    role: string;
+    companyId: string | null;
+  }): Promise<boolean> {
+    if (user.role === 'PLATFORM_ADMIN') return user.companyId === null;
+    if (!user.companyId) return false;
+
+    const company = await this.prisma.Company.where({ id: user.companyId }).first();
+    return company !== null && !company.suspended;
+  }
+
+  async withRefreshTokenLock<T>(
     userId: string,
-    code: string | null,
+    operation: (
+      user: Awaited<ReturnType<AuthRepository['findUserById']>>,
+      saveRefreshToken: (refreshToken: string | null) => Promise<void>,
+      companyIsActive: boolean,
+    ) => Promise<T>,
+  ): Promise<T> {
+    return this.prisma.db.transaction(async (tx) => {
+      // A no-op update takes a PostgreSQL row lock until the transaction ends.
+      // Concurrent refreshes then compare against the latest rotated hash.
+      await tx.execute(
+        this.prisma.db.raw.sql`UPDATE "users" SET "refreshToken" = "refreshToken" WHERE "id" = ${userId}`
+          .affectedCount()
+          .build(),
+      );
+      const user = await tx.orm.public.User.where({ id: userId }).first();
+      const companyIsActive = user
+        ? user.role === 'PLATFORM_ADMIN'
+          ? user.companyId === null
+          : user.companyId
+            ? (await tx.orm.public.Company.where({ id: user.companyId }).first())?.suspended === false
+            : false
+        : false;
+      return operation(user, async (refreshToken) => {
+        await tx.orm.public.User.where({ id: userId }).update({ refreshToken });
+      }, companyIsActive);
+    });
+  }
+
+  async saveVerificationTokenVerifier(
+    userId: string,
+    verifier: string | null,
     expiresAt: Date | null,
   ): Promise<void> {
     await this.prisma.User.where({ id: userId }).update({
-      verificationToken: code,
+      verificationToken: verifier,
       verificationTokenExpiresAt: dateToInstant(expiresAt) as any,
     });
   }
 
-  async markEmailVerified(userId: string): Promise<void> {
-    await this.prisma.User.where({ id: userId }).update({
-      isEmailVerified: true,
-      verificationToken: null,
-      verificationTokenExpiresAt: null,
+  async consumeEmailVerificationToken(
+    userId: string,
+    candidateVerifier: string,
+    now: Date,
+  ): Promise<'verified' | 'already-verified' | 'expired' | 'invalid'> {
+    return this.prisma.db.transaction(async (tx) => {
+      await tx.execute(
+        this.prisma.db.raw.sql`UPDATE "users" SET "verificationToken" = "verificationToken" WHERE "id" = ${userId}`
+          .affectedCount()
+          .build(),
+      );
+      const user = await tx.orm.public.User.where({ id: userId }).first();
+      if (!user) return 'invalid';
+      if (user.isEmailVerified) return 'already-verified';
+      if (
+        !matchesOneTimeTokenVerifier(
+          user.verificationToken,
+          candidateVerifier,
+          'email-verification',
+        )
+      ) {
+        return 'invalid';
+      }
+      if (
+        !user.verificationTokenExpiresAt ||
+        instantToMs(user.verificationTokenExpiresAt) <= now.getTime()
+      ) {
+        return 'expired';
+      }
+
+      await tx.orm.public.User.where({ id: userId }).update({
+        isEmailVerified: true,
+        isActive: true,
+        verificationToken: null,
+        verificationTokenExpiresAt: null,
+      });
+      return 'verified';
+    });
+  }
+
+  async consumePasswordResetToken(
+    userId: string,
+    candidateVerifier: string,
+    now: Date,
+    hashedPassword: string,
+  ): Promise<boolean> {
+    return this.prisma.db.transaction(async (tx) => {
+      await tx.execute(
+        this.prisma.db.raw.sql`UPDATE "users" SET "verificationToken" = "verificationToken" WHERE "id" = ${userId}`
+          .affectedCount()
+          .build(),
+      );
+      const user = await tx.orm.public.User.where({ id: userId }).first();
+      if (
+        !user ||
+        !matchesOneTimeTokenVerifier(
+          user.verificationToken,
+          candidateVerifier,
+          'password-reset',
+        ) ||
+        !user.verificationTokenExpiresAt ||
+        instantToMs(user.verificationTokenExpiresAt) <= now.getTime()
+      ) {
+        return false;
+      }
+
+      await tx.orm.public.User.where({ id: userId }).update({
+        password: hashedPassword,
+        refreshToken: null,
+        verificationToken: null,
+        verificationTokenExpiresAt: null,
+      });
+      return true;
     });
   }
 
@@ -129,11 +256,4 @@ export class AuthRepository {
     }
   }
 
-  async updateUserActevity(id: string, active: boolean) {
-    try {
-      return this.prisma.User.where({ id }).update({ isActive: active });
-    } catch {
-      throw new InternalServerErrorException('Connection failed to database');
-    }
-  }
 }

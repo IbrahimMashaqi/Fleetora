@@ -56,12 +56,12 @@ export async function verifyEmailAction(
   }
   const endpoint = getEndpoint("auth/verify-email");
   if (!endpoint) return { status: "error" };
-  endpoint.searchParams.set("userId", userId);
-  endpoint.searchParams.set("token", token);
 
   try {
     const response = await fetch(endpoint, {
-      method: "GET",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, token }),
       cache: "no-store",
       redirect: "error",
       signal: AbortSignal.timeout(15_000),

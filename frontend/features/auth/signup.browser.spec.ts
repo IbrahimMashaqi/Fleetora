@@ -48,9 +48,11 @@ async function fillSignup(page: Page) {
 }
 
 test("submits through the Server Action and ends at email confirmation", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await fillSignup(page);
   await page.getByRole("button", { name: "Create account", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
+  await expect(page.locator(".auth-success-state")).toHaveCSS("animation-name", "auth-success-state");
   await expect(page.getByText("amina@example.com", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
   expect(requests).toEqual([{
@@ -66,6 +68,7 @@ test("disables the form while signup is pending", async ({ page }) => {
   await fillSignup(page);
   await page.getByRole("button", { name: "Create account", exact: true }).click();
   await expect(page.getByRole("button", { name: "Creating account..." })).toBeDisabled();
+  await expect(page.locator(".auth-spinner")).toHaveCSS("animation-name", "auth-spinner");
   await expect(page.getByLabel("Work email")).toBeDisabled();
   await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
   expect(requests).toHaveLength(1);
@@ -110,7 +113,7 @@ test("shows a safe backend error and allows another attempt", async ({ page }) =
 });
 
 test("supports password visibility, keyboard use, and a small viewport", async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 812 });
+  await page.setViewportSize({ width: 375, height: 640 });
   await fillSignup(page);
   await page.getByRole("button", { name: "Show password" }).focus();
   await page.keyboard.press("Enter");
@@ -118,7 +121,7 @@ test("supports password visibility, keyboard use, and a small viewport", async (
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute("type", "password");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  expect(await page.getByRole("button", { name: "Create account", exact: true }).evaluate((button) => getComputedStyle(button).backgroundColor)).toBe("rgb(15, 159, 149)");
+  expect(await page.getByRole("button", { name: "Create account", exact: true }).evaluate((button) => getComputedStyle(button).backgroundColor)).toBe("rgb(11, 129, 122)");
   await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: "Create account", exact: true })).toBeFocused();
 });
@@ -127,12 +130,11 @@ test("frames account creation in the company workspace across desktop and mobile
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/signup");
 
-  const formTitle = page.getByRole("heading", { name: "Create your Fleetora account" });
-  const workspaceTitle = page.getByRole("heading", { name: "Your company workspace" });
+  const formTitle = page.getByRole("heading", { name: "Create your account" });
+  const workspaceTitle = page.getByRole("heading", { name: "Operations, connected." });
   await expect(formTitle).toBeVisible();
   await expect(workspaceTitle).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Connected operations" })).toBeVisible();
-  await expect(page.getByText("Vehicle assignments", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Company Administrator" })).toBeVisible();
   await expect(page.locator('img[src*="fleetora-logo"]')).toHaveCount(1);
 
   const desktopForm = await formTitle.boundingBox();
@@ -140,10 +142,25 @@ test("frames account creation in the company workspace across desktop and mobile
   if (!desktopForm || !desktopWorkspace) throw new Error("Signup context is not visible on desktop.");
   expect(desktopForm.x).toBeGreaterThan(desktopWorkspace.x);
 
-  await page.setViewportSize({ width: 375, height: 812 });
+  await page.setViewportSize({ width: 768, height: 900 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await page.setViewportSize({ width: 375, height: 640 });
   const mobileForm = await formTitle.boundingBox();
   const mobileWorkspace = await workspaceTitle.boundingBox();
   if (!mobileForm || !mobileWorkspace) throw new Error("Signup context is not visible on mobile.");
   expect(mobileForm.y).toBeLessThan(mobileWorkspace.y);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("fits the standard desktop viewport and still scrolls naturally on mobile", async ({ page }) => {
+  for (const size of [{ width: 1366, height: 768 }, { width: 1280, height: 720 }]) {
+    await page.setViewportSize(size);
+    await page.goto("/signup");
+    expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);
+  }
+
+  await page.setViewportSize({ width: 375, height: 640 });
+  await page.goto("/signup");
+  expect(await page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight)).toBe(true);
 });

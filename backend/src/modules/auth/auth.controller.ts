@@ -2,12 +2,17 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
+  HttpException,
   HttpStatus,
+  Inject,
+  MethodNotAllowedException,
   Post,
-  Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -26,11 +31,19 @@ import { Public } from './decorators/public.decorator.js';
 import { UpdatePasswordDto } from './dto/update-password.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import {
+  RECOVERY_RATE_LIMITER,
+  type RecoveryRateLimiter,
+} from './recovery-rate-limiter.js';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    @Inject(RECOVERY_RATE_LIMITER)
+    private readonly recoveryRateLimiter: RecoveryRateLimiter,
+  ) {}
 
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User registered, check email for verification' })
@@ -40,11 +53,23 @@ export class AuthController {
     return this.authService.signup(createUserDto);
   }
 
-  @ApiOperation({ summary: 'Verify user email with token' })
+  @ApiOperation({ summary: 'Require explicit POST confirmation for email verification' })
+  @ApiResponse({ status: 405, description: 'Email verification requires explicit confirmation' })
+  @Public()
+  @Header('Allow', 'POST')
+  @Get('verify-email')
+  verifyEmailGet(): never {
+    throw new MethodNotAllowedException(
+      'Email verification requires an explicit POST confirmation',
+    );
+  }
+
+  @ApiOperation({ summary: 'Redeem a verification token after explicit confirmation' })
   @ApiResponse({ status: 200, description: 'Email verified' })
   @Public()
-  @Get('verify-email')
-  async verifyEmail(@Query() verifyEmailDto: VerifyEmailDto) {
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
     return this.authService.verifyEmail(
       verifyEmailDto.userId,
       verifyEmailDto.token,
@@ -82,6 +107,15 @@ export class AuthController {
     return this.authService.refreshTokens(id, refreshToken);
   }
 
+  @ApiOperation({ summary: 'Get the current active user session' })
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Current user session' })
+  @UseGuards(AccessTokenGuard)
+  @Get('session')
+  async session(@GetCurrentUser('sub') id: string) {
+    return this.authService.getSessionUser(id);
+  }
+
   @ApiOperation({ summary: 'Log out and invalidate refresh token' })
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Logged out' })
@@ -114,7 +148,24 @@ export class AuthController {
   @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+  async forgotPassword(
+    @Body() forgotPasswordDto: ForgotPasswordDto,
+    @Req() request: Pick<Request, 'ip'>,
+  ) {
+    const limit = this.recoveryRateLimiter.consume(
+      request.ip ?? 'unknown',
+      forgotPasswordDto.email,
+    );
+    if (!limit.allowed) {
+      throw new HttpException(
+        {
+          message:
+            'Too many password recovery requests. Please try again later.',
+          retryAfterSeconds: limit.retryAfterSeconds,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
     return this.authService.sendForgotPasswordEmail(forgotPasswordDto.email);
   }
 
