@@ -43,23 +43,23 @@ export class InMemoryRecoveryRateLimiter implements RecoveryRateLimiter {
       );
     }
     this.windowMs = this.positiveInteger(
-      config.get<number>('RECOVERY_RATE_LIMIT_WINDOW_MS'),
+      config.get<number | string>('RECOVERY_RATE_LIMIT_WINDOW_MS'),
       15 * 60_000,
     );
     this.pairMax = this.positiveInteger(
-      config.get<number>('RECOVERY_RATE_LIMIT_PAIR_MAX'),
+      config.get<number | string>('RECOVERY_RATE_LIMIT_PAIR_MAX'),
       3,
     );
     this.accountMax = this.positiveInteger(
-      config.get<number>('RECOVERY_RATE_LIMIT_ACCOUNT_MAX'),
+      config.get<number | string>('RECOVERY_RATE_LIMIT_ACCOUNT_MAX'),
       5,
     );
     this.sourceMax = this.positiveInteger(
-      config.get<number>('RECOVERY_RATE_LIMIT_SOURCE_MAX'),
+      config.get<number | string>('RECOVERY_RATE_LIMIT_SOURCE_MAX'),
       50,
     );
     this.maxEntries = this.positiveInteger(
-      config.get<number>('RECOVERY_RATE_LIMIT_MAX_ENTRIES'),
+      config.get<number | string>('RECOVERY_RATE_LIMIT_MAX_ENTRIES'),
       10_000,
     );
   }
@@ -121,7 +121,8 @@ export class InMemoryRecoveryRateLimiter implements RecoveryRateLimiter {
     }
   }
 
-  private positiveInteger(value: number | undefined, fallback: number): number {
-    return Number.isInteger(value) && (value ?? 0) > 0 ? value! : fallback;
+  private positiveInteger(value: number | string | undefined, fallback: number): number {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
   }
 }

@@ -1,0 +1,82 @@
+.auth-fields {
+  /* Native fieldset min-content sizing can clip enlarged text inside cards. */
+  min-inline-size: 0;
+}
+
+.auth-action-button {
+  transition: color var(--motion-default) var(--motion-easing),
+    background-color var(--motion-default) var(--motion-easing),
+    border-color var(--motion-default) var(--motion-easing),
+    transform var(--motion-default) var(--motion-easing);
+}
+
+.auth-primary-action {
+  /* Keep the existing minimum while allowing enlarged labels to wrap. */
+  min-block-size: calc(var(--spacing) * 12);
+  block-size: auto;
+  background-color: var(--action-background);
+  color: var(--primary-foreground);
+  transition: background-color var(--motion-default) var(--motion-easing),
+    transform var(--motion-default) var(--motion-easing);
+}
+
+.auth-primary-action:disabled {
+  cursor: wait;
+  opacity: 1;
+}
+
+.auth-spinner {
+  display: inline-block;
+  flex: none;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 9999px;
+}
+
+.auth-text-link {
+  color: var(--secondary-foreground);
+  text-decoration: underline;
+  text-decoration-color: var(--primary);
+  text-underline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .auth-enter {
+    /* Retain the existing public-flow entry timing; it is not a UI default. */
+    animation: auth-enter 320ms var(--motion-easing) both;
+  }
+  .auth-enter-delayed { animation-delay: 70ms; }
+  .auth-feedback { animation: auth-feedback var(--motion-default) var(--motion-easing) both; }
+  .auth-success-state { animation: auth-success-state 240ms var(--motion-easing) both; }
+  .auth-success-mark { animation: auth-success-mark 260ms var(--motion-easing) both; }
+  .auth-spinner { animation: auth-spinner 900ms linear infinite; }
+  .auth-action-button:hover:not(:disabled),
+  .auth-primary-action:hover:not(:disabled) { transform: translateY(-1px); }
+  .auth-action-button:active:not(:disabled) { transform: translateY(0) scale(0.99); }
+  .auth-primary-action:active:not(:disabled) { transform: translateY(1px); }
+}
+
+.auth-primary-action:hover:not(:disabled) { background-color: var(--primary-active); }
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-action-button, .auth-primary-action { transition: none; }
+  .auth-spinner { animation: none; }
+}
+
+@keyframes auth-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes auth-feedback {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes auth-success-state {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes auth-success-mark {
+  from { opacity: 0.75; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes auth-spinner { to { transform: rotate(360deg); } }

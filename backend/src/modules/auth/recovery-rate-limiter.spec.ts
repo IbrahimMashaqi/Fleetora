@@ -60,6 +60,21 @@ describe('InMemoryRecoveryRateLimiter', () => {
     expect(limiter.consume('203.0.113.8', 'amina@example.com').allowed).toBe(true);
   });
 
+  it('honors numeric environment strings without changing the configured limits', () => {
+    const configured = new InMemoryRecoveryRateLimiter(new ConfigService({
+      ACCESS_TOKEN_SECRET: 'test-only-rate-limit-key',
+      RECOVERY_RATE_LIMIT_WINDOW_MS: '60000',
+      RECOVERY_RATE_LIMIT_PAIR_MAX: '1',
+      RECOVERY_RATE_LIMIT_ACCOUNT_MAX: '10',
+      RECOVERY_RATE_LIMIT_SOURCE_MAX: '20',
+      RECOVERY_RATE_LIMIT_MAX_ENTRIES: '12',
+    }));
+    expect(configured.consume('203.0.113.8', 'amina@example.com').allowed).toBe(true);
+    expect(configured.consume('203.0.113.8', 'amina@example.com')).toEqual({ allowed: false, retryAfterSeconds: 60 });
+    vi.advanceTimersByTime(60_000);
+    expect(configured.consume('203.0.113.8', 'amina@example.com').allowed).toBe(true);
+  });
+
   it('evicts expired or oldest counters instead of growing without a bound', () => {
     const bounded = new InMemoryRecoveryRateLimiter(
       new ConfigService({

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { TokenPayload } from './token.payload.js';
+import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class TokenService {
@@ -22,6 +23,7 @@ export class TokenService {
     const refreshToken = await this.jwtService.signAsync(payload, {
       secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
       expiresIn: '7d',
+      jwtid: randomUUID(),
     });
     return refreshToken;
   }

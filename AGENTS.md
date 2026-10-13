@@ -1,383 +1,125 @@
-# Fleetora Agent Instructions
+# Fleetora — Project Agent Instructions
 
-## Project Context
+This file applies to the entire project. Read it before working, then read the `AGENTS.md` files along the path to the affected code. More specific instructions refine these rules within their own scope.
 
-Fleetora is a multi-tenant logistics SaaS.
+## Project and requirements
 
-Before making architectural or domain decisions, inspect:
+Fleetora is a multi-tenant logistics platform with a web frontend, a NestJS backend, and an AI service. The logistics core must work independently of AI.
 
-- `docs/Fleetora_Master_Project_Document.md`
-- the relevant application `AGENTS.md`
-- the existing implementation
+- Read `docs/Fleetora_Master_Project_Document.md` before product, architecture, or domain changes. If unavailable, report the missing reference instead of inventing requirements.
+- Distinguish approved requirements, current implementation, conceptual examples, and future plans. Do not implement roadmap features merely because the document mentions them.
+- Inspect code to understand what exists; do not assume documented modules, versions, paths, or integrations are already implemented.
+- Apply the user's explicit task within the approved scope. If it changes an established requirement or security boundary, identify the conflict instead of silently choosing.
+- Project skills describe implementation methods; they do not authorize new product behavior or override approved requirements.
+- Do not transfer requirements from other projects into Fleetora.
 
-The documentation describes the intended product and architecture.
-The code describes the current implementation.
+## Working method
 
-If they conflict, do not silently guess.
-Identify the conflict and ask when the decision affects architecture,
-database design, security, tenant isolation, or API contracts.
+1. Understand the requested outcome and inspect relevant code and local instructions.
+2. State a brief plan covering the change and its verification.
+3. Implement the smallest coherent solution using established patterns.
+4. Verify the affected behavior and correct failures caused by the change.
+5. Report the outcome, evidence, and any remaining limitation.
 
----
+Carry authorized work through implementation and verification. Do not stop at a proposal when implementation was requested.
 
-## Working Method
+Proceed with routine, reversible choices such as naming, component composition, spacing, and internal helpers. Ask only when investigation leaves a material requirement unresolved, especially around domain behavior, public contracts, ownership, security, or destructive operations. Ask the smallest useful question and continue independent work.
 
-For every task:
+When debugging, inspect or reproduce the failure and identify the cause before editing. Avoid speculative patches and silent fallbacks that disguise invalid behavior.
 
-1. Understand the requested outcome.
-2. Inspect the relevant existing files.
-3. Determine which project skills apply.
-4. Read and apply those skills before modifying code.
-5. Check the relevant local `AGENTS.md`.
-6. Make the smallest correct change.
-7. Validate the result.
-8. Report what changed and any unresolved issue.
+If `docs/CODEX_WORKFLOW.md` exists, follow its applicable workflow and verification guidance. Do not assume it exists or use a missing file as a reason to abandon otherwise clear work.
 
-Do not start coding before understanding the affected scope. Read wider architecture when the task touches it.
+## Route work to the right area
 
-## Task Paths
+| Area                              | Instructions and responsibilities                                                                                             |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `frontend/`                       | Read `frontend/AGENTS.md`. Own presentation, interaction, client state, and API consumption.                                  |
+| `backend/`                        | Read `backend/AGENTS.md`. Own identity, authorization, company isolation, domain rules, persistence, and operational history. |
+| `ai/`                             | Read `ai/AGENTS.md` if present. Own reasoning, recommendations, agent orchestration, and controlled tool use.                 |
+| Shared contracts or configuration | Inspect every affected consumer; keep changes compatible or explicitly handle the required transition.                        |
 
-Use `docs/CODEX_WORKFLOW.md` for the canonical FAST PATH, DECISION PATH, and proportional verification model. Default to FAST PATH when the request is clear, scoped, reversible, and supported by established Fleetora rules or patterns.
+For tasks spanning applications, trace the actual request and data flow. Complete all authorized affected layers; do not treat a UI change as finished when its required backend behavior is missing.
 
-Routine implementation choices—including UI composition and responsive details—do not need user approval. Do not add a brainstorming interview, plan, or checkpoint solely because a task is frontend work or introduces a component. Escalate only for a material unresolved decision. Preserve all applicable security, tenant-isolation, database-safety, and product rules. This repository-level fast path does not erase a mandatory Superpowers plugin gate; see the workflow note. The plugin's own rules give precedence to a current explicit user instruction.
+## Use relevant skills
 
----
+Inspect available project skills under `.agents/skills/` when present. Read the relevant `SKILL.md` before applying it; never claim to have used a skill that was not available or read.
 
-## Skill Routing
+Typical routing, when these skills exist:
 
-Fleetora contains specialized skills under:
+- Frontend implementation: `frontend-engineering`.
+- Layout, interaction, accessibility, or responsive behavior: `ui-ux-design`.
+- Shared UI components, tokens, typography, or visual consistency: `design-system`.
+- Backend implementation: `backend-engineering`.
+- Prisma, queries, transactions, constraints, or migrations: `database-prisma`.
+- Authentication, permissions, company ownership, or sensitive data: `backend-security`.
+- AI work: inspect available AI-specific skills and local instructions; do not invent a skill name or architecture.
 
-`.agents/skills/`
+Load only relevant skills. A small task does not require every skill associated with its application. If a required skill is missing, explain the gap; otherwise use established project patterns without pretending the skill exists.
 
-Use the relevant skills automatically according to the task.
+## Preserve system boundaries
 
-### Frontend
+- The backend is authoritative for business rules, permissions, company ownership, and operational writes.
+- Frontend validation improves usability; it does not replace server validation or authorization.
+- Database constraints complement application rules and protect important invariants.
+- AI must use controlled backend interfaces with trusted actor/company context and normal authorization. Model-generated arguments never grant permissions.
+- Do not give AI unrestricted access to operational data or move domain rules into prompts.
+- Preserve required approval and audit behavior for AI actions. Do not introduce a new automation system outside the requested scope.
 
-For frontend implementation, refactoring, Next.js architecture,
-React components, API integration, state handling, or TypeScript:
+## Company isolation and security
 
-Use:
+- Resolve ownership and tenant context from trusted server-side identity, not client-supplied fields.
+- Scope company-owned reads and writes, including lists, counts, exports, bulk actions, nested relationships, background tasks, caches, and AI retrieval.
+- Check related-resource ownership before creating relationships. Foreign keys alone may not prevent cross-company links.
+- Keep platform-wide privileges explicit; absent company context must not silently grant global access.
+- Never weaken guards, validation, or ownership checks to make functionality work.
+- Do not expose secrets, credentials, tokens, password hashes, or full environment values in responses, logs, or generated artifacts.
+- Reuse existing error and serialization conventions; return only authorized data.
+- Test relevant denied access and cross-company attempts when changing these boundaries.
 
-- `frontend-engineering`
+## Frontend expectations
 
-Also use:
+- Follow the existing theme, design tokens, component system, route structure, and API layer.
+- Inspect the user's workflow before designing an interaction. Avoid unnecessary steps or implementation details in product UI.
+- Handle loading, empty, error, success, and submission states where relevant.
+- Preserve keyboard access, visible focus, labels, readable contrast, and responsive behavior.
+- Do not invent endpoints, payload fields, permissions, or successful responses. Use the actual API contract.
+- Prevent stale data from appearing under a different signed-in user or company; follow existing session and cache handling.
+- Do not redesign unrelated screens or add a second competing design system.
 
-- `ui-ux-design` when the task affects user experience, layout,
-  interaction, responsive behavior, accessibility, or visual hierarchy.
+## Backend and data expectations
 
-- `design-system` when the task affects reusable components,
-  typography, spacing, colors, tokens, forms, tables, buttons,
-  navigation, or visual consistency.
+- Keep controllers focused on HTTP concerns, services on use cases, and persistence in established data-access boundaries.
+- Validate external input and restrict writable fields. Keep domain actions, including shipment transitions and assignment, governed by approved rules.
+- Use atomic writes where partial completion would break integrity, and address relevant concurrency risks.
+- Inspect actual Prisma configuration, source schema, and migration workflow before persistence changes. Do not manually edit generated output.
+- Explain schema impact on existing data and inspect generated migrations.
+- Do not reset shared databases, delete migration history, perform destructive operations, or apply changes to remote/shared infrastructure without explicit authorization.
 
-For substantial UI work, these skills should normally be considered together:
+## Scope and code quality
 
-`frontend-engineering + ui-ux-design + design-system`
+- Preserve existing behavior outside the task; avoid unrelated edits and broad rewrites.
+- Use actual project versions and commands from configuration. Do not assume tools from memory.
+- Prefer clear names, focused units, strong types, and explicit behavior.
+- Avoid unchecked casts, error suppression, speculative abstractions, duplicate logic, and unnecessary dependencies.
+- Keep production paths complete. Do not substitute fake persistence, placeholder success, or unfinished stubs for required functionality.
+- Flag useful out-of-scope work separately instead of silently adding it.
 
-Always follow `frontend/AGENTS.md`.
+## Verification and completion
 
----
+Choose checks that provide evidence for the changed behavior. Discover commands from project configuration and apply documented required checks.
 
-### Backend
+- Logic changes: focused success and failure tests plus applicable type or lint checks.
+- Security or company-owned data: relevant allowed, denied, and cross-company tests.
+- Database changes: applicable Prisma checks, migration inspection, and persistence tests.
+- API changes: request/response behavior and affected client compatibility.
+- UI changes: affected user flow, meaningful states, responsiveness, and accessibility; use real browser verification when available and appropriate.
+- AI changes: tool authorization, tenant context, failure handling, and structured-output behavior where affected.
+- Shared configuration or module wiring: relevant build, startup, or integration checks.
 
-For NestJS modules, controllers, services, DTOs, repositories,
-business logic, TypeScript backend code, or API implementation:
+Start with focused checks and broaden when shared effects, failures, or unresolved risk justify it. Do not skip tests, remove assertions, or lower checks to make results pass.
 
-Use:
+Never claim that something works or passes without evidence. State what passed, what failed, and what could not be checked. Do not describe mocked checks as live integration verification.
 
-- `backend-engineering`
+Use the user's language for explanations and existing project conventions for code. End with a concise account of what changed, why, relevant verification results, and material unresolved issues.
 
-Also use:
-
-- `database-prisma` when the task touches Prisma, schema,
-  database queries, relations, migrations, transactions, indexes,
-  constraints, or persistence design.
-
-- `backend-security` when the task touches authentication,
-  authorization, JWT, refresh tokens, roles, permissions,
-  tenant isolation, user/company access, passwords, or sensitive data.
-
-Examples:
-
-Authentication task:
-
-`backend-engineering + backend-security + database-prisma` when persistence is involved.
-
-Shipment CRUD:
-
-`backend-engineering + database-prisma + backend-security`
-
-because Shipment is tenant-owned.
-
-Database schema change:
-
-`database-prisma + backend-engineering`
-
-and include `backend-security` if tenant ownership or authorization
-is affected.
-
-Always follow `backend/AGENTS.md`.
-
----
-
-## Multi-Skill Tasks
-
-Do not assume that every task belongs to exactly one skill.
-
-Use multiple skills when the task crosses concerns.
-
-Example:
-
-Building the shipment management page may require:
-
-- frontend-engineering
-- ui-ux-design
-- design-system
-- backend-engineering
-- database-prisma
-- backend-security
-
-But only load/apply skills that are relevant to the requested task.
-
-Do not use skills mechanically when they do not apply.
-
----
-
-## Source of Truth
-
-Use this precedence:
-
-1. Explicit user instruction for the current task
-2. Security and tenant-isolation requirements
-3. Relevant local `AGENTS.md`
-4. Relevant Fleetora skills
-5. Approved architecture/domain decisions
-6. `docs/Fleetora_Master_Project_Document.md`
-7. Existing implementation patterns
-
-Existing code must be inspected before modification.
-
-Do not blindly copy an existing pattern if it violates a higher-priority
-security, tenant, or architecture rule.
-
----
-
-## Architecture Boundaries
-
-Backend owns:
-
-- business rules
-- authorization
-- tenant isolation
-- shipment lifecycle
-- data integrity
-
-Frontend owns:
-
-- presentation
-- interaction
-- client-side state
-- API consumption
-
-Frontend must not become the authority for business rules.
-
-The database complements backend enforcement with appropriate
-constraints and integrity rules.
-
----
-
-## Multi-Tenancy
-
-Fleetora is multi-tenant.
-
-Treat tenant isolation as a system-wide invariant.
-
-Whenever working with company-owned resources, consider:
-
-- authenticated company context
-- authorization
-- resource ownership
-- query scoping
-- cross-tenant relationships
-- negative cross-tenant tests
-
-Never trust `companyId` from request input as authorization.
-
----
-
-## Before Editing
-
-Inspect before modifying.
-
-For backend work, inspect:
-
-- affected module
-- DTOs
-- service
-- repository/data access
-- Prisma schema when relevant
-- auth/security context
-- tests
-
-For frontend work, inspect:
-
-- affected route
-- components
-- existing design patterns
-- API layer
-- loading/error handling
-- responsive behavior
-
-Do not create duplicate architecture without checking what already exists.
-
----
-
-## Database Changes
-
-Before changing the database:
-
-1. Read `database-prisma` skill.
-2. Inspect the current Prisma contract.
-3. Inspect affected relationships.
-4. Check tenant ownership.
-5. Check indexes and constraints.
-6. Determine migration impact.
-
-Never edit generated Prisma files manually.
-
-Never perform destructive database operations without explicit approval.
-
----
-
-## Security-Sensitive Changes
-
-Before changing authentication, authorization, tenant isolation,
-roles, permissions, password handling, or token behavior:
-
-1. Read `backend-security`.
-2. Inspect the existing auth implementation.
-3. Identify the security boundary.
-4. Add negative/security tests where appropriate.
-
-Do not weaken security to make a feature easier to implement.
-
----
-
-## UI Work
-
-Do not produce generic starter-template UI.
-
-When implementing Fleetora UI:
-
-1. Understand the workflow.
-2. Use the design system.
-3. Apply UX principles.
-4. Preserve visual consistency.
-5. Handle loading, empty, error, and success states.
-6. Consider responsiveness and accessibility.
-
-Do not redesign unrelated areas unless requested.
-
----
-
-## Decision Handling
-
-Proceed autonomously when ambiguity is limited to reversible implementation details and existing requirements, code, or project rules support a reasonable choice. Do not ask the user to approve routine component composition, naming, spacing, responsive behavior, or other local choices.
-
-Use the DECISION PATH in `docs/CODEX_WORKFLOW.md` only when investigation leaves a material decision unresolved—for example, one affecting database design, authentication, authorization, tenant isolation, API contracts, business behavior, major architecture, destructive operations, or another difficult-to-reverse outcome.
-
-When blocked, ask the minimum question needed to resolve that decision and explain its impact. Continue independent work that does not depend on the answer. Do not turn a choice between acceptable reversible implementations into a user decision.
-
----
-
-## Problem Solving
-
-When a bug or architectural problem is reported:
-
-Do not immediately patch symptoms.
-
-First:
-
-1. reproduce or inspect the problem
-2. identify the root cause
-3. identify affected layers
-4. apply relevant skills
-5. propose the smallest robust fix
-6. implement
-7. validate
-
-Avoid temporary hacks unless explicitly requested.
-
----
-
-## Code Quality
-
-Prefer:
-
-- clear code
-- strong typing
-- small focused units
-- explicit business rules
-- predictable behavior
-- testable architecture
-
-Avoid:
-
-- `any`
-- unnecessary abstractions
-- speculative infrastructure
-- duplicated logic
-- giant services/components
-- hidden side effects
-- premature optimization
-
----
-
-## Validation
-
-Choose the least costly checks that provide adequate evidence for the changed scope, using the risk matrix in `docs/CODEX_WORKFLOW.md`. Do not run every test, lint, type-check, and build command by default for a localized change.
-
-Keep required tests and broader checks for behavior, cross-cutting changes, and release-risk work. Database, authentication, authorization, and tenant-isolation changes retain their focused safety checks; proportional verification does not lower those standards.
-
-Do not claim something works if it was not verified. Clearly state what was and was not tested.
-
----
-
-## Git Discipline
-
-Do not:
-
-- modify unrelated files
-- delete functionality without instruction
-- rewrite large areas unnecessarily
-- commit secrets
-- force push
-- reset user changes
-- run destructive Git commands
-
-Keep diffs focused and reviewable.
-
----
-
-## Final Response After Work
-
-After completing a coding task, report concisely:
-
-1. What was changed
-2. Why it was changed
-3. Files affected
-4. Validation performed
-5. Remaining risks or decisions, if any
-
-Do not provide a long tutorial unless requested.
-
----
-
-## Core Principle
-
-Use AI as an engineering agent, not as a code generator.
-
-Inspect first.
-Choose the relevant skills.
-Understand the domain.
-Respect architecture and security boundaries.
-Implement the smallest correct solution.
-Verify the result.
+## Do not change any md document unless i tell you

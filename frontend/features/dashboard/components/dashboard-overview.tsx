@@ -1,4 +1,4 @@
-import type { SessionUser } from "@/features/auth/login.types";
+import type { SessionUser } from "@/lib/auth/session.types";
 
 export function DashboardOverview({ user }: { user: SessionUser }) {
   return (
@@ -8,11 +8,11 @@ export function DashboardOverview({ user }: { user: SessionUser }) {
           Welcome to Fleetora
         </h2>
         {user.company ? (
-          <p className="mt-3 max-w-xl break-words text-sm leading-6 text-muted-foreground">
+          <p className="mt-3 max-w-xl break-words text-sm leading-6 text-foreground/75">
             Your company workspace is active.
           </p>
         ) : (
-          <p className="mt-3 max-w-2xl break-words text-sm leading-6 text-muted-foreground">
+          <p className="mt-3 max-w-2xl break-words text-sm leading-6 text-foreground/75">
             You’re signed in as a Fleetora platform administrator. This workspace isn’t associated with a company.
           </p>
         )}

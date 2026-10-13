@@ -13,6 +13,7 @@ import { AuthService } from './auth.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { TokenService } from './token/token.service.js';
 import { createOneTimeTokenVerifier } from './token/one-time-token.js';
+import * as bcrypt from 'bcrypt';
 
 const verificationToken = 'a'.repeat(64);
 const expectedTokenDigest =
@@ -33,6 +34,7 @@ describe('AuthService email verification', () => {
     saveVerificationTokenVerifier: ReturnType<typeof vi.fn>;
     consumeEmailVerificationToken: ReturnType<typeof vi.fn>;
     consumePasswordResetToken: ReturnType<typeof vi.fn>;
+    reserveEmailVerificationToken: ReturnType<typeof vi.fn>;
   };
   let mailService: {
     sendVerificationEmail: ReturnType<typeof vi.fn>;
@@ -70,6 +72,7 @@ describe('AuthService email verification', () => {
       ),
       consumeEmailVerificationToken: vi.fn().mockResolvedValue('verified'),
       consumePasswordResetToken: vi.fn().mockResolvedValue(true),
+      reserveEmailVerificationToken: vi.fn().mockImplementation(async () => ({ status: 'reserved', user })),
     };
     mailService = {
       sendVerificationEmail: vi.fn().mockResolvedValue(undefined),
@@ -271,6 +274,8 @@ describe('AuthService email verification', () => {
     user.verificationTokenExpiresAt = new Date(Date.now() - 15 * 60_000 - 1);
     await authService.resendVerificationCode(user.id);
 
+    authRepository.reserveEmailVerificationToken.mockResolvedValueOnce({ status: 'rate-limited', retryAfterSeconds: 60 });
+
     let rateLimitError: unknown;
     try {
       await authService.resendVerificationCode(user.id);
@@ -288,6 +293,7 @@ describe('AuthService email verification', () => {
       id: 'another-user',
       verificationTokenExpiresAt: new Date(Date.now() - 15 * 60_000 - 1),
     });
+    authRepository.reserveEmailVerificationToken.mockResolvedValueOnce({ status: 'reserved', user: { ...user, id: 'another-user' } });
     await expect(
       authService.resendVerificationCode('another-user'),
     ).resolves.toMatchObject({ message: expect.stringContaining('sent') });
@@ -296,13 +302,13 @@ describe('AuthService email verification', () => {
 });
 
 describe('AuthService frontend URL configuration', () => {
-  async function compileWithConfig(values: Record<string, string>) {
+  async function compileWithConfig(values: Record<string, string>, repository: object = {}, mail: object = {}) {
     return Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: AuthRepository, useValue: {} },
+        { provide: AuthRepository, useValue: repository },
         { provide: TokenService, useValue: {} },
-        { provide: MailService, useValue: {} },
+        { provide: MailService, useValue: mail },
         {
           provide: ConfigService,
           useValue: { get: (key: string) => values[key] },
@@ -337,4 +343,29 @@ describe('AuthService frontend URL configuration', () => {
       }),
     ).rejects.toThrow('FRONTEND_URL must be a valid trusted frontend URL');
   });
+
+  it('parses numeric environment configuration before hashing passwords', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-13T10:37:00Z'));
+    const repository = {
+      createUserWithDefaultCompany: vi.fn().mockResolvedValue({ user: { id: 'fixture', email: 'config@example.invalid', fullName: 'Fixture' } }),
+      saveVerificationTokenVerifier: vi.fn().mockResolvedValue(undefined),
+    };
+    const mail = { sendVerificationEmail: vi.fn().mockResolvedValue(undefined) };
+    try {
+      const module = await compileWithConfig({ SALT_ROUNDS: '4', VERIFICATION_CODE_EXPIRY_MINUTES: '15' }, repository, mail);
+      await module.get(AuthService).signup({ name: 'Fixture', email: 'config@example.invalid', password: 'NewPassword1' });
+      expect(await bcrypt.compare('NewPassword1', repository.createUserWithDefaultCompany.mock.calls[0][2])).toBe(true);
+      expect(repository.saveVerificationTokenVerifier.mock.calls[0][2].getTime() - Date.now()).toBe(15 * 60_000);
+      expect(mail.sendVerificationEmail.mock.calls[0][3]).toBe(15);
+      await module.close();
+    } finally { vi.useRealTimers(); }
+  });
+
+  for (const key of ['SALT_ROUNDS', 'VERIFICATION_CODE_EXPIRY_MINUTES']) {
+    it(`fails closed for invalid ${key} without echoing its value`, async () => {
+      await expect(compileWithConfig({ [key]: 'private-invalid-value' })).rejects.toThrow(key);
+      await expect(compileWithConfig({ [key]: 'private-invalid-value' })).rejects.not.toThrow('private-invalid-value');
+    });
+  }
 });

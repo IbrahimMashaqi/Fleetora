@@ -1,3 +1,4 @@
+import 'temporal-polyfill/full/global';
 import { requireDisposableAuthTestDatabase } from './auth-postgres.safety.js';
 
 const testDatabase = requireDisposableAuthTestDatabase(process.env);

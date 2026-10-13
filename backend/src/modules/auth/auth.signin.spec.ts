@@ -11,6 +11,8 @@ const bcryptMocks = vi.hoisted(() => ({
   compare: vi.fn<(data: string, encrypted: string) => Promise<boolean>>(),
 }));
 
+const currentRefreshVerifier = 'refresh:sha256:v1:0eb17643d4e9261163783a420859c92c7d212fa9624106a12b510afbec266120';
+
 vi.mock('bcrypt', () => ({
   compare: bcryptMocks.compare,
   hash: vi.fn().mockResolvedValue('hashed-refresh-token'),
@@ -40,15 +42,15 @@ describe('AuthService signin', () => {
     vi.clearAllMocks();
     repository.findUserByEmail.mockResolvedValue({ ...user });
     repository.isCompanyActiveForUser.mockResolvedValue(true);
-    repository.findUserById.mockResolvedValue({ ...user, refreshToken: 'hashed-refresh-token' });
+    repository.findUserById.mockResolvedValue({ ...user, refreshToken: currentRefreshVerifier });
     repository.findSessionContextById.mockResolvedValue({
       ...user,
-      refreshToken: 'hashed-refresh-token',
+      refreshToken: currentRefreshVerifier,
       verificationToken: 'verification-secret',
       company: { id: 'company-1', name: 'Amina Logistics', suspended: false },
     });
     repository.withRefreshTokenLock.mockImplementation(async (_id, operation) =>
-      operation({ ...user, refreshToken: 'hashed-refresh-token' }, vi.fn().mockResolvedValue(undefined), true),
+      operation({ ...user, refreshToken: currentRefreshVerifier }, vi.fn().mockResolvedValue(undefined), true),
     );
     bcryptMocks.compare.mockResolvedValue(true);
     const module = await Test.createTestingModule({
@@ -132,12 +134,12 @@ describe('AuthService signin', () => {
   it('rotates and persists the refresh token for an active account', async () => {
     const saveRefreshToken = vi.fn().mockResolvedValue(undefined);
     repository.withRefreshTokenLock.mockImplementationOnce(async (_id, operation) =>
-      operation({ ...user, refreshToken: 'hashed-refresh-token' }, saveRefreshToken, true),
+      operation({ ...user, refreshToken: currentRefreshVerifier }, saveRefreshToken, true),
     );
     await expect(service.refreshTokens(user.id, 'refresh-token')).resolves.toMatchObject({
       accessToken: 'access-token', refreshToken: 'refresh-token',
     });
-    expect(saveRefreshToken).toHaveBeenCalledWith('hashed-refresh-token');
+    expect(saveRefreshToken).toHaveBeenCalledWith(currentRefreshVerifier);
     expect(tokens.generateAccessToken).toHaveBeenCalledTimes(1);
   });
 

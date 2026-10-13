@@ -29,7 +29,7 @@ export default function VerifyEmailLoading() {
           >
             …
           </span>
-          <p className="mt-6 text-sm font-semibold text-primary">
+          <p className="mt-6 text-sm font-semibold text-accent-foreground">
             Account verification
           </p>
           <h1 className="mt-2 text-2xl font-semibold leading-8 tracking-tight">

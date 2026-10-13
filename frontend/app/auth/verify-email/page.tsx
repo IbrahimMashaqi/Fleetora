@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { EmailVerification } from "@/features/auth/components/email-verification";
+import { EmailVerification } from "@/features/auth/verification/email-verification";
 
 export const metadata: Metadata = {
   title: "Verify your email",

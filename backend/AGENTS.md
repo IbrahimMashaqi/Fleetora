@@ -1,594 +1,138 @@
-# Fleetora Backend — AGENTS.md
+# Fleetora Backend — Agent Instructions
 
-## Purpose
+These instructions apply inside `backend/`. Read any more specific `AGENTS.md` in the affected directory before editing its files.
 
-This file defines the rules for AI-assisted development inside `backend/`.
+## 1. Understand the task before editing
 
-These instructions apply to all backend code unless a more specific `AGENTS.md` exists deeper in the directory tree.
+Fleetora is a multi-tenant delivery management platform. Its backend owns authentication, authorization, company isolation, business rules, persistence, and operational history. Web, mobile, and AI clients use these rules through controlled interfaces.
 
-The goal is to help AI tools make safe, minimal, architecture-aware changes without inventing product requirements or bypassing Fleetora's security boundaries.
+- Read `../docs/Fleetora_Master_Project_Document.md` before planning a product or domain change. If it is missing, locate the actual project specification; do not invent its contents.
+- Treat approved requirements as intended behavior, and code as evidence of current behavior. A roadmap item or conceptual example is not authorization to implement it.
+- Inspect the affected module and its dependencies: DTOs, guards, services, persistence, schema, and relevant tests. Read only the parts needed to understand the change.
+- Check `package.json`, configuration, and existing imports before assuming library versions, commands, paths, or available features.
+- The expected stack is NestJS, TypeScript, PostgreSQL, and Prisma. Use the actual authentication implementation and test runner present in the project.
+- Do not import requirements or design decisions from another project.
 
----
+## 2. Work in a short, complete loop
 
-# 1. Project Context
+1. State a short plan: intended behavior, affected areas, and how you will verify it.
+2. Inspect the existing implementation and identify the cause or missing behavior.
+3. Implement the smallest coherent change that satisfies the task.
+4. Add or update meaningful tests when behavior changes.
+5. Run the relevant checks, inspect their results, and correct failures caused by the change.
+6. Report what changed, what was verified, and any remaining limitation.
 
-Fleetora is a multi-tenant logistics SaaS platform.
+Continue through implementation and verification when the request authorizes them. Do not stop after proposing a plan or generating code.
 
-The backend is the authoritative source for:
+For routine implementation choices, follow existing patterns and proceed. Ask a focused question only when an unresolved requirement changes the result materially. State the exact ambiguity and its consequence; continue independent work when possible.
 
-- authentication
-- authorization
-- tenant isolation
-- business rules
-- shipment lifecycle rules
-- operational data
-- database integrity
-- audit-sensitive actions
-- AI tool authorization and execution
+Do not claim completion, passing tests, or working behavior without evidence. Distinguish checks that passed, checks that failed, and checks that could not run.
 
-Current backend technologies include:
+## 3. Keep scope controlled
 
-- NestJS
-- TypeScript
-- PostgreSQL
-- Prisma 8
-- JWT authentication
-- REST APIs
-- Vitest
+- Preserve existing functionality and public behavior outside the requested change.
+- Fix the cause; do not hide the symptom with a fallback that silently accepts invalid behavior.
+- Do not introduce unrelated refactors, broad renames, infrastructure, dependencies, or roadmap features.
+- Extend the existing architecture before introducing a competing pattern.
+- Do not create interfaces, repositories, factories, or base classes without a concrete benefit.
+- If a useful improvement is outside scope, describe it separately instead of implementing it implicitly.
+- Avoid placeholder success responses, fake persistence, and unfinished branches in production paths.
 
-Do not assume that planned technologies or modules already exist.
+## 4. Respect module responsibilities
 
----
+Follow the structure actually present in the project. Do not reorganize directories to match a diagram in documentation.
 
-# 2. Source of Truth
+- **Controllers:** HTTP routing, validated input, guards, delegation, and response mapping. Keep substantial business logic and database workflows out of controllers.
+- **Services:** use cases, business invariants, permission-sensitive actions, and transaction orchestration.
+- **Persistence:** use the established Prisma service or meaningful repository boundary. Keep ownership filters explicit and reusable where appropriate.
+- **DTOs:** operation-specific external input validation. Do not accept database models as request contracts.
+- **Shared code:** genuinely shared behavior; do not turn `common/` into a home for unrelated feature logic.
 
-Before implementing a change, distinguish between:
+Prefer focused functions, clear names, strong types, and straightforward control flow. Avoid `any`, unchecked casts, and suppression comments used to conceal errors. Use `unknown` and narrow it for untrusted values.
 
-1. current implementation
-2. documented target architecture
-3. undecided product or architecture decisions
+## 5. Enforce security on every relevant path
 
-The existing code describes the current implementation.
+Authentication establishes identity; it does not grant unrestricted access.
 
-`../docs/Fleetora_Master_Project_Document.md` describes the intended product and architecture, but not every item in that document is implemented or finalized.
+- Use the existing authentication and authorization mechanisms. Verify that guards are applied and wired into the affected module.
+- Enforce role, permission, ownership, account status, and resource-state rules where required by the approved model.
+- Never rely on hidden frontend buttons or client validation for security.
+- Never accept client-provided role, ownership, account status, or tenant fields as trusted authority.
+- Allow only fields the operation is authorized to change. Do not pass an unrestricted request object into database writes.
+- Do not bypass guards, weaken validation, or disable security checks to make a feature or test pass.
+- Never expose or log passwords, password hashes, authentication tokens, secrets, or full environment values.
+- Use existing response serialization and error conventions; return only fields intended for the caller.
+- Keep expected domain failures clear, and unexpected failures diagnosable through safe server-side logging.
 
-Do not silently resolve conflicts between documentation and code.
+Do not introduce new account-deactivation semantics, authentication flows, or role privileges without requirements supporting them.
 
-If documentation and implementation disagree:
+## 6. Preserve company isolation
 
-1. identify the conflict
-2. determine whether the requested task already implies the intended behavior
-3. if the difference affects security, database design, API contracts, tenant boundaries, or core domain behavior, ask before making a major architectural decision
+Company isolation applies to reads and writes, including lists, counts, exports, nested relations, bulk operations, background work, and AI tools.
 
-Never invent missing business requirements.
+- Resolve tenant context from trusted authenticated/server-side state according to the existing identity model.
+- Scope resource lookup by both resource identity and company ownership. Knowing a resource ID does not establish access.
+- Validate that related resources belong to the permitted company before linking them.
+- Scope updates and deletes as carefully as reads. Never remove ownership filters to make a query succeed.
+- Keep platform-wide access explicit and permission-controlled; a missing company ID must not silently grant global access.
+- Foreign keys prove relationships exist; they do not necessarily prove company ownership matches.
+- Test attempted access to another company's data, including related-resource assignment where relevant.
 
----
+## 7. Implement domain actions explicitly
 
-# 3. Architecture
+- Shipment transitions must follow the approved lifecycle. Do not expose arbitrary status mutation through a generic update endpoint.
+- Validate the current state, actor permissions, required inputs, and related-resource conditions before performing an action.
+- Assignment must enforce the approved ownership, availability, and conflict rules. Do not invent capacity or scheduling rules.
+- Preserve required shipment events and audit records when changing operational state.
+- Keep business rules in the backend; client applications and AI prompts must not become alternative authorities.
+- When the specification describes conceptual statuses or roles, confirm the concrete enum and supported transitions in the approved model before changing them.
 
-Use modular NestJS architecture.
+## 8. Protect database integrity
 
-Current/general structure:
+- Inspect the actual Prisma configuration, source schema, generation setup, and migration workflow before changing persistence.
+- Modify source contracts rather than generated Prisma output. Regenerate using the project's supported commands when needed.
+- Use constraints for important invariants where appropriate, alongside application validation.
+- Make related writes atomic when partial completion would leave invalid data. Include required state history in the same transaction where possible.
+- Consider concurrent requests. A transaction alone does not automatically make a read-then-write check safe; use suitable constraints, conditional updates, locking, or isolation when necessary.
+- Handle uniqueness and conflict errors using the existing application error pattern.
+- For schema changes, explain existing-data compatibility, inspect the generated migration, and test the relevant behavior.
+- Do not delete migration history, reset shared databases, or perform destructive data/schema changes without explicit authorization.
+- Do not run migrations against a remote or shared database merely because local schema files changed.
 
-```text
-src/
-├── common/
-├── modules/
-└── prisma/
-```
+## 9. Keep external work and AI controlled
 
-Do not assume a directory exists merely because documentation mentions it.
+- Reuse existing integration, configuration, timeout, and error-handling patterns.
+- Do not hold a database transaction open across slow external calls unless the design specifically requires it.
+- Where retries or duplicate requests matter, prevent duplicate effects using the established mechanism.
+- AI tools must receive trusted actor/company context and use normal backend authorization and domain checks.
+- Do not give AI unrestricted operational database access or let a model-generated argument grant permissions.
+- Implement approvals and action history according to the approved feature requirements; do not invent a separate automation system during unrelated work.
 
-Keep features inside their appropriate modules.
+## 10. Verify according to the change
 
-Prefer clear module boundaries over large shared services.
+Discover runnable commands from the project. Do not assume a test runner or invent scripts.
 
----
+| Change | Required evidence |
+| --- | --- |
+| Documentation or formatting | Inspect the edited content; check affected syntax or formatting if applicable. |
+| Local logic or DTO validation | Focused behavior tests, including relevant invalid inputs; applicable type/lint checks. |
+| Endpoint or API contract | Relevant request/response tests, validation, error behavior, and compatibility with callers. |
+| Authentication or authorization | Allowed and denied paths; verify enforcement on each affected entry point. |
+| Company-owned resource | Same-company success, cross-company rejection, and related ownership checks. |
+| Shipment state or assignment | Valid action, invalid state, conflict, and required history; concurrency checks when relevant. |
+| Schema or persistence | Prisma validation/generation as needed, migration inspection, and affected persistence tests. |
+| Module wiring, dependencies, or configuration | Applicable build/type checks and a focused startup or integration check. |
 
-# 4. Responsibility Boundaries
+Tests should prove observable behavior rather than repeat implementation details. Keep existing test expectations meaningful; do not skip tests, remove assertions, or weaken checks to obtain a passing result.
 
-## Controllers
+Start with the smallest relevant verification scope. Broaden it when shared behavior, failures, or unresolved risk justify it. Follow additional documented project checks when applicable.
 
-Controllers handle HTTP concerns.
+## 11. Communicate clearly
 
-They may:
+- Use the user's language for explanations. Follow existing conventions for code, identifiers, and technical documentation.
+- Explain the outcome and its practical effect before implementation details.
+- Keep updates short and useful: findings, decisions, blockers, and verification results.
+- In the final response, summarize the change, relevant checks and results, and material unresolved issues.
+- If blocked, state the specific missing information or failing prerequisite. Never disguise incomplete work as success.
 
-- receive requests
-- apply guards/decorators
-- parse validated DTOs
-- call application/domain services
-- return responses
-
-Controllers must not contain substantial business logic.
-
-Controllers must not directly implement database workflows.
-
-## Services
-
-Services contain application and business logic.
-
-Examples:
-
-- shipment transitions
-- assignments
-- permission-sensitive operations
-- workflow validation
-- transactional operations
-
-Business rules must be enforced server-side.
-
-## Repositories
-
-Use repositories when they provide a meaningful data-access boundary.
-
-Do not create repository abstractions merely to satisfy a pattern.
-
-Repositories should:
-
-- encapsulate meaningful database operations
-- preserve tenant scoping
-- keep database-specific queries out of domain logic when useful
-
-Do not create interfaces/factories/repositories for trivial operations without a concrete benefit.
-
----
-
-# 5. Engineering Principles
-
-Use SOLID and clean-code principles pragmatically.
-
-Prefer:
-
-- small focused functions
-- explicit behavior
-- meaningful names
-- composition
-- strong types
-- minimal duplication
-- clear module boundaries
-
-Avoid:
-
-- unnecessary inheritance
-- speculative abstractions
-- premature infrastructure
-- pattern-driven complexity
-- hidden side effects
-- clever code that reduces readability
-
-Simple and maintainable is preferred over clever and complex.
-
-Do not over-engineer for hypothetical future requirements.
-
----
-
-# 6. DTOs and Validation
-
-Use DTOs for external API input.
-
-Never use Prisma models directly as request DTOs.
-
-Use `class-validator` and the project's existing validation pipeline.
-
-DTOs must be specific to their operation.
-
-Prefer:
-
-```text
-CreateShipmentDto
-UpdateShipmentDto
-AssignShipmentDto
-```
-
-instead of one generic DTO containing unrelated fields.
-
-DTOs define and validate input structure.
-
-DTOs must not contain business logic.
-
-Validation at DTO level does not replace authorization or domain validation.
-
----
-
-# 7. Authentication
-
-Fleetora uses JWT-based authentication.
-
-Access and refresh token behavior must remain explicit and reviewable.
-
-Do not:
-
-- expose tokens
-- log credentials
-- expose password hashes
-- bypass authentication for convenience
-- weaken authentication checks to make a feature work
-
-Authentication proves identity.
-
-Authentication alone does not prove authorization.
-
-Account status and other security-sensitive checks must be enforced by the backend according to the approved domain model.
-
-Do not invent authentication flows for new actor types without checking existing requirements.
-
----
-
-# 8. Authorization
-
-Authorization belongs on the backend.
-
-A valid JWT does not automatically authorize an operation.
-
-Authorization may depend on:
-
-- authenticated user
-- role
-- permission
-- tenant/company
-- resource ownership
-- resource state
-- domain rules
-
-Do not rely on frontend visibility or disabled buttons as authorization.
-
-Never implement security rules only in the client.
-
----
-
-# 9. Multi-Tenancy
-
-Fleetora is multi-tenant.
-
-Tenant isolation is a critical security boundary.
-
-Never allow one company to access or mutate another company's resources.
-
-Do not trust `companyId` supplied by request bodies as proof of tenant ownership.
-
-Tenant context must come from trusted authenticated/server-side context according to the approved identity model.
-
-Tenant-owned database operations must be scoped appropriately.
-
-When accessing related resources, verify that the relationship does not cross tenant boundaries.
-
-Example:
-
-A shipment belonging to Company A must never be assignable to a worker belonging to Company B.
-
-The existence of foreign keys alone does not prove tenant safety.
-
-For tenant-sensitive changes, consider protection at:
-
-- authentication context
-- authorization/service layer
-- repository/query layer
-- database integrity layer
-- tests
-
-Never remove tenant filters for convenience.
-
----
-
-# 10. Domain Rules
-
-The backend owns Fleetora business rules.
-
-Clients request actions; they do not define whether those actions are valid.
-
-Shipment status changes are domain operations.
-
-Do not allow arbitrary status updates such as:
-
-```text
-PATCH shipment
-status = anything
-```
-
-without domain validation.
-
-Shipment transitions must follow the approved lifecycle/state machine.
-
-Assignment, delivery, proof-of-delivery, cancellation, failure, rescheduling, and similar workflows must be validated by backend domain logic.
-
-If the lifecycle or business rule required by a task has not been decided, do not invent it.
-
----
-
-# 11. Prisma and Database
-
-Fleetora currently uses Prisma 8.
-
-Use the Prisma APIs and conventions actually present in this repository.
-
-Do not assume syntax from older Prisma versions.
-
-Before modifying Prisma-related code:
-
-1. inspect `prisma.config.ts`
-2. inspect `src/prisma/contract.prisma`
-3. inspect existing generated/migration workflow
-4. follow the repository's actual Prisma 8 setup
-
-Do not introduce another ORM.
-
-Keep database access type-safe.
-
-Use transactions when multiple writes must succeed or fail atomically.
-
-Consider concurrency when operations may modify the same operational resource.
-
-Database constraints should protect important invariants when practical.
-
-Application validation is not always a substitute for database integrity.
-
----
-
-# 12. Generated Files and Migrations
-
-Do not manually edit generated Prisma artifacts unless the repository explicitly requires it.
-
-Files under generated Prisma output or migration snapshots should be treated as generated artifacts unless verified otherwise.
-
-Schema changes must follow the project's actual Prisma generation/migration workflow.
-
-Never:
-
-- fabricate migration files
-- delete migration history casually
-- reset a shared database without explicit instruction
-- perform destructive schema operations without approval
-- modify generated output as a substitute for modifying the source contract
-
-Before a destructive database change, stop and request confirmation.
-
----
-
-# 13. Transactions and Concurrency
-
-Use transactions for workflows that must remain atomic.
-
-Examples may include:
-
-- creating multiple dependent records
-- assignment operations
-- state transitions plus history/audit records
-- operations that update related resources together
-
-Do not assume a read-then-write sequence is concurrency-safe.
-
-For operations vulnerable to races, reason explicitly about concurrent requests and database constraints.
-
----
-
-# 14. Errors
-
-Do not leak:
-
-- database internals
-- stack traces
-- secrets
-- password hashes
-- tokens
-- sensitive infrastructure information
-
-Use the project's existing exception and response patterns.
-
-Do not invent a second incompatible error format without a requirement.
-
-Expected domain failures should become appropriate application/HTTP errors.
-
-Unexpected failures should remain diagnosable through safe server-side logging.
-
----
-
-# 15. Security
-
-Security-sensitive code requires conservative changes.
-
-Never:
-
-- disable authorization temporarily
-- hardcode secrets
-- commit credentials
-- expose environment values
-- trust client-provided ownership information
-- bypass validation
-- weaken guards to make tests pass
-- log sensitive authentication material
-
-Environment files must use placeholders/examples where appropriate.
-
-If a credential appears real or accidentally committed, report it instead of reproducing it.
-
----
-
-# 16. Audit and Operational History
-
-Important operational actions should be auditable where required by the domain.
-
-Do not silently overwrite meaningful operational history when the system requires traceability.
-
-When implementing sensitive state-changing workflows, consider:
-
-- actor
-- action
-- target resource
-- timestamp
-- previous state
-- resulting state
-- relevant metadata
-
-Do not invent a full audit infrastructure unless the task requires it, but avoid designs that make future auditing impossible.
-
----
-
-# 17. AI Boundary
-
-The AI layer is not the source of truth for Fleetora business rules.
-
-The backend remains authoritative for:
-
-- authentication
-- authorization
-- tenant isolation
-- domain validation
-- database writes
-- sensitive operational actions
-
-Future AI services must interact with operational capabilities through controlled backend interfaces/tools.
-
-Do not give an AI service unrestricted direct database access.
-
-Do not move core Fleetora business rules into prompts.
-
-AI-generated actions must still pass normal backend authorization and domain validation.
-
-Detailed AI architecture belongs to the AI service rules when that service is introduced.
-
----
-
-# 18. TypeScript
-
-Avoid `any`.
-
-Do not use `@ts-ignore` or equivalent mechanisms merely to hide type errors.
-
-Prefer:
-
-- explicit domain types
-- inferred types where clear
-- existing project types
-- narrow interfaces
-- typed return values where useful
-
-Do not duplicate generated database types unnecessarily.
-
-Keep code readable and predictable.
-
----
-
-# 19. Testing
-
-Fleetora currently uses Vitest.
-
-Do not assume Jest APIs or configuration unless the repository explicitly introduces Jest later.
-
-Add or update tests when behavior changes.
-
-Prioritize tests for:
-
-- authentication
-- authorization
-- tenant isolation
-- shipment lifecycle rules
-- assignment rules
-- state transitions
-- validation
-- cross-company access attempts
-- transactional behavior
-- security-sensitive failure cases
-
-Test negative paths, not only successful requests.
-
-A tenant-sensitive feature is not complete if cross-tenant failure behavior is untested.
-
----
-
-# 20. Before Changing Code
-
-Inspect the affected module and adjacent code first. Read related DTOs, services, repositories, guards, tests, and schema when the change touches or depends on them; do not expand into unrelated layers by default.
-
-Check relevant Fleetora documentation and existing patterns. For persistence, auth, authorization, tenant-owned data, or domain behavior, inspect the corresponding schema, trusted context, and enforcement paths before implementation. Determine whether the requested behavior is already established.
-
-Do not begin with a rewrite. Prefer the smallest coherent change that satisfies the requirement.
-
----
-
-# 21. After Changing Code
-
-Verify the smallest relevant scope first, using the risk matrix in `../docs/CODEX_WORKFLOW.md`. Depending on the change, run focused tests, type checking, linting, the backend build, or Prisma validation/generation checks. Do not run every check by default for a localized change.
-
-For database changes, inspect the resulting schema/migration changes before considering the task complete. Security, authentication, authorization, and tenant-isolation changes retain their required focused negative tests and enforcement checks.
-
-Do not claim a change works if it has not been verified. If relevant verification cannot be run, state that explicitly.
-
----
-
-# 22. Scope Control
-
-Do not modify unrelated files.
-
-Do not:
-
-- rewrite architecture without being asked
-- rename broad directory structures casually
-- install dependencies without a concrete requirement
-- downgrade Prisma
-- replace working libraries merely because another library is preferred
-- implement future roadmap features during an unrelated task
-- delete existing functionality without approval
-
-Keep diffs focused and reviewable.
-
----
-
-# 23. Decision Escalation
-
-Stop and ask before making a major decision when requirements are unclear and the decision affects:
-
-- database schema
-- tenant ownership
-- authentication model
-- authorization model
-- role semantics
-- public API contracts
-- shipment lifecycle
-- destructive migrations
-- security boundaries
-- external infrastructure
-- irreversible data behavior
-
-For small implementation details that do not change architecture or product behavior, follow existing project patterns instead of asking unnecessarily.
-
----
-
-# 24. Definition of Done
-
-A backend change is not complete merely because code was generated.
-
-For the relevant scope, verify:
-
-- behavior matches the requested requirement
-- types are correct
-- input is validated
-- authorization is enforced
-- tenant isolation is preserved
-- business rules remain server-side
-- database integrity is preserved
-- errors are handled safely
-- tests cover important success and failure paths
-- relevant checks pass
-- unrelated files were not modified
-
----
-
-# 25. Priority Order
-
-When trade-offs occur, prioritize:
-
-```text
-Correctness
-→ Security
-→ Tenant Isolation
-→ Data Integrity
-→ Business Rules
-→ Type Safety
-→ Maintainability
-→ Simplicity
-→ Performance Optimization
-```
-
-Do not sacrifice correctness or security for convenience.
-
-Do not sacrifice simplicity for speculative scalability.
+Correctness, security, company isolation, and data integrity are mandatory. Within those boundaries, prefer the simplest maintainable implementation that fulfills the approved requirement.

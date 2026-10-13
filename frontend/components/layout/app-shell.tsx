@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import type { SessionRole, SessionUser } from "@/features/auth/login.types";
-import { LogoutControl } from "./logout-control";
+import type { SessionRole, SessionUser } from "@/lib/auth/session.types";
 
 const roleLabels: Record<SessionRole, string> = {
   PLATFORM_ADMIN: "Platform administrator",
@@ -35,11 +35,12 @@ function FleetoraBrand({ lightSurface = false }: { lightSurface?: boolean }) {
 }
 
 function OverviewNavigation({ onNavigate }: { onNavigate?: () => void }) {
+  const isOverview = usePathname() === "/app";
   return (
     <nav aria-label="Primary navigation" className="px-4 py-5">
       <Link
         href="/app"
-        aria-current="page"
+        aria-current={isOverview ? "page" : undefined}
         onClick={onNavigate}
         className="flex min-h-11 items-center gap-3 rounded-md border-l-2 border-primary bg-brand-navy px-3 text-sm font-medium text-white outline-none transition-colors hover:bg-brand-navy/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar-navy"
       >
@@ -53,7 +54,7 @@ function OverviewNavigation({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function SidebarAccount({ user }: { user: SessionUser }) {
+function SidebarAccount({ user, accountActions }: { user: SessionUser; accountActions: ReactNode }) {
   return (
     <div className="min-w-0 border-t border-white/10 px-5 py-4">
       <p className="text-xs font-medium text-sidebar-foreground/70">Signed in as</p>
@@ -64,7 +65,7 @@ function SidebarAccount({ user }: { user: SessionUser }) {
           {user.email}
         </p>
       )}
-      <LogoutControl className="mt-3" />
+      {accountActions}
     </div>
   );
 }
@@ -84,7 +85,7 @@ function MobileWorkspaceContext({ user }: { user: SessionUser }) {
   );
 }
 
-function MobileNavigation({ user }: { user: SessionUser }) {
+function MobileNavigation({ user, accountActions }: { user: SessionUser; accountActions: ReactNode }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
 
@@ -139,7 +140,7 @@ function MobileNavigation({ user }: { user: SessionUser }) {
           <MobileWorkspaceContext user={user} />
           <OverviewNavigation onNavigate={() => setOpen(false)} />
           <div className="mt-auto">
-            <SidebarAccount user={user} />
+            <SidebarAccount user={user} accountActions={accountActions} />
           </div>
         </div>
       </dialog>
@@ -147,7 +148,7 @@ function MobileNavigation({ user }: { user: SessionUser }) {
   );
 }
 
-function DesktopSidebar({ user }: { user: SessionUser }) {
+function DesktopSidebar({ user, accountActions }: { user: SessionUser; accountActions: ReactNode }) {
   return (
     <aside aria-label="Workspace sidebar" className="hidden min-h-svh w-[248px] shrink-0 flex-col bg-sidebar-navy text-sidebar-foreground lg:flex">
       <div className="flex h-16 shrink-0 items-center border-b border-white/10 px-6">
@@ -155,7 +156,7 @@ function DesktopSidebar({ user }: { user: SessionUser }) {
       </div>
       <OverviewNavigation />
       <div className="mt-auto">
-        <SidebarAccount user={user} />
+        <SidebarAccount user={user} accountActions={accountActions} />
       </div>
     </aside>
   );
@@ -176,7 +177,7 @@ function WorkspaceContext({ user }: { user: SessionUser }) {
   );
 }
 
-export function AppShell({ user, children }: { user: SessionUser; children: ReactNode }) {
+export function AppShell({ user, accountActions, children }: { user: SessionUser; accountActions: ReactNode; children: ReactNode }) {
   return (
     <div className="flex min-h-svh w-full bg-background text-foreground">
       <a
@@ -185,7 +186,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
       >
         Skip to content
       </a>
-      <DesktopSidebar user={user} />
+      <DesktopSidebar user={user} accountActions={accountActions} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center border-b border-border bg-surface px-4 sm:px-6 lg:h-16 lg:px-8">
           <div className="mx-auto flex w-full max-w-5xl min-w-0 items-center gap-3">
@@ -196,7 +197,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
             <h1 className="hidden text-base font-semibold tracking-tight lg:block">Overview</h1>
             <WorkspaceContext user={user} />
             <div className="ml-auto lg:hidden">
-              <MobileNavigation user={user} />
+              <MobileNavigation user={user} accountActions={accountActions} />
             </div>
           </div>
         </header>

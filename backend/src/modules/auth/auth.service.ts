@@ -13,6 +13,7 @@ import * as bcrypt from 'bcrypt';
 import { SigninDto } from './dto/signin.dto.js';
 import { TokenPayload, UserRole } from './token/token.payload.js';
 import { TokenService } from './token/token.service.js';
+import { createRefreshTokenVerifier, isLegacyRefreshTokenVerifier, matchesRefreshTokenVerifier } from './token/refresh-token-verifier.js';
 import { MailService } from '../mail/mail.service.js';
 import { instantToMs } from '../../common/utils/temporal.js';
 import { randomBytes } from 'crypto';
@@ -36,10 +37,16 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
   ) {
-    this.PASSWORD_SALT_ROUNDS =
-      this.configService.get<number>('SALT_ROUNDS') ?? 10;
-    this.VERIFICATION_CODE_EXPIRY_MINUTES =
-      this.configService.get<number>('VERIFICATION_CODE_EXPIRY_MINUTES') ?? 15;
+    const saltRounds = Number(this.configService.get<number | string>('SALT_ROUNDS') ?? 10);
+    if (!Number.isInteger(saltRounds) || saltRounds < 4 || saltRounds > 31) {
+      throw new Error('SALT_ROUNDS must be an integer from 4 to 31');
+    }
+    this.PASSWORD_SALT_ROUNDS = saltRounds;
+    const verificationMinutes = Number(this.configService.get<number | string>('VERIFICATION_CODE_EXPIRY_MINUTES') ?? 15);
+    if (!Number.isInteger(verificationMinutes) || verificationMinutes <= 0) {
+      throw new Error('VERIFICATION_CODE_EXPIRY_MINUTES must be a positive integer');
+    }
+    this.VERIFICATION_CODE_EXPIRY_MINUTES = verificationMinutes;
     const configuredFrontendUrl = this.configService.get<string>('FRONTEND_URL');
     const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
     if (!configuredFrontendUrl && isProduction) {
@@ -84,10 +91,7 @@ export class AuthService {
       this.tokenService.generateRefreshToken(payload),
     ]);
 
-    const hashedRefreshToken = await bcrypt.hash(
-      refreshToken,
-      this.PASSWORD_SALT_ROUNDS,
-    );
+    const hashedRefreshToken = createRefreshTokenVerifier(refreshToken);
     await this.authRepository.updateRefreshToken(user.id, hashedRefreshToken);
 
     return {
@@ -144,6 +148,10 @@ export class AuthService {
       verifier,
       expiresAt,
     );
+    await this.deliverVerificationEmail({ id: user.id, email: user.email, fullName: user.fullName }, token);
+  }
+
+  private async deliverVerificationEmail(user: { id: string; email: string; fullName: string }, token: string) {
     const verificationLink = new URL(
       '/auth/verify-email',
       this.FRONTEND_URL,
@@ -164,7 +172,7 @@ export class AuthService {
       this.PASSWORD_SALT_ROUNDS,
     );
 
-    // Create user with default organization and membership in a transaction
+    // Persist the company and initial administrator atomically; send email afterward.
     const { user } = await this.authRepository.createUserWithDefaultCompany(
       name,
       email,
@@ -214,42 +222,29 @@ export class AuthService {
   }
 
   async resendVerificationCode(userId: string) {
-    const user = await this.authRepository.findUserById(userId);
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-    if (user.isEmailVerified) {
-      return { message: 'Email is already verified. You can sign in.' };
-    }
-
-    const now = Date.now();
-    const lastSentAt = user.verificationTokenExpiresAt
-      ? instantToMs(user.verificationTokenExpiresAt) -
-        this.VERIFICATION_CODE_EXPIRY_MINUTES * 60_000
-      : null;
-    if (
-      lastSentAt !== null &&
-      now - lastSentAt < this.VERIFICATION_RESEND_COOLDOWN_MS
-    ) {
-      const retryAfterSeconds = Math.ceil(
-        (this.VERIFICATION_RESEND_COOLDOWN_MS - (now - lastSentAt)) / 1000,
-      );
+    const token = randomBytes(32).toString('hex');
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + this.VERIFICATION_CODE_EXPIRY_MINUTES * 60_000);
+    const verifier = createOneTimeTokenVerifier(token, 'email-verification');
+    if (!verifier) throw new BadRequestException('Verification token is invalid');
+    const reserved = await this.authRepository.reserveEmailVerificationToken(
+      userId, verifier, expiresAt, now,
+      this.VERIFICATION_CODE_EXPIRY_MINUTES * 60_000, this.VERIFICATION_RESEND_COOLDOWN_MS,
+    );
+    if (reserved.status === 'missing') throw new BadRequestException('User not found');
+    if (reserved.status === 'email-required') throw new BadRequestException('User email is required for verification');
+    if (reserved.status === 'already-verified') return { message: 'Email is already verified. You can sign in.' };
+    if (reserved.status === 'rate-limited') {
       throw new HttpException(
-        `Please wait ${retryAfterSeconds} seconds before requesting another verification email.`,
+        `Please wait ${reserved.retryAfterSeconds} seconds before requesting another verification email.`,
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
-
-    const token = randomBytes(32).toString('hex');
-    const expiresAt = new Date();
-    expiresAt.setMinutes(
-      expiresAt.getMinutes() + this.VERIFICATION_CODE_EXPIRY_MINUTES,
-    );
-
-    await this.sendVerificationEmail(user, token, expiresAt);
+    // The reservation commits before external email delivery; no network work holds the row lock.
+    await this.deliverVerificationEmail(reserved.user, token);
     return {
       message: 'Verification code sent. Please check your email.',
-      email: user.email,
+      email: reserved.user.email,
     };
   }
 
@@ -280,7 +275,11 @@ export class AuthService {
         if (!user.refreshToken) {
           throw new ForbiddenException('Access Denied: Session expired');
         }
-        if (!(await bcrypt.compare(refreshToken, user.refreshToken))) {
+        // Approved rollout: legacy bcrypt verifiers cannot safely prove the full JWT.
+        if (isLegacyRefreshTokenVerifier(user.refreshToken)) {
+          throw new UnauthorizedException('Please sign in again');
+        }
+        if (!matchesRefreshTokenVerifier(refreshToken, user.refreshToken)) {
           throw new ForbiddenException('Access Denied: Token mismatch');
         }
 
@@ -294,10 +293,7 @@ export class AuthService {
           this.tokenService.generateAccessToken(payload),
           this.tokenService.generateRefreshToken(payload),
         ]);
-        const hashedRefreshToken = await bcrypt.hash(
-          newRefreshToken,
-          this.PASSWORD_SALT_ROUNDS,
-        );
+        const hashedRefreshToken = createRefreshTokenVerifier(newRefreshToken);
         await saveRefreshToken(hashedRefreshToken);
         return {
           accessToken,

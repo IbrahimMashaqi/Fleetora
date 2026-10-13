@@ -20,7 +20,7 @@ The design system must optimize for:
 5. scalability
 6. professional visual quality
 
-This skill guides application of [frontend/DESIGN_SYSTEM.md](../../../frontend/DESIGN_SYSTEM.md), the sole authority for visual tokens and component rules. Read that document before visual work. Theme/reference files support the workflow and do not define independent values.
+This skill guides application of [frontend/DESIGN_SYSTEM.md](../../../frontend/DESIGN_SYSTEM.md) for component rules and visual tokens other than palette and semantic color roles. [FLEETORA_THEME.md](../../design/FLEETORA_THEME.md) is authoritative for palette and semantic color roles. Read both before visual work. Supporting references must not define alternative values.
 
 For workflow design, information architecture, and UX decisions,
 use the `ui-ux-design` skill.

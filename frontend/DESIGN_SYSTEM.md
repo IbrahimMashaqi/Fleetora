@@ -4,7 +4,7 @@
 
 This document defines how Fleetora's frontend UI should be constructed.
 
-It is Fleetora's canonical source of truth for design tokens, colors, typography, spacing, radii, borders, shadows, surfaces, semantic states, component visual rules, dashboard density, and responsive visual behavior.
+It is Fleetora's canonical source of truth for typography, spacing, radii, borders, shadows, surfaces, semantic states, component visual rules, dashboard density, responsive visual behavior, and design tokens other than palette and semantic color roles. The approved palette and semantic color roles are authoritative in [FLEETORA_THEME.md](../.agents/design/FLEETORA_THEME.md) and implemented by `app/globals.css`.
 
 It also defines implementation rules for:
 
@@ -23,7 +23,7 @@ It also defines implementation rules for:
 
 Section 8 contains the canonical visual specification and values. The remaining sections define how the system is implemented and reused.
 
-[Product design language](../.agents/design/FLEETORA_DESIGN_LANGUAGE.md) explains the design philosophy. Theme files under `.agents/` are supporting AI references and must defer to this document; they do not define alternative tokens or visual directions.
+[Product design language](../.agents/design/FLEETORA_DESIGN_LANGUAGE.md) explains the design philosophy. Theme references defer to this document for component and layout rules; the product theme remains authoritative for palette and semantic color roles. Supporting references must not define an alternative palette or visual direction.
 
 Business rules remain owned by the backend.
 

@@ -106,6 +106,7 @@ describe('AuthRepository company authentication status', () => {
     const now = new Date();
     const account = {
       id: 'user-1',
+      isActive: true,
       isEmailVerified: false,
       verificationToken: 'email-verification:sha256:ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb',
       verificationTokenExpiresAt: new Date(now.getTime() + 60_000),
@@ -134,10 +135,10 @@ describe('AuthRepository company authentication status', () => {
     expect(lockedUserUpdate).toHaveBeenCalledTimes(1);
     expect(lockedUserUpdate).toHaveBeenCalledWith({
       isEmailVerified: true,
-      isActive: true,
       verificationToken: null,
       verificationTokenExpiresAt: null,
     });
+    expect(account.isActive).toBe(true);
   });
 
   it('rejects legacy raw tokens and expired verification verifiers without account changes', async () => {
@@ -168,6 +169,28 @@ describe('AuthRepository company authentication status', () => {
       ),
     ).resolves.toBe('expired');
     expect(lockedUserUpdate).not.toHaveBeenCalled();
+  });
+
+  it('verifies email without reactivating a disabled account or changing tenant state', async () => {
+    const now = new Date();
+    const verifier = 'email-verification:sha256:ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb';
+    const account = {
+      id: 'disabled-user', isActive: false, isEmailVerified: false,
+      role: 'MERCHANT', companyId: 'suspended-company', password: 'unchanged-hash',
+      company: { id: 'suspended-company', suspended: true },
+      verificationToken: verifier, verificationTokenExpiresAt: new Date(now.getTime() + 60_000),
+    };
+    lockedUserFirst.mockResolvedValue(account);
+    lockedUserUpdate.mockImplementation(async (changes: Record<string, unknown>) => {
+      Object.assign(account, changes);
+    });
+
+    await expect(repository.consumeEmailVerificationToken(account.id, verifier, now)).resolves.toBe('verified');
+    expect(account).toMatchObject({
+      isEmailVerified: true, isActive: false, role: 'MERCHANT',
+      companyId: 'suspended-company', password: 'unchanged-hash',
+      company: { suspended: true }, verificationToken: null, verificationTokenExpiresAt: null,
+    });
   });
 
   it('consumes a password-reset verifier while clearing the refresh session in the same row update', async () => {

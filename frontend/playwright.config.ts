@@ -1,17 +1,18 @@
 import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
-  testDir: "./features/auth",
+  tsconfig: "./tests/tsconfig.server.json",
+  testDir: "./features",
   workers: 1,
   reporter: "list",
   projects: [
     {
       name: "action",
-      testMatch: ["signup.action.spec.ts", "verification.action.spec.ts"],
+      testMatch: "**/*.action.spec.ts",
     },
     {
       name: "browser",
-      testMatch: ["signup.browser.spec.ts", "verification.browser.spec.ts", "login.browser.spec.ts", "dashboard.browser.spec.ts"],
+      testMatch: "**/*.browser.spec.ts",
       use: {
         baseURL: "http://localhost:3100",
         browserName: "chromium",

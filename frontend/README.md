@@ -1,36 +1,24 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fleetora frontend
 
-## Getting Started
+The current frontend uses Next.js 16.3.8, React 19 and the App Router. Public authentication pages live under `app/`; workflow code lives under `features/auth/`. `/app` uses a reusable protected layout and renders the dashboard feature. Shared server transport and credential operations live under `lib/api/` and `lib/auth/`.
 
-First, run the development server:
+## Local development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+From this directory, use the existing installed dependencies and run `npm run dev`. Set the server-only `FLEETORA_API_URL` to the intended backend base URL using your local environment configuration. Never prefix it with `NEXT_PUBLIC_` or put credentials in browser configuration. The default frontend port is 3000; Playwright uses 3100 and a test backend fixture on 3101.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Authentication requires the backend's current contracts. The frontend protected layout controls presentation and session lifecycle; it does not authorize tenant data access.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Verification
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npx tsc --noEmit --incremental false` checks TypeScript without updating build metadata.
+- `npm run lint` runs the configured ESLint checks.
+- `npm run test:actions` runs action tests without starting Next.js.
+- `npm run test:isolated` copies the current source to a new temporary directory, runs action/browser tests and maintained layout/primitive probes, then stops its own test server. Optional `-- --output <new-directory> --project=browser` selects an explicit output directory and project. Outputs are retained. Test-only child routes are created only in the isolated copy.
+- `npm test` uses the existing Playwright web-server configuration and writes its normal artifacts in this directory.
+- `npm run build` performs the normal production build; `npm start` starts that output. Use an isolated source copy when existing `.next` artifacts must be preserved.
 
-## Learn More
+The root layout uses Inter through `next/font/google`. Normal builds require Google Fonts downloads. Cache-assisted isolated verification must be labeled supplementary and must not replace the production font configuration. Browser fixtures and action mocks do not prove live-backend integration; backend PostgreSQL tests require a separately proven disposable environment.
 
-To learn more about Next.js, take a look at the following resources:
+## Design and future features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Read `AGENTS.md`, `DESIGN_SYSTEM.md`, the product theme references, and [the security checklist](../docs/PHASE6B_SECURITY_CHECKLIST.md) before extending the application. Keep shared UI, feature presentation, session orchestration, and backend authorization separate. Do not create production routes for test probes or future modules.

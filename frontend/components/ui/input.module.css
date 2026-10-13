@@ -1,0 +1,32 @@
+.input {
+  border-color: var(--control-border);
+  transition: border-color var(--motion-default) var(--motion-easing),
+    box-shadow var(--motion-default) var(--motion-easing);
+}
+
+.input:focus-visible {
+  border-color: var(--primary);
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--danger-foreground);
+}
+
+.input[aria-invalid="true"]:focus-visible {
+  outline-color: var(--danger-foreground);
+}
+
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input { transition: none; }
+}

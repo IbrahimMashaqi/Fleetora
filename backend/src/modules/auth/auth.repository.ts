@@ -143,11 +143,40 @@ export class AuthRepository {
 
       await tx.orm.public.User.where({ id: userId }).update({
         isEmailVerified: true,
-        isActive: true,
         verificationToken: null,
         verificationTokenExpiresAt: null,
       });
       return 'verified';
+    });
+  }
+
+  async reserveEmailVerificationToken(
+    userId: string,
+    verifier: string,
+    expiresAt: Date,
+    now: Date,
+    expiryMs: number,
+    cooldownMs: number,
+  ) {
+    return this.prisma.db.transaction(async (tx) => {
+      await tx.execute(
+        this.prisma.db.raw.sql`UPDATE "users" SET "verificationToken" = "verificationToken" WHERE "id" = ${userId}`
+          .affectedCount().build(),
+      );
+      const user = await tx.orm.public.User.where({ id: userId }).first();
+      if (!user) return { status: 'missing' as const };
+      if (user.isEmailVerified) return { status: 'already-verified' as const };
+      if (!user.email) return { status: 'email-required' as const };
+      const lastSentAt = user.verificationTokenExpiresAt
+        ? instantToMs(user.verificationTokenExpiresAt) - expiryMs : null;
+      if (lastSentAt !== null && now.getTime() - lastSentAt < cooldownMs) {
+        return { status: 'rate-limited' as const, retryAfterSeconds: Math.ceil((cooldownMs - (now.getTime() - lastSentAt)) / 1000) };
+      }
+      await tx.orm.public.User.where({ id: userId }).update({
+        verificationToken: verifier,
+        verificationTokenExpiresAt: dateToInstant(expiresAt),
+      });
+      return { status: 'reserved' as const, user: { id: user.id, email: user.email, fullName: user.fullName } };
     });
   }
 
@@ -218,23 +247,23 @@ export class AuthRepository {
     }
 
     try {
-      const company = await this.prisma.Company.create({
-        name: name ? `${name}'s Company` : `User's Company`,
-        plan: 'TRIAL',
-        suspended: false,
+      return await this.prisma.db.transaction(async (tx) => {
+        const company = await tx.orm.public.Company.create({
+          name: name ? `${name}'s Company` : `User's Company`,
+          plan: 'TRIAL',
+          suspended: false,
+        });
+        const user = await tx.orm.public.User.create({
+          fullName: name,
+          email,
+          password: hashedPassword,
+          role: 'COMPANY_ADMIN',
+          companyId: company.id,
+          isActive: true,
+          isEmailVerified: false,
+        });
+        return { user, company };
       });
-
-      const user = await this.prisma.User.create({
-        fullName: name,
-        email,
-        password: hashedPassword,
-        role: 'COMPANY_ADMIN',
-        companyId: company.id,
-        isActive: true,
-        isEmailVerified: false,
-      });
-
-      return { user, company };
     } catch (error: any) {
       if (error?.code === 'P2002' || error?.message?.includes('P2002')) {
         throw new BadRequestException('Email already in use');

@@ -6,6 +6,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { PasswordByteLimit } from './password-byte-limit.js';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'Ibrahim' })
@@ -21,6 +22,7 @@ export class CreateUserDto {
 
   @ApiProperty({ example: 'Passw0rd' })
   @MinLength(6)
+  @PasswordByteLimit()
   @IsString()
   @IsNotEmpty()
   @Matches(/(?=.*[A-Z])/, {

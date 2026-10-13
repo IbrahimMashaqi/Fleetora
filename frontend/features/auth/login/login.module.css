@@ -1,0 +1,100 @@
+.login-route-map-desktop {
+  display: none;
+}
+
+.login-route-map-mobile {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.login-route-signal-static {
+  display: none;
+}
+
+.login-route-node-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (min-width: 1024px) {
+  .login-content {
+    padding-block: clamp(20px, 4vh, 36px);
+  }
+
+  .login-route-panel::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: 40px;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      transparent,
+      color-mix(in srgb, var(--background) 88%, transparent)
+    );
+  }
+
+  .login-route-map-desktop {
+    position: absolute;
+    z-index: 2;
+    inset: 32% 0 0;
+    display: block;
+    width: 100%;
+    height: 68%;
+  }
+
+  .login-route-map-mobile {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .login-route-node-pulse {
+    animation: login-route-pulse 3.6s var(--motion-easing) infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-route-signal {
+    display: none;
+  }
+
+  .login-route-signal-static {
+    display: block;
+  }
+
+  .login-route-node-pulse {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .login-route-technical,
+  .login-route-label {
+    display: none;
+  }
+}
+
+@keyframes login-route-pulse {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.75);
+  }
+
+  78%,
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+
+@media (prefers-reduced-motion: no-preference) {
+  .login-route-panel { animation: login-panel-enter 320ms var(--motion-easing) 70ms both; }
+}
+@keyframes login-panel-enter { from { opacity: 0; } to { opacity: 1; } }
