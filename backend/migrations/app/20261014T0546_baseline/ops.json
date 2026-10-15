@@ -1,0 +1,1951 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.ai_executions",
+    "label": "Create table \"ai_executions\"",
+    "summary": "Creates table \"ai_executions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "ai_executions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ai_executions\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ai_executions\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ai_executions\"",
+        "sql": "CREATE TABLE \"public\".\"ai_executions\" (\n  \"agent\" text NOT NULL,\n  \"approvedBy\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"recommendation\" text,\n  \"request\" text NOT NULL,\n  \"shipmentId\" text,\n  \"status\" text DEFAULT 'RUNNING' NOT NULL,\n  \"toolCalls\" json NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"ai_executions_agent_check_8e7cc056\" CHECK (\"agent\" IN ('OPERATIONS_AGENT', 'SUPPORT_AGENT')),\n  CONSTRAINT \"ai_executions_status_check_f7af5ecd\" CHECK (\"status\" IN ('RUNNING', 'WAITING_FOR_APPROVAL', 'APPROVED', 'REJECTED', 'COMPLETED', 'FAILED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ai_executions\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ai_executions\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.companies",
+    "label": "Create table \"companies\"",
+    "summary": "Creates table \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"companies\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companies\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"companies\"",
+        "sql": "CREATE TABLE \"public\".\"companies\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"plan\" text DEFAULT 'TRIAL' NOT NULL,\n  \"suspended\" bool DEFAULT false NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"companies_plan_check_16898502\" CHECK (\"plan\" IN ('TRIAL', 'BASIC', 'PRO', 'ENTERPRISE'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"companies\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companies\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.location_events",
+    "label": "Create table \"location_events\"",
+    "summary": "Creates table \"location_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "location_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"location_events\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"location_events\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"location_events\"",
+        "sql": "CREATE TABLE \"public\".\"location_events\" (\n  \"id\" text NOT NULL,\n  \"latitude\" float8 NOT NULL,\n  \"longitude\" float8 NOT NULL,\n  \"recordedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"workerId\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"location_events\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"location_events\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.notifications",
+    "label": "Create table \"notifications\"",
+    "summary": "Creates table \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"notifications\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"notifications\"",
+        "sql": "CREATE TABLE \"public\".\"notifications\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"message\" text NOT NULL,\n  \"read\" bool DEFAULT false NOT NULL,\n  \"type\" text NOT NULL,\n  \"userId\" text,\n  \"workerId\" text,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"notifications_type_check_08a83016\" CHECK (\"type\" IN ('SHIPMENT_ASSIGNED', 'DELIVERY_UPDATED', 'NEW_TASK', 'DELIVERY_FAILED', 'AI_RECOMMENDATION', 'APPROVAL_REQUIRED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"notifications\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.proof_of_delivery",
+    "label": "Create table \"proof_of_delivery\"",
+    "summary": "Creates table \"proof_of_delivery\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "proof_of_delivery"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"proof_of_delivery\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"proof_of_delivery\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"proof_of_delivery\"",
+        "sql": "CREATE TABLE \"public\".\"proof_of_delivery\" (\n  \"capturedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"gpsLatitude\" float8,\n  \"gpsLongitude\" float8,\n  \"id\" text NOT NULL,\n  \"photoUrl\" text,\n  \"shipmentId\" text NOT NULL,\n  \"signatureUrl\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"proof_of_delivery\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"proof_of_delivery\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.shipment_history",
+    "label": "Create table \"shipment_history\"",
+    "summary": "Creates table \"shipment_history\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "shipment_history"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"shipment_history\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipment_history\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"shipment_history\"",
+        "sql": "CREATE TABLE \"public\".\"shipment_history\" (\n  \"event\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"occurredAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"shipmentId\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"shipment_history\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipment_history\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.shipments",
+    "label": "Create table \"shipments\"",
+    "summary": "Creates table \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"shipments\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"shipments\"",
+        "sql": "CREATE TABLE \"public\".\"shipments\" (\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"destination\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"notes\" text,\n  \"priority\" text DEFAULT 'NORMAL' NOT NULL,\n  \"requestedBy\" text NOT NULL,\n  \"status\" text DEFAULT 'CREATED' NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"warehouseId\" text,\n  \"workerId\" text,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"shipments_priority_check_72dbae57\" CHECK (\"priority\" IN ('LOW', 'NORMAL', 'HIGH', 'URGENT')),\n  CONSTRAINT \"shipments_status_check_efddab2e\" CHECK (\"status\" IN ('CREATED', 'READY_FOR_DISPATCH', 'ASSIGNED', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'FAILED_DELIVERY', 'RESCHEDULED', 'RETURNED', 'ON_HOLD'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"shipments\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.users",
+    "label": "Create table \"users\"",
+    "summary": "Creates table \"users\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"users\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"users\"",
+        "sql": "CREATE TABLE \"public\".\"users\" (\n  \"companyId\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text,\n  \"fullName\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"isActive\" bool DEFAULT true NOT NULL,\n  \"isEmailVerified\" bool DEFAULT false NOT NULL,\n  \"password\" text NOT NULL,\n  \"refreshToken\" text,\n  \"role\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"verificationToken\" text,\n  \"verificationTokenExpiresAt\" timestamptz,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"users_role_check_8e96eaf0\" CHECK (\"role\" IN ('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'MERCHANT', 'ACCOUNTANT'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"users\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.vehicles",
+    "label": "Create table \"vehicles\"",
+    "summary": "Creates table \"vehicles\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "vehicles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"vehicles\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"vehicles\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"vehicles\"",
+        "sql": "CREATE TABLE \"public\".\"vehicles\" (\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"plateNumber\" text NOT NULL,\n  \"type\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"vehicles_type_check_8ef84690\" CHECK (\"type\" IN ('MOTORCYCLE', 'CAR', 'VAN', 'TRUCK'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"vehicles\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"vehicles\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.warehouses",
+    "label": "Create table \"warehouses\"",
+    "summary": "Creates table \"warehouses\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "warehouses"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"warehouses\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"warehouses\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"warehouses\"",
+        "sql": "CREATE TABLE \"public\".\"warehouses\" (\n  \"address\" text NOT NULL,\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"warehouses\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"warehouses\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.workers",
+    "label": "Create table \"workers\"",
+    "summary": "Creates table \"workers\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "workers"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"workers\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"workers\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"workers\"",
+        "sql": "CREATE TABLE \"public\".\"workers\" (\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"fullName\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"phone\" text NOT NULL,\n  \"status\" text DEFAULT 'OFFLINE' NOT NULL,\n  \"successRate\" float8 DEFAULT 0 NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"vehicleId\" text,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"workers_status_check_ef9962ab\" CHECK (\"status\" IN ('ACTIVE', 'OFFLINE', 'ON_BREAK', 'SUSPENDED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"workers\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"workers\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.zones",
+    "label": "Create table \"zones\"",
+    "summary": "Creates table \"zones\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "zones"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"zones\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"zones\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"zones\"",
+        "sql": "CREATE TABLE \"public\".\"zones\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"warehouseId\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"zones\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"zones\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.proof_of_delivery.proof_of_delivery_shipmentId_key",
+    "label": "Add unique constraint on \"proof_of_delivery\" (shipmentId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "proof_of_delivery_shipmentId_key",
+        "table": "proof_of_delivery"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"proof_of_delivery_shipmentId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "proof_of_delivery_shipmentId_key",
+          "public",
+          "\"public\".\"proof_of_delivery\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"proof_of_delivery_shipmentId_key\"",
+        "sql": "ALTER TABLE \"public\".\"proof_of_delivery\" ADD CONSTRAINT \"proof_of_delivery_shipmentId_key\" UNIQUE (\"shipmentId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"proof_of_delivery_shipmentId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "proof_of_delivery_shipmentId_key",
+          "public",
+          "\"public\".\"proof_of_delivery\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.users.users_email_key",
+    "label": "Add unique constraint on \"users\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "users_email_key",
+        "table": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"users_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "users_email_key",
+          "public",
+          "\"public\".\"users\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"users_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"users\" ADD CONSTRAINT \"users_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"users_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "users_email_key",
+          "public",
+          "\"public\".\"users\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.workers.workers_vehicleId_key",
+    "label": "Add unique constraint on \"workers\" (vehicleId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "workers_vehicleId_key",
+        "table": "workers"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"workers_vehicleId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "workers_vehicleId_key",
+          "public",
+          "\"public\".\"workers\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"workers_vehicleId_key\"",
+        "sql": "ALTER TABLE \"public\".\"workers\" ADD CONSTRAINT \"workers_vehicleId_key\" UNIQUE (\"vehicleId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"workers_vehicleId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "workers_vehicleId_key",
+          "public",
+          "\"public\".\"workers\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ai_executions.ai_executions_approvedBy_idx_7a053eb3",
+    "label": "Create index \"ai_executions_approvedBy_idx_7a053eb3\" on \"ai_executions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ai_executions_approvedBy_idx_7a053eb3",
+        "table": "ai_executions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ai_executions_approvedBy_idx_7a053eb3\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ai_executions_approvedBy_idx_7a053eb3\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ai_executions_approvedBy_idx_7a053eb3\"",
+        "sql": "CREATE INDEX \"ai_executions_approvedBy_idx_7a053eb3\" ON \"public\".\"ai_executions\" (\"approvedBy\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ai_executions_approvedBy_idx_7a053eb3\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ai_executions_approvedBy_idx_7a053eb3\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ai_executions.ai_executions_shipmentId_idx_e3606ec1",
+    "label": "Create index \"ai_executions_shipmentId_idx_e3606ec1\" on \"ai_executions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ai_executions_shipmentId_idx_e3606ec1",
+        "table": "ai_executions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ai_executions_shipmentId_idx_e3606ec1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ai_executions_shipmentId_idx_e3606ec1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ai_executions_shipmentId_idx_e3606ec1\"",
+        "sql": "CREATE INDEX \"ai_executions_shipmentId_idx_e3606ec1\" ON \"public\".\"ai_executions\" (\"shipmentId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ai_executions_shipmentId_idx_e3606ec1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ai_executions_shipmentId_idx_e3606ec1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.location_events.location_events_workerId_idx_0b8f3a7c",
+    "label": "Create index \"location_events_workerId_idx_0b8f3a7c\" on \"location_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "location_events_workerId_idx_0b8f3a7c",
+        "table": "location_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"location_events_workerId_idx_0b8f3a7c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"location_events_workerId_idx_0b8f3a7c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"location_events_workerId_idx_0b8f3a7c\"",
+        "sql": "CREATE INDEX \"location_events_workerId_idx_0b8f3a7c\" ON \"public\".\"location_events\" (\"workerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"location_events_workerId_idx_0b8f3a7c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"location_events_workerId_idx_0b8f3a7c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.location_events.location_events_workerId_recordedAt_idx_fb6f79bd",
+    "label": "Create index \"location_events_workerId_recordedAt_idx_fb6f79bd\" on \"location_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "location_events_workerId_recordedAt_idx_fb6f79bd",
+        "table": "location_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"location_events_workerId_recordedAt_idx_fb6f79bd\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"location_events_workerId_recordedAt_idx_fb6f79bd\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"location_events_workerId_recordedAt_idx_fb6f79bd\"",
+        "sql": "CREATE INDEX \"location_events_workerId_recordedAt_idx_fb6f79bd\" ON \"public\".\"location_events\" (\"workerId\", \"recordedAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"location_events_workerId_recordedAt_idx_fb6f79bd\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"location_events_workerId_recordedAt_idx_fb6f79bd\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.notifications.notifications_userId_idx_a489d58a",
+    "label": "Create index \"notifications_userId_idx_a489d58a\" on \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "notifications_userId_idx_a489d58a",
+        "table": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"notifications_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"notifications_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"notifications_userId_idx_a489d58a\" ON \"public\".\"notifications\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"notifications_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.notifications.notifications_workerId_idx_0b8f3a7c",
+    "label": "Create index \"notifications_workerId_idx_0b8f3a7c\" on \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "notifications_workerId_idx_0b8f3a7c",
+        "table": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"notifications_workerId_idx_0b8f3a7c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_workerId_idx_0b8f3a7c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"notifications_workerId_idx_0b8f3a7c\"",
+        "sql": "CREATE INDEX \"notifications_workerId_idx_0b8f3a7c\" ON \"public\".\"notifications\" (\"workerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"notifications_workerId_idx_0b8f3a7c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_workerId_idx_0b8f3a7c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.shipment_history.shipment_history_shipmentId_idx_e3606ec1",
+    "label": "Create index \"shipment_history_shipmentId_idx_e3606ec1\" on \"shipment_history\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "shipment_history_shipmentId_idx_e3606ec1",
+        "table": "shipment_history"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"shipment_history_shipmentId_idx_e3606ec1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipment_history_shipmentId_idx_e3606ec1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"shipment_history_shipmentId_idx_e3606ec1\"",
+        "sql": "CREATE INDEX \"shipment_history_shipmentId_idx_e3606ec1\" ON \"public\".\"shipment_history\" (\"shipmentId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"shipment_history_shipmentId_idx_e3606ec1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipment_history_shipmentId_idx_e3606ec1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.shipments.shipments_companyId_idx_33acc5ed",
+    "label": "Create index \"shipments_companyId_idx_33acc5ed\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "shipments_companyId_idx_33acc5ed",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"shipments_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"shipments_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"shipments_companyId_idx_33acc5ed\" ON \"public\".\"shipments\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"shipments_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.shipments.shipments_requestedBy_idx_e2539833",
+    "label": "Create index \"shipments_requestedBy_idx_e2539833\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "shipments_requestedBy_idx_e2539833",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"shipments_requestedBy_idx_e2539833\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_requestedBy_idx_e2539833\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"shipments_requestedBy_idx_e2539833\"",
+        "sql": "CREATE INDEX \"shipments_requestedBy_idx_e2539833\" ON \"public\".\"shipments\" (\"requestedBy\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"shipments_requestedBy_idx_e2539833\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_requestedBy_idx_e2539833\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.shipments.shipments_warehouseId_idx_8ff93e70",
+    "label": "Create index \"shipments_warehouseId_idx_8ff93e70\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "shipments_warehouseId_idx_8ff93e70",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"shipments_warehouseId_idx_8ff93e70\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_warehouseId_idx_8ff93e70\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"shipments_warehouseId_idx_8ff93e70\"",
+        "sql": "CREATE INDEX \"shipments_warehouseId_idx_8ff93e70\" ON \"public\".\"shipments\" (\"warehouseId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"shipments_warehouseId_idx_8ff93e70\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_warehouseId_idx_8ff93e70\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.shipments.shipments_workerId_idx_0b8f3a7c",
+    "label": "Create index \"shipments_workerId_idx_0b8f3a7c\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "shipments_workerId_idx_0b8f3a7c",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"shipments_workerId_idx_0b8f3a7c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_workerId_idx_0b8f3a7c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"shipments_workerId_idx_0b8f3a7c\"",
+        "sql": "CREATE INDEX \"shipments_workerId_idx_0b8f3a7c\" ON \"public\".\"shipments\" (\"workerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"shipments_workerId_idx_0b8f3a7c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_workerId_idx_0b8f3a7c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.users.users_companyId_idx_33acc5ed",
+    "label": "Create index \"users_companyId_idx_33acc5ed\" on \"users\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "users_companyId_idx_33acc5ed",
+        "table": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"users_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"users_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"users_companyId_idx_33acc5ed\" ON \"public\".\"users\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"users_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.vehicles.vehicles_companyId_idx_33acc5ed",
+    "label": "Create index \"vehicles_companyId_idx_33acc5ed\" on \"vehicles\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "vehicles_companyId_idx_33acc5ed",
+        "table": "vehicles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"vehicles_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"vehicles_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"vehicles_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"vehicles_companyId_idx_33acc5ed\" ON \"public\".\"vehicles\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"vehicles_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"vehicles_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.warehouses.warehouses_companyId_idx_33acc5ed",
+    "label": "Create index \"warehouses_companyId_idx_33acc5ed\" on \"warehouses\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "warehouses_companyId_idx_33acc5ed",
+        "table": "warehouses"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"warehouses_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"warehouses_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"warehouses_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"warehouses_companyId_idx_33acc5ed\" ON \"public\".\"warehouses\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"warehouses_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"warehouses_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.workers.workers_companyId_idx_33acc5ed",
+    "label": "Create index \"workers_companyId_idx_33acc5ed\" on \"workers\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "workers_companyId_idx_33acc5ed",
+        "table": "workers"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"workers_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"workers_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"workers_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"workers_companyId_idx_33acc5ed\" ON \"public\".\"workers\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"workers_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"workers_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.zones.zones_warehouseId_idx_8ff93e70",
+    "label": "Create index \"zones_warehouseId_idx_8ff93e70\" on \"zones\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "zones_warehouseId_idx_8ff93e70",
+        "table": "zones"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"zones_warehouseId_idx_8ff93e70\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"zones_warehouseId_idx_8ff93e70\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"zones_warehouseId_idx_8ff93e70\"",
+        "sql": "CREATE INDEX \"zones_warehouseId_idx_8ff93e70\" ON \"public\".\"zones\" (\"warehouseId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"zones_warehouseId_idx_8ff93e70\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"zones_warehouseId_idx_8ff93e70\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ai_executions.ai_executions_shipmentId_fkey",
+    "label": "Add foreign key \"ai_executions_shipmentId_fkey\" on \"ai_executions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ai_executions_shipmentId_fkey",
+        "table": "ai_executions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ai_executions_shipmentId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ai_executions_shipmentId_fkey",
+          "public",
+          "\"public\".\"ai_executions\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ai_executions_shipmentId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ai_executions\"\nADD CONSTRAINT \"ai_executions_shipmentId_fkey\"\nFOREIGN KEY (\"shipmentId\")\nREFERENCES \"public\".\"shipments\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ai_executions_shipmentId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ai_executions_shipmentId_fkey",
+          "public",
+          "\"public\".\"ai_executions\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ai_executions.ai_executions_approvedBy_fkey",
+    "label": "Add foreign key \"ai_executions_approvedBy_fkey\" on \"ai_executions\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ai_executions_approvedBy_fkey",
+        "table": "ai_executions"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ai_executions_approvedBy_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ai_executions_approvedBy_fkey",
+          "public",
+          "\"public\".\"ai_executions\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ai_executions_approvedBy_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ai_executions\"\nADD CONSTRAINT \"ai_executions_approvedBy_fkey\"\nFOREIGN KEY (\"approvedBy\")\nREFERENCES \"public\".\"users\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ai_executions_approvedBy_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ai_executions_approvedBy_fkey",
+          "public",
+          "\"public\".\"ai_executions\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.location_events.location_events_workerId_fkey",
+    "label": "Add foreign key \"location_events_workerId_fkey\" on \"location_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "location_events_workerId_fkey",
+        "table": "location_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"location_events_workerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "location_events_workerId_fkey",
+          "public",
+          "\"public\".\"location_events\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"location_events_workerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"location_events\"\nADD CONSTRAINT \"location_events_workerId_fkey\"\nFOREIGN KEY (\"workerId\")\nREFERENCES \"public\".\"workers\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"location_events_workerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "location_events_workerId_fkey",
+          "public",
+          "\"public\".\"location_events\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.notifications.notifications_userId_fkey",
+    "label": "Add foreign key \"notifications_userId_fkey\" on \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "notifications_userId_fkey",
+        "table": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"notifications_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "notifications_userId_fkey",
+          "public",
+          "\"public\".\"notifications\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"notifications_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"notifications\"\nADD CONSTRAINT \"notifications_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"users\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"notifications_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "notifications_userId_fkey",
+          "public",
+          "\"public\".\"notifications\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.notifications.notifications_workerId_fkey",
+    "label": "Add foreign key \"notifications_workerId_fkey\" on \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "notifications_workerId_fkey",
+        "table": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"notifications_workerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "notifications_workerId_fkey",
+          "public",
+          "\"public\".\"notifications\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"notifications_workerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"notifications\"\nADD CONSTRAINT \"notifications_workerId_fkey\"\nFOREIGN KEY (\"workerId\")\nREFERENCES \"public\".\"workers\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"notifications_workerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "notifications_workerId_fkey",
+          "public",
+          "\"public\".\"notifications\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.proof_of_delivery.proof_of_delivery_shipmentId_fkey",
+    "label": "Add foreign key \"proof_of_delivery_shipmentId_fkey\" on \"proof_of_delivery\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "proof_of_delivery_shipmentId_fkey",
+        "table": "proof_of_delivery"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"proof_of_delivery_shipmentId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "proof_of_delivery_shipmentId_fkey",
+          "public",
+          "\"public\".\"proof_of_delivery\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"proof_of_delivery_shipmentId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"proof_of_delivery\"\nADD CONSTRAINT \"proof_of_delivery_shipmentId_fkey\"\nFOREIGN KEY (\"shipmentId\")\nREFERENCES \"public\".\"shipments\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"proof_of_delivery_shipmentId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "proof_of_delivery_shipmentId_fkey",
+          "public",
+          "\"public\".\"proof_of_delivery\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.shipment_history.shipment_history_shipmentId_fkey",
+    "label": "Add foreign key \"shipment_history_shipmentId_fkey\" on \"shipment_history\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "shipment_history_shipmentId_fkey",
+        "table": "shipment_history"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"shipment_history_shipmentId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipment_history_shipmentId_fkey",
+          "public",
+          "\"public\".\"shipment_history\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"shipment_history_shipmentId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"shipment_history\"\nADD CONSTRAINT \"shipment_history_shipmentId_fkey\"\nFOREIGN KEY (\"shipmentId\")\nREFERENCES \"public\".\"shipments\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"shipment_history_shipmentId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipment_history_shipmentId_fkey",
+          "public",
+          "\"public\".\"shipment_history\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.shipments.shipments_companyId_fkey",
+    "label": "Add foreign key \"shipments_companyId_fkey\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "shipments_companyId_fkey",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"shipments_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_companyId_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"shipments_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\"\nADD CONSTRAINT \"shipments_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"shipments_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_companyId_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.shipments.shipments_warehouseId_fkey",
+    "label": "Add foreign key \"shipments_warehouseId_fkey\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "shipments_warehouseId_fkey",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"shipments_warehouseId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_warehouseId_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"shipments_warehouseId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\"\nADD CONSTRAINT \"shipments_warehouseId_fkey\"\nFOREIGN KEY (\"warehouseId\")\nREFERENCES \"public\".\"warehouses\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"shipments_warehouseId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_warehouseId_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.shipments.shipments_requestedBy_fkey",
+    "label": "Add foreign key \"shipments_requestedBy_fkey\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "shipments_requestedBy_fkey",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"shipments_requestedBy_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_requestedBy_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"shipments_requestedBy_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\"\nADD CONSTRAINT \"shipments_requestedBy_fkey\"\nFOREIGN KEY (\"requestedBy\")\nREFERENCES \"public\".\"users\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"shipments_requestedBy_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_requestedBy_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.shipments.shipments_workerId_fkey",
+    "label": "Add foreign key \"shipments_workerId_fkey\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "shipments_workerId_fkey",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"shipments_workerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_workerId_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"shipments_workerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\"\nADD CONSTRAINT \"shipments_workerId_fkey\"\nFOREIGN KEY (\"workerId\")\nREFERENCES \"public\".\"workers\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"shipments_workerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_workerId_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.users.users_companyId_fkey",
+    "label": "Add foreign key \"users_companyId_fkey\" on \"users\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "users_companyId_fkey",
+        "table": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"users_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "users_companyId_fkey",
+          "public",
+          "\"public\".\"users\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"users_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"users\"\nADD CONSTRAINT \"users_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"users_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "users_companyId_fkey",
+          "public",
+          "\"public\".\"users\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.vehicles.vehicles_companyId_fkey",
+    "label": "Add foreign key \"vehicles_companyId_fkey\" on \"vehicles\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "vehicles_companyId_fkey",
+        "table": "vehicles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"vehicles_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "vehicles_companyId_fkey",
+          "public",
+          "\"public\".\"vehicles\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"vehicles_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"vehicles\"\nADD CONSTRAINT \"vehicles_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"vehicles_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "vehicles_companyId_fkey",
+          "public",
+          "\"public\".\"vehicles\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.warehouses.warehouses_companyId_fkey",
+    "label": "Add foreign key \"warehouses_companyId_fkey\" on \"warehouses\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "warehouses_companyId_fkey",
+        "table": "warehouses"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"warehouses_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "warehouses_companyId_fkey",
+          "public",
+          "\"public\".\"warehouses\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"warehouses_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"warehouses\"\nADD CONSTRAINT \"warehouses_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"warehouses_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "warehouses_companyId_fkey",
+          "public",
+          "\"public\".\"warehouses\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.workers.workers_companyId_fkey",
+    "label": "Add foreign key \"workers_companyId_fkey\" on \"workers\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "workers_companyId_fkey",
+        "table": "workers"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"workers_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "workers_companyId_fkey",
+          "public",
+          "\"public\".\"workers\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"workers_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"workers\"\nADD CONSTRAINT \"workers_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"workers_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "workers_companyId_fkey",
+          "public",
+          "\"public\".\"workers\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.workers.workers_vehicleId_fkey",
+    "label": "Add foreign key \"workers_vehicleId_fkey\" on \"workers\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "workers_vehicleId_fkey",
+        "table": "workers"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"workers_vehicleId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "workers_vehicleId_fkey",
+          "public",
+          "\"public\".\"workers\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"workers_vehicleId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"workers\"\nADD CONSTRAINT \"workers_vehicleId_fkey\"\nFOREIGN KEY (\"vehicleId\")\nREFERENCES \"public\".\"vehicles\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"workers_vehicleId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "workers_vehicleId_fkey",
+          "public",
+          "\"public\".\"workers\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.zones.zones_warehouseId_fkey",
+    "label": "Add foreign key \"zones_warehouseId_fkey\" on \"zones\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "zones_warehouseId_fkey",
+        "table": "zones"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"zones_warehouseId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "zones_warehouseId_fkey",
+          "public",
+          "\"public\".\"zones\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"zones_warehouseId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"zones\"\nADD CONSTRAINT \"zones_warehouseId_fkey\"\nFOREIGN KEY (\"warehouseId\")\nREFERENCES \"public\".\"warehouses\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"zones_warehouseId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "zones_warehouseId_fkey",
+          "public",
+          "\"public\".\"zones\""
+        ]
+      }
+    ]
+  }
+]

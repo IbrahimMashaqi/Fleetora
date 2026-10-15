@@ -5,14 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import type { SessionRole, SessionUser } from "@/lib/auth/session.types";
+import { sessionRoleLabels, type SessionUser } from "@/lib/auth/session.types";
 
-const roleLabels: Record<SessionRole, string> = {
-  PLATFORM_ADMIN: "Platform administrator",
-  COMPANY_ADMIN: "Company administrator",
-  MERCHANT: "Merchant",
-  ACCOUNTANT: "Accountant",
-};
+const navigation = [
+  { href: "/app", label: "Overview" },
+  { href: "/app/account", label: "Account & security" },
+  { href: "/app/merchants", label: "Merchants" },
+];
 
 function FleetoraBrand({ lightSurface = false }: { lightSurface?: boolean }) {
   return (
@@ -34,22 +33,38 @@ function FleetoraBrand({ lightSurface = false }: { lightSurface?: boolean }) {
   );
 }
 
-function OverviewNavigation({ onNavigate }: { onNavigate?: () => void }) {
-  const isOverview = usePathname() === "/app";
+function WorkspaceNavigation({ user, onNavigate }: { user: SessionUser; onNavigate?: () => void }) {
+  const pathname = usePathname();
   return (
-    <nav aria-label="Primary navigation" className="px-4 py-5">
-      <Link
-        href="/app"
-        aria-current={isOverview ? "page" : undefined}
-        onClick={onNavigate}
-        className="flex min-h-11 items-center gap-3 rounded-md border-l-2 border-primary bg-brand-navy px-3 text-sm font-medium text-white outline-none transition-colors hover:bg-brand-navy/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar-navy"
-      >
-        <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="size-5 shrink-0">
-          <path d="m3.5 8.25 6.5-5 6.5 5v7a1.25 1.25 0 0 1-1.25 1.25h-10A1.25 1.25 0 0 1 4 15.25v-7Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-          <path d="M8 16.5v-5h4v5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-        </svg>
-        <span>Overview</span>
-      </Link>
+    <nav aria-label="Primary navigation" className="space-y-1 px-4 py-5">
+      {navigation.filter(item => item.href !== "/app/merchants" || user.role === "COMPANY_ADMIN" && user.company !== null).map(item => (
+        <Link
+          key={item.href}
+          href={item.href}
+          aria-current={pathname === item.href ? "page" : undefined}
+          onClick={onNavigate}
+          className={`flex min-h-11 items-center gap-3 rounded-md border-l-2 px-3 text-sm font-medium text-white outline-none transition-colors hover:bg-brand-navy/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar-navy ${pathname === item.href ? "border-primary bg-brand-navy" : "border-transparent"}`}
+        >
+          <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="size-5 shrink-0">
+            {item.href === "/app" ? (
+              <>
+                <path d="m3.5 8.25 6.5-5 6.5 5v7a1.25 1.25 0 0 1-1.25 1.25h-10A1.25 1.25 0 0 1 4 15.25v-7Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                <path d="M8 16.5v-5h4v5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+              </>
+            ) : item.href === "/app/account" ? (
+              <>
+                <circle cx="10" cy="6.5" r="3" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M4 17v-1.5a6 6 0 0 1 12 0V17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </>
+            ) : (
+              <>
+                <path d="M3 8h14l-1-4H4L3 8Zm1 0v8h12V8M8 16v-5h4v5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+              </>
+            )}
+          </svg>
+          <span>{item.label}</span>
+        </Link>
+      ))}
     </nav>
   );
 }
@@ -59,7 +74,7 @@ function SidebarAccount({ user, accountActions }: { user: SessionUser; accountAc
     <div className="min-w-0 border-t border-white/10 px-5 py-4">
       <p className="text-xs font-medium text-sidebar-foreground/70">Signed in as</p>
       <p className="mt-1 truncate text-sm font-medium text-white" title={user.name}>{user.name}</p>
-      <p className="mt-0.5 truncate text-xs text-sidebar-foreground/70">{roleLabels[user.role]}</p>
+      <p className="mt-0.5 truncate text-xs text-sidebar-foreground/70">{sessionRoleLabels[user.role]}</p>
       {user.email && (
         <p className="mt-0.5 truncate text-xs text-sidebar-foreground/70" title={user.email}>
           {user.email}
@@ -138,7 +153,7 @@ function MobileNavigation({ user, accountActions }: { user: SessionUser; account
             </Button>
           </div>
           <MobileWorkspaceContext user={user} />
-          <OverviewNavigation onNavigate={() => setOpen(false)} />
+          <WorkspaceNavigation user={user} onNavigate={() => setOpen(false)} />
           <div className="mt-auto">
             <SidebarAccount user={user} accountActions={accountActions} />
           </div>
@@ -154,7 +169,7 @@ function DesktopSidebar({ user, accountActions }: { user: SessionUser; accountAc
       <div className="flex h-16 shrink-0 items-center border-b border-white/10 px-6">
         <FleetoraBrand />
       </div>
-      <OverviewNavigation />
+      <WorkspaceNavigation user={user} />
       <div className="mt-auto">
         <SidebarAccount user={user} accountActions={accountActions} />
       </div>
@@ -178,6 +193,8 @@ function WorkspaceContext({ user }: { user: SessionUser }) {
 }
 
 export function AppShell({ user, accountActions, children }: { user: SessionUser; accountActions: ReactNode; children: ReactNode }) {
+  const pathname = usePathname();
+  const pageTitle = navigation.find(item => item.href === pathname)?.label ?? "Overview";
   return (
     <div className="flex min-h-svh w-full bg-background text-foreground">
       <a
@@ -192,9 +209,9 @@ export function AppShell({ user, accountActions, children }: { user: SessionUser
           <div className="mx-auto flex w-full max-w-5xl min-w-0 items-center gap-3">
             <div className="flex min-w-0 items-center gap-3 lg:hidden">
               <FleetoraBrand lightSurface />
-              <h1 className="truncate text-sm font-semibold tracking-tight">Overview</h1>
+              <h1 className="truncate text-sm font-semibold tracking-tight">{pageTitle}</h1>
             </div>
-            <h1 className="hidden text-base font-semibold tracking-tight lg:block">Overview</h1>
+            <h1 className="hidden text-base font-semibold tracking-tight lg:block">{pageTitle}</h1>
             <WorkspaceContext user={user} />
             <div className="ml-auto lg:hidden">
               <MobileNavigation user={user} accountActions={accountActions} />

@@ -12,6 +12,7 @@ import { createRefreshTokenVerifier } from '../src/modules/auth/token/refresh-to
 import { MailService } from '../src/modules/mail/mail.service.js';
 import { PrismaService } from '../src/modules/prisma/prisma.service.js';
 import { dateToInstant } from '../src/common/utils/temporal.js';
+import { AuthPostgresTestGuard, readAuthPostgresIdentity } from './auth-postgres.safety.js';
 
 const companyId = '11111111-1111-4111-8111-111111111111';
 const otherCompanyId = '22222222-2222-4222-8222-222222222222';
@@ -22,6 +23,7 @@ const resetToken = 'a'.repeat(64);
 const verificationToken = 'b'.repeat(64);
 
 describe('authentication PostgreSQL concurrency and tenant boundaries', () => {
+  const databaseGuard = new AuthPostgresTestGuard();
   let module: TestingModule;
   let prisma: PrismaService;
   let repository: AuthRepository;
@@ -59,16 +61,12 @@ describe('authentication PostgreSQL concurrency and tenant boundaries', () => {
     service = module.get(AuthService);
     tokenService = module.get(TokenService);
 
-    const identityPlan = prisma.db.raw.sql`SELECT current_database() AS "databaseName"`
-      .returnsRow({ databaseName: 'pg/text@1' })
-      .build();
-    const [identity] = await prisma.db.runtime().query(identityPlan);
-    expect(identity?.databaseName).toBe(
-      process.env.FLEETORA_VERIFIED_TEST_DATABASE_NAME,
-    );
+    await databaseGuard.verify(() => readAuthPostgresIdentity(prisma));
   });
 
   beforeEach(async () => {
+    databaseGuard.assertVerified();
+    await databaseGuard.verify(() => readAuthPostgresIdentity(prisma));
     vi.clearAllMocks();
     await cleanup();
     await prisma.Company.create({
@@ -100,9 +98,16 @@ describe('authentication PostgreSQL concurrency and tenant boundaries', () => {
   });
 
   afterAll(async () => {
-    await cleanup();
-    await prisma.db.close();
-    await module.close();
+    await databaseGuard.teardown(async () => {
+      await databaseGuard.verify(() => readAuthPostgresIdentity(prisma));
+      await cleanup();
+    }, async () => {
+      try {
+        await prisma?.db.close();
+      } finally {
+        await module?.close();
+      }
+    });
   });
 
   it('allows at most one concurrent rotation of the same refresh token', async () => {
@@ -362,6 +367,7 @@ describe('authentication PostgreSQL concurrency and tenant boundaries', () => {
   });
 
   async function cleanup(): Promise<void> {
+    databaseGuard.assertVerified();
     for (const name of ['Phase6B Rollback', 'Phase6B Duplicate', 'Phase6B Existing', 'Phase6B Mail Failure']) {
       await prisma?.Company.where({ name: `${name}'s Company` }).delete();
     }

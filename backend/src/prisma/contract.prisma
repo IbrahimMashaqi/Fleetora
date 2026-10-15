@@ -18,6 +18,23 @@ enum UserRole {
   ACCOUNTANT 
 }
 
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+  REVOKED
+}
+
+enum MembershipPrincipalType {
+  STAFF
+  MERCHANT
+  DRIVER
+}
+
+enum PlatformGrantStatus {
+  ACTIVE
+  REVOKED
+}
+
 enum WorkerStatus {
   ACTIVE
   OFFLINE
@@ -93,6 +110,7 @@ model Company {
   vehicles   Vehicle[]
   warehouses Warehouse[]
   shipments  Shipment[]
+  memberships CompanyMembership[]
 
   @@map("companies")
 }
@@ -116,9 +134,54 @@ model User {
   requestedShipments Shipment[]     @relation("ShipmentRequestedBy")
   approvedExecutions AIExecution[]  @relation("AIExecutionApprovedBy")
   notifications      Notification[]
+  companyMemberships CompanyMembership[]
+  platformAdminGrant PlatformAdminGrant? @relation("PlatformGrantSubject")
+  issuedPlatformGrants PlatformAdminGrant[] @relation("PlatformGrantIssuer")
+  revokedPlatformGrants PlatformAdminGrant[] @relation("PlatformGrantRevoker")
 
   @@index([companyId])
   @@map("users")
+}
+
+// Additive foundation only: legacy auth remains authoritative until approved cutover.
+model CompanyMembership {
+  id            String                  @id @default(uuid())
+  userId        String
+  companyId     String
+  status        MembershipStatus        @default(INACTIVE)
+  principalType MembershipPrincipalType
+  createdAt     DateTime                @default(now())
+  updatedAt     temporal.updatedAt()
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  // Only ACTIVE rows contend; inactive and revoked affiliation history is retained.
+  @@index([userId], unique: true, where: "\"status\" = 'ACTIVE'", name: "company_memberships_one_active_user")
+  @@index([userId, status])
+  @@index([companyId, status])
+  @@map("company_memberships")
+}
+
+model PlatformAdminGrant {
+  id          String              @id @default(uuid())
+  userId      String              @unique
+  status      PlatformGrantStatus
+  createdAt   DateTime            @default(now())
+  updatedAt   temporal.updatedAt()
+  grantedById String?
+  revokedAt   DateTime?
+  revokedById String?
+
+  user      User  @relation("PlatformGrantSubject", fields: [userId], references: [id], onDelete: Restrict)
+  grantedBy User? @relation("PlatformGrantIssuer", fields: [grantedById], references: [id], onDelete: Restrict)
+  revokedBy User? @relation("PlatformGrantRevoker", fields: [revokedById], references: [id], onDelete: Restrict)
+
+  @@check(expression: "(\"status\" = 'ACTIVE' AND \"revokedAt\" IS NULL AND \"revokedById\" IS NULL) OR (\"status\" = 'REVOKED' AND \"revokedAt\" IS NOT NULL)", name: "platform_admin_grants_revocation_state")
+  @@index([status])
+  @@index([grantedById])
+  @@index([revokedById])
+  @@map("platform_admin_grants")
 }
 
 model Worker {
