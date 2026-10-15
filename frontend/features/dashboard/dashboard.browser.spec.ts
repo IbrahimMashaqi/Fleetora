@@ -52,7 +52,7 @@ test("shows validated company identity and only implemented navigation", async (
   const destinations = await page.locator("a[href^='/']").evaluateAll((links) =>
     [...new Set(links.map((link) => link.getAttribute("href")))],
   );
-  expect(destinations).toEqual(["/app"]);
+  expect(destinations).toEqual(["/app", "/app/account", "/app/merchants"]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   const browserStorage = await page.evaluate(() => JSON.stringify({
     cookies: document.cookie,

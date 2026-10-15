@@ -1,4 +1,10 @@
 export type SessionRole = "PLATFORM_ADMIN" | "COMPANY_ADMIN" | "MERCHANT" | "ACCOUNTANT";
+export const sessionRoleLabels: Record<SessionRole, string> = {
+  PLATFORM_ADMIN: "Platform administrator",
+  COMPANY_ADMIN: "Company administrator",
+  MERCHANT: "Merchant",
+  ACCOUNTANT: "Accountant",
+};
 export type SessionCompany = { id: string; name: string };
 export type SessionUser = {
   id: string;

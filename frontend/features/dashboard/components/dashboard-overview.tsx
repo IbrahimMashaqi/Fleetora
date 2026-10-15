@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import type { SessionUser } from "@/lib/auth/session.types";
 
 export function DashboardOverview({ user }: { user: SessionUser }) {
@@ -16,6 +18,9 @@ export function DashboardOverview({ user }: { user: SessionUser }) {
             You’re signed in as a Fleetora platform administrator. This workspace isn’t associated with a company.
           </p>
         )}
+        <Button asChild variant="outline" className="mt-6">
+          <Link href="/app/account">Account &amp; security</Link>
+        </Button>
       </section>
 
     </div>

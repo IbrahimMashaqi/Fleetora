@@ -1,0 +1,605 @@
+[
+  {
+    "id": "table.company_memberships",
+    "label": "Create table \"company_memberships\"",
+    "summary": "Creates table \"company_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "company_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"company_memberships\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_memberships\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"company_memberships\"",
+        "sql": "CREATE TABLE \"public\".\"company_memberships\" (\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"principalType\" text NOT NULL,\n  \"status\" text DEFAULT 'INACTIVE' NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"userId\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"company_memberships_principalType_check_d2343e87\" CHECK (\"principalType\" IN ('STAFF', 'MERCHANT', 'DRIVER')),\n  CONSTRAINT \"company_memberships_status_check_7232e080\" CHECK (\"status\" IN ('ACTIVE', 'INACTIVE', 'REVOKED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"company_memberships\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_memberships\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.platform_admin_grants",
+    "label": "Create table \"platform_admin_grants\"",
+    "summary": "Creates table \"platform_admin_grants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "platform_admin_grants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"platform_admin_grants\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_admin_grants\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"platform_admin_grants\"",
+        "sql": "CREATE TABLE \"public\".\"platform_admin_grants\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"grantedById\" text,\n  \"id\" text NOT NULL,\n  \"revokedAt\" timestamptz,\n  \"revokedById\" text,\n  \"status\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"userId\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"platform_admin_grants_revocation_state_7d7025f9\" CHECK ((\"status\" = 'ACTIVE' AND \"revokedAt\" IS NULL AND \"revokedById\" IS NULL) OR (\"status\" = 'REVOKED' AND \"revokedAt\" IS NOT NULL)),\n  CONSTRAINT \"platform_admin_grants_status_check_35f03e2c\" CHECK (\"status\" IN ('ACTIVE', 'REVOKED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"platform_admin_grants\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_admin_grants\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.platform_admin_grants.platform_admin_grants_userId_key",
+    "label": "Add unique constraint on \"platform_admin_grants\" (userId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "platform_admin_grants_userId_key",
+        "table": "platform_admin_grants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"platform_admin_grants_userId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_admin_grants_userId_key",
+          "public",
+          "\"public\".\"platform_admin_grants\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"platform_admin_grants_userId_key\"",
+        "sql": "ALTER TABLE \"public\".\"platform_admin_grants\" ADD CONSTRAINT \"platform_admin_grants_userId_key\" UNIQUE (\"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"platform_admin_grants_userId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_admin_grants_userId_key",
+          "public",
+          "\"public\".\"platform_admin_grants\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.company_memberships.company_memberships_companyId_idx_33acc5ed",
+    "label": "Create index \"company_memberships_companyId_idx_33acc5ed\" on \"company_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "company_memberships_companyId_idx_33acc5ed",
+        "table": "company_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"company_memberships_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_memberships_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"company_memberships_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"company_memberships_companyId_idx_33acc5ed\" ON \"public\".\"company_memberships\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"company_memberships_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_memberships_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.company_memberships.company_memberships_companyId_status_idx_86f6fb02",
+    "label": "Create index \"company_memberships_companyId_status_idx_86f6fb02\" on \"company_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "company_memberships_companyId_status_idx_86f6fb02",
+        "table": "company_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"company_memberships_companyId_status_idx_86f6fb02\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_memberships_companyId_status_idx_86f6fb02\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"company_memberships_companyId_status_idx_86f6fb02\"",
+        "sql": "CREATE INDEX \"company_memberships_companyId_status_idx_86f6fb02\" ON \"public\".\"company_memberships\" (\"companyId\", \"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"company_memberships_companyId_status_idx_86f6fb02\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_memberships_companyId_status_idx_86f6fb02\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.company_memberships.company_memberships_one_active_user_0293bafb",
+    "label": "Create index \"company_memberships_one_active_user_0293bafb\" on \"company_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "company_memberships_one_active_user_0293bafb",
+        "table": "company_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"company_memberships_one_active_user_0293bafb\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_memberships_one_active_user_0293bafb\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"company_memberships_one_active_user_0293bafb\"",
+        "sql": "CREATE UNIQUE INDEX \"company_memberships_one_active_user_0293bafb\" ON \"public\".\"company_memberships\" (\"userId\") WHERE (\"status\" = 'ACTIVE')",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"company_memberships_one_active_user_0293bafb\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_memberships_one_active_user_0293bafb\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.company_memberships.company_memberships_userId_status_idx_e4a128ba",
+    "label": "Create index \"company_memberships_userId_status_idx_e4a128ba\" on \"company_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "company_memberships_userId_status_idx_e4a128ba",
+        "table": "company_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"company_memberships_userId_status_idx_e4a128ba\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_memberships_userId_status_idx_e4a128ba\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"company_memberships_userId_status_idx_e4a128ba\"",
+        "sql": "CREATE INDEX \"company_memberships_userId_status_idx_e4a128ba\" ON \"public\".\"company_memberships\" (\"userId\", \"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"company_memberships_userId_status_idx_e4a128ba\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_memberships_userId_status_idx_e4a128ba\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.platform_admin_grants.platform_admin_grants_grantedById_idx_416f9b2b",
+    "label": "Create index \"platform_admin_grants_grantedById_idx_416f9b2b\" on \"platform_admin_grants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "platform_admin_grants_grantedById_idx_416f9b2b",
+        "table": "platform_admin_grants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"platform_admin_grants_grantedById_idx_416f9b2b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_admin_grants_grantedById_idx_416f9b2b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"platform_admin_grants_grantedById_idx_416f9b2b\"",
+        "sql": "CREATE INDEX \"platform_admin_grants_grantedById_idx_416f9b2b\" ON \"public\".\"platform_admin_grants\" (\"grantedById\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"platform_admin_grants_grantedById_idx_416f9b2b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_admin_grants_grantedById_idx_416f9b2b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.platform_admin_grants.platform_admin_grants_revokedById_idx_ab374353",
+    "label": "Create index \"platform_admin_grants_revokedById_idx_ab374353\" on \"platform_admin_grants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "platform_admin_grants_revokedById_idx_ab374353",
+        "table": "platform_admin_grants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"platform_admin_grants_revokedById_idx_ab374353\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_admin_grants_revokedById_idx_ab374353\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"platform_admin_grants_revokedById_idx_ab374353\"",
+        "sql": "CREATE INDEX \"platform_admin_grants_revokedById_idx_ab374353\" ON \"public\".\"platform_admin_grants\" (\"revokedById\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"platform_admin_grants_revokedById_idx_ab374353\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_admin_grants_revokedById_idx_ab374353\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.platform_admin_grants.platform_admin_grants_status_idx_e98638ab",
+    "label": "Create index \"platform_admin_grants_status_idx_e98638ab\" on \"platform_admin_grants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "platform_admin_grants_status_idx_e98638ab",
+        "table": "platform_admin_grants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"platform_admin_grants_status_idx_e98638ab\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_admin_grants_status_idx_e98638ab\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"platform_admin_grants_status_idx_e98638ab\"",
+        "sql": "CREATE INDEX \"platform_admin_grants_status_idx_e98638ab\" ON \"public\".\"platform_admin_grants\" (\"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"platform_admin_grants_status_idx_e98638ab\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_admin_grants_status_idx_e98638ab\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.company_memberships.company_memberships_userId_fkey",
+    "label": "Add foreign key \"company_memberships_userId_fkey\" on \"company_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "company_memberships_userId_fkey",
+        "table": "company_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"company_memberships_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_memberships_userId_fkey",
+          "public",
+          "\"public\".\"company_memberships\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"company_memberships_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"company_memberships\"\nADD CONSTRAINT \"company_memberships_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"users\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"company_memberships_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_memberships_userId_fkey",
+          "public",
+          "\"public\".\"company_memberships\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.company_memberships.company_memberships_companyId_fkey",
+    "label": "Add foreign key \"company_memberships_companyId_fkey\" on \"company_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "company_memberships_companyId_fkey",
+        "table": "company_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"company_memberships_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_memberships_companyId_fkey",
+          "public",
+          "\"public\".\"company_memberships\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"company_memberships_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"company_memberships\"\nADD CONSTRAINT \"company_memberships_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"company_memberships_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_memberships_companyId_fkey",
+          "public",
+          "\"public\".\"company_memberships\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.platform_admin_grants.platform_admin_grants_userId_fkey",
+    "label": "Add foreign key \"platform_admin_grants_userId_fkey\" on \"platform_admin_grants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "platform_admin_grants_userId_fkey",
+        "table": "platform_admin_grants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"platform_admin_grants_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_admin_grants_userId_fkey",
+          "public",
+          "\"public\".\"platform_admin_grants\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"platform_admin_grants_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"platform_admin_grants\"\nADD CONSTRAINT \"platform_admin_grants_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"users\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"platform_admin_grants_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_admin_grants_userId_fkey",
+          "public",
+          "\"public\".\"platform_admin_grants\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.platform_admin_grants.platform_admin_grants_grantedById_fkey",
+    "label": "Add foreign key \"platform_admin_grants_grantedById_fkey\" on \"platform_admin_grants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "platform_admin_grants_grantedById_fkey",
+        "table": "platform_admin_grants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"platform_admin_grants_grantedById_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_admin_grants_grantedById_fkey",
+          "public",
+          "\"public\".\"platform_admin_grants\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"platform_admin_grants_grantedById_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"platform_admin_grants\"\nADD CONSTRAINT \"platform_admin_grants_grantedById_fkey\"\nFOREIGN KEY (\"grantedById\")\nREFERENCES \"public\".\"users\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"platform_admin_grants_grantedById_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_admin_grants_grantedById_fkey",
+          "public",
+          "\"public\".\"platform_admin_grants\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.platform_admin_grants.platform_admin_grants_revokedById_fkey",
+    "label": "Add foreign key \"platform_admin_grants_revokedById_fkey\" on \"platform_admin_grants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "platform_admin_grants_revokedById_fkey",
+        "table": "platform_admin_grants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"platform_admin_grants_revokedById_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_admin_grants_revokedById_fkey",
+          "public",
+          "\"public\".\"platform_admin_grants\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"platform_admin_grants_revokedById_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"platform_admin_grants\"\nADD CONSTRAINT \"platform_admin_grants_revokedById_fkey\"\nFOREIGN KEY (\"revokedById\")\nREFERENCES \"public\".\"users\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"platform_admin_grants_revokedById_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_admin_grants_revokedById_fkey",
+          "public",
+          "\"public\".\"platform_admin_grants\""
+        ]
+      }
+    ]
+  }
+]

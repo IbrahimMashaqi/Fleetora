@@ -12,12 +12,20 @@
       "model": "Company",
       "namespace": "public"
     },
+    "company_memberships": {
+      "model": "CompanyMembership",
+      "namespace": "public"
+    },
     "location_events": {
       "model": "LocationEvent",
       "namespace": "public"
     },
     "notifications": {
       "model": "Notification",
+      "namespace": "public"
+    },
+    "platform_admin_grants": {
+      "model": "PlatformAdminGrant",
       "namespace": "public"
     },
     "proof_of_delivery": {
@@ -99,6 +107,40 @@
               }
             ]
           },
+          "MembershipPrincipalType": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "STAFF",
+                "value": "STAFF"
+              },
+              {
+                "name": "MERCHANT",
+                "value": "MERCHANT"
+              },
+              {
+                "name": "DRIVER",
+                "value": "DRIVER"
+              }
+            ]
+          },
+          "MembershipStatus": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "ACTIVE",
+                "value": "ACTIVE"
+              },
+              {
+                "name": "INACTIVE",
+                "value": "INACTIVE"
+              },
+              {
+                "name": "REVOKED",
+                "value": "REVOKED"
+              }
+            ]
+          },
           "NotificationType": {
             "codecId": "pg/text@1",
             "members": [
@@ -146,6 +188,19 @@
               {
                 "name": "ENTERPRISE",
                 "value": "ENTERPRISE"
+              }
+            ]
+          },
+          "PlatformGrantStatus": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "ACTIVE",
+                "value": "ACTIVE"
+              },
+              {
+                "name": "REVOKED",
+                "value": "REVOKED"
               }
             ]
           },
@@ -492,6 +547,21 @@
               }
             },
             "relations": {
+              "memberships": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "CompanyMembership",
+                  "namespace": "public"
+                }
+              },
               "shipments": {
                 "cardinality": "1:N",
                 "on": {
@@ -591,6 +661,132 @@
               },
               "namespaceId": "public",
               "table": "companies"
+            }
+          },
+          "CompanyMembership": {
+            "fields": {
+              "companyId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "principalType": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "MembershipPrincipalType",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "MembershipStatus",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "userId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "company": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "userId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "companyId": {
+                  "column": "companyId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "principalType": {
+                  "column": "principalType"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                },
+                "userId": {
+                  "column": "userId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "company_memberships"
             }
           },
           "LocationEvent": {
@@ -789,6 +985,152 @@
               },
               "namespaceId": "public",
               "table": "notifications"
+            }
+          },
+          "PlatformAdminGrant": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "grantedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "revokedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "revokedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "PlatformGrantStatus",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "userId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "grantedBy": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "grantedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
+              "revokedBy": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "revokedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "userId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "grantedById": {
+                  "column": "grantedById"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "revokedAt": {
+                  "column": "revokedAt"
+                },
+                "revokedById": {
+                  "column": "revokedById"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                },
+                "userId": {
+                  "column": "userId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "platform_admin_grants"
             }
           },
           "ProofOfDelivery": {
@@ -1333,6 +1675,36 @@
                   "namespace": "public"
                 }
               },
+              "companyMemberships": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "userId"
+                  ]
+                },
+                "to": {
+                  "model": "CompanyMembership",
+                  "namespace": "public"
+                }
+              },
+              "issuedPlatformGrants": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "grantedById"
+                  ]
+                },
+                "to": {
+                  "model": "PlatformAdminGrant",
+                  "namespace": "public"
+                }
+              },
               "notifications": {
                 "cardinality": "1:N",
                 "on": {
@@ -1348,6 +1720,22 @@
                   "namespace": "public"
                 }
               },
+              "platformAdminGrant": {
+                "cardinality": "1:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "userId"
+                  ]
+                },
+                "to": {
+                  "model": "PlatformAdminGrant",
+                  "namespace": "public"
+                }
+              },
               "requestedShipments": {
                 "cardinality": "1:N",
                 "on": {
@@ -1360,6 +1748,21 @@
                 },
                 "to": {
                   "model": "Shipment",
+                  "namespace": "public"
+                }
+              },
+              "revokedPlatformGrants": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "revokedById"
+                  ]
+                },
+                "to": {
+                  "model": "PlatformAdminGrant",
                   "namespace": "public"
                 }
               }
@@ -2111,6 +2514,156 @@
               },
               "uniques": []
             },
+            "company_memberships": {
+              "checks": [
+                {
+                  "expression": "\"principalType\" IN ('STAFF', 'MERCHANT', 'DRIVER')",
+                  "name": "company_memberships_principalType_check_d2343e87",
+                  "prefix": "company_memberships_principalType_check"
+                },
+                {
+                  "expression": "\"status\" IN ('ACTIVE', 'INACTIVE', 'REVOKED')",
+                  "name": "company_memberships_status_check_7232e080",
+                  "prefix": "company_memberships_status_check"
+                }
+              ],
+              "columns": {
+                "companyId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "principalType": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "MembershipPrincipalType",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "INACTIVE"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "MembershipStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "userId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "userId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "company_memberships"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "company_memberships"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "companyId"
+                  ],
+                  "name": "company_memberships_companyId_idx_33acc5ed",
+                  "prefix": "company_memberships_companyId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "companyId",
+                    "status"
+                  ],
+                  "name": "company_memberships_companyId_status_idx_86f6fb02",
+                  "prefix": "company_memberships_companyId_status_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "userId"
+                  ],
+                  "name": "company_memberships_one_active_user_0293bafb",
+                  "prefix": "company_memberships_one_active_user",
+                  "unique": true,
+                  "where": "\"status\" = 'ACTIVE'"
+                },
+                {
+                  "columns": [
+                    "userId",
+                    "status"
+                  ],
+                  "name": "company_memberships_userId_status_idx_e4a128ba",
+                  "prefix": "company_memberships_userId_status_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
             "location_events": {
               "columns": {
                 "id": {
@@ -2307,6 +2860,163 @@
                 ]
               },
               "uniques": []
+            },
+            "platform_admin_grants": {
+              "checks": [
+                {
+                  "expression": "(\"status\" = 'ACTIVE' AND \"revokedAt\" IS NULL AND \"revokedById\" IS NULL) OR (\"status\" = 'REVOKED' AND \"revokedAt\" IS NOT NULL)",
+                  "name": "platform_admin_grants_revocation_state_7d7025f9",
+                  "prefix": "platform_admin_grants_revocation_state"
+                },
+                {
+                  "expression": "\"status\" IN ('ACTIVE', 'REVOKED')",
+                  "name": "platform_admin_grants_status_check_35f03e2c",
+                  "prefix": "platform_admin_grants_status_check"
+                }
+              ],
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "grantedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "revokedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "revokedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "PlatformGrantStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "userId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "userId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "platform_admin_grants"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "grantedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "platform_admin_grants"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "revokedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "platform_admin_grants"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "grantedById"
+                  ],
+                  "name": "platform_admin_grants_grantedById_idx_416f9b2b",
+                  "prefix": "platform_admin_grants_grantedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "revokedById"
+                  ],
+                  "name": "platform_admin_grants_revokedById_idx_ab374353",
+                  "prefix": "platform_admin_grants_revokedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "status"
+                  ],
+                  "name": "platform_admin_grants_status_idx_e98638ab",
+                  "prefix": "platform_admin_grants_status_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "userId"
+                  ]
+                }
+              ]
             },
             "proof_of_delivery": {
               "columns": {
@@ -3156,6 +3866,22 @@
                 "FAILED"
               ]
             },
+            "MembershipPrincipalType": {
+              "kind": "valueSet",
+              "values": [
+                "STAFF",
+                "MERCHANT",
+                "DRIVER"
+              ]
+            },
+            "MembershipStatus": {
+              "kind": "valueSet",
+              "values": [
+                "ACTIVE",
+                "INACTIVE",
+                "REVOKED"
+              ]
+            },
             "NotificationType": {
               "kind": "valueSet",
               "values": [
@@ -3174,6 +3900,13 @@
                 "BASIC",
                 "PRO",
                 "ENTERPRISE"
+              ]
+            },
+            "PlatformGrantStatus": {
+              "kind": "valueSet",
+              "values": [
+                "ACTIVE",
+                "REVOKED"
               ]
             },
             "ShipmentPriority": {
@@ -3234,10 +3967,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "316de1e8d9642428af4648bcae6927da9aa3df855b50b4a3456412f7e40dd902"
+    "storageHash": "cb732e7410ed221c37e6d0e555810415ba5551ef7b1d2a81c12645466ac8236a"
   },
   "execution": {
-    "executionHash": "8c3fcd7d25f1afd9c04140136961bbc6eb0c068e810d0d63d29b90669d17285d",
+    "executionHash": "41ef3236816b6077d8690407c3386758893545c5087fa3b811061f55dff65936",
     "mutations": {
       "defaults": [
         {
@@ -3300,6 +4033,32 @@
           "ref": {
             "column": "id",
             "namespace": "public",
+            "table": "company_memberships"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "company_memberships"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
             "table": "location_events"
           }
         },
@@ -3312,6 +4071,32 @@
             "column": "id",
             "namespace": "public",
             "table": "notifications"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "platform_admin_grants"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "instantNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updatedAt",
+            "namespace": "public",
+            "table": "platform_admin_grants"
           }
         },
         {

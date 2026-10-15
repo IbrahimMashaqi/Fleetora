@@ -9,6 +9,7 @@ import { PrismaService } from '../src/modules/prisma/prisma.service.js';
 import { MailService } from '../src/modules/mail/mail.service.js';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor.js';
 import { HttpExceptionFilter } from '../src/common/exceptions-filter/http-exception.filter.js';
+import { AuthPostgresTestGuard, readAuthPostgresIdentity } from './auth-postgres.safety.js';
 
 const companyId = '44444444-4444-4444-8444-444444444444';
 const otherCompanyId = '55555555-5555-4555-8555-555555555555';
@@ -18,6 +19,7 @@ const password = 'ExistingPassword1';
 
 // Full Nest module + guards + services + PostgreSQL. SMTP delivery is mocked.
 describe('implemented authentication API (disposable PostgreSQL)', () => {
+  const databaseGuard = new AuthPostgresTestGuard();
   let app: INestApplication<App>;
   let module: TestingModule;
   let prisma: PrismaService;
@@ -27,18 +29,18 @@ describe('implemented authentication API (disposable PostgreSQL)', () => {
     module = await Test.createTestingModule({
       imports: [AppModule],
     }).overrideProvider(MailService).useValue(mail).compile();
+    prisma = module.get(PrismaService);
+    await databaseGuard.verify(() => readAuthPostgresIdentity(prisma));
     app = module.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
     app.useGlobalInterceptors(new TransformInterceptor());
     app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
-    prisma = module.get(PrismaService);
-    const query = prisma.db.raw.sql`SELECT current_database() AS "name"`.returnsRow({ name: 'pg/text@1' }).build();
-    const [identity] = await prisma.db.runtime().query(query);
-    expect(identity?.name).toBe(process.env.FLEETORA_VERIFIED_TEST_DATABASE_NAME);
   });
 
   beforeEach(async () => {
+    databaseGuard.assertVerified();
+    await databaseGuard.verify(() => readAuthPostgresIdentity(prisma));
     vi.clearAllMocks(); await cleanup();
     await prisma.Company.create({ id: companyId, name: 'Phase6B E2E', plan: 'TRIAL', suspended: false });
     await prisma.Company.create({ id: otherCompanyId, name: 'Phase6B Other', plan: 'TRIAL', suspended: false });
@@ -47,11 +49,24 @@ describe('implemented authentication API (disposable PostgreSQL)', () => {
 
   async function signin() { return request(app.getHttpServer()).post('/auth/signin').send({ email, password }).expect(200); }
   async function cleanup() {
+    databaseGuard.assertVerified();
     await prisma?.Company.where({ name: "Phase6B HTTP's Company" }).delete();
     await prisma?.Company.where({ id: companyId }).delete();
     await prisma?.Company.where({ id: otherCompanyId }).delete();
   }
-  afterAll(async () => { await cleanup(); await prisma.db.close(); await app.close(); });
+  afterAll(async () => {
+    await databaseGuard.teardown(async () => {
+      await databaseGuard.verify(() => readAuthPostgresIdentity(prisma));
+      await cleanup();
+    }, async () => {
+      try {
+        await prisma?.db.close();
+      } finally {
+        if (app) await app.close();
+        else await module?.close();
+      }
+    });
+  });
 
   it('has no obsolete root scaffold endpoint', async () => {
     await request(app.getHttpServer()).get('/').expect(404);
