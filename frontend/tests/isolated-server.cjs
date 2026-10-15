@@ -15,7 +15,7 @@ import('next').then(async ({ default: next }) => {
       // Compile workspace routes serially inside the existing startup window,
       // before browser navigation/prefetch can race cold manifest generation.
       // These GETs render public/session-loading UI and carry no credentials.
-      for (const route of ['/login', '/app', '/app/account', '/app/merchants']) {
+      for (const route of ['/login', '/app', '/app/account', '/app/merchants', '/app/drivers']) {
         const response = await fetch(`http://localhost:3100${route}`);
         await response.arrayBuffer();
         if (!response.ok) throw new Error('Isolated route warmup failed');
