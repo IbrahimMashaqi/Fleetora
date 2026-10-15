@@ -11,6 +11,7 @@ const navigation = [
   { href: "/app", label: "Overview" },
   { href: "/app/account", label: "Account & security" },
   { href: "/app/merchants", label: "Merchants" },
+  { href: "/app/drivers", label: "Drivers" },
 ];
 
 function FleetoraBrand({ lightSurface = false }: { lightSurface?: boolean }) {
@@ -37,7 +38,7 @@ function WorkspaceNavigation({ user, onNavigate }: { user: SessionUser; onNaviga
   const pathname = usePathname();
   return (
     <nav aria-label="Primary navigation" className="space-y-1 px-4 py-5">
-      {navigation.filter(item => item.href !== "/app/merchants" || user.role === "COMPANY_ADMIN" && user.company !== null).map(item => (
+      {navigation.filter(item => !["/app/merchants", "/app/drivers"].includes(item.href) || user.role === "COMPANY_ADMIN" && user.company !== null).map(item => (
         <Link
           key={item.href}
           href={item.href}
@@ -55,6 +56,12 @@ function WorkspaceNavigation({ user, onNavigate }: { user: SessionUser; onNaviga
               <>
                 <circle cx="10" cy="6.5" r="3" stroke="currentColor" strokeWidth="1.5" />
                 <path d="M4 17v-1.5a6 6 0 0 1 12 0V17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </>
+            ) : item.href === "/app/drivers" ? (
+              <>
+                <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" />
+                <circle cx="10" cy="10" r="2" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M3 10h5m4 0h5m-7 2v5" stroke="currentColor" strokeWidth="1.5" />
               </>
             ) : (
               <>
