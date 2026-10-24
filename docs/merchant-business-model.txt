@@ -1,0 +1,174 @@
+FLEETORA — AUTHORITATIVE PHASE 1 BUSINESS SPECIFICATION
+Source: the project owner's authoritative, self-contained message dated 2026-10-22.
+This specification supersedes earlier incorrect assumptions about staff-created parcels.
+The separate MANDATORY ENGINEERING QUALITY CONTRACT remains binding.
+Repository: C:\Projects\Fleetora
+Mobile platform amendment: the owner's subsequent Flutter master specification requires
+Flutter + Dart for final mobile products. The official merchant application is at
+apps/merchant_app. Other Phase 1 business rules below remain authoritative.
+
+1. CORE BUSINESS MODEL
+Fleetora is a multi-tenant delivery-company management SaaS for Palestine.
+Three connected products share the existing central NestJS backend and PostgreSQL database:
+the existing company web dashboard, a merchant mobile app, and a later-phase driver mobile app.
+There is no customer mobile application.
+The MERCHANT creates parcels from the merchant mobile application. The delivery company sees
+them automatically and manages pickup, custody, assignment, delivery, returns, COD, and settlement.
+The company need not manually recreate merchant parcels.
+Each merchant belongs to exactly ONE delivery company; a company has many merchants.
+Merchants never choose a company when creating parcels. Resolve company securely through
+authenticated merchant membership. Isolate both company and merchant. No merchant multi-company
+membership in Phase 1.
+
+2. MERCHANT CREATION, INVITATION, AND ONBOARDING
+The company initiates onboarding: authorized company administrator/employee creates merchant
+business information and primary pickup address, assigns a commercial pricing plan, issues secure
+activation invitation. Merchant owner accepts, activates account, authenticates in merchant app,
+and manages merchant parcels and authorized merchant employees.
+No random public registrations may attach themselves to a company.
+Reuse existing authentication. Invitation tokens: cryptographically secure, single-use,
+time-limited, bound to merchant/company/invited identity/intended role, server validated,
+revocable, replay/cross-tenant safe. Store hashes, not raw secrets. Do not expose tokens in logs
+or unrelated API responses. States pending, accepted, expired, revoked.
+If delivery provider is missing, offer honest manual invitation issuance to authorized admins;
+never fake email/SMS delivery. Do not rewrite or bypass Better Auth.
+
+3. MERCHANT USERS AND EMPLOYEE PERMISSIONS
+One merchant business may have multiple individual authenticated people.
+Owner: view all own parcels; create/edit/cancel eligible parcels; bulk import; pickup requests;
+track pickup/delivery/returns/exchanges; view statements/balances; request settlement;
+manage employees/permissions; view merchant activity/audit.
+Employee permissions individually separate: view parcels, create, edit, cancel, bulk import,
+create/manage pickups, view returns/history, view financial statements, request settlement,
+manage users (owner-level unless safely delegated explicitly).
+Ordinary employees receive NO automatic balances/statements/payout requests/employee admin.
+Enforce permissions in NestJS. Audit individual actor for creation/edit/cancellation/financial
+actions. Company staff roles remain separate. No parallel conflicting authentication system.
+
+4. MERCHANT ADDRESS AND PICKUP LOCATIONS
+No merchant branches. One primary business address and default pickup address/location.
+Each pickup request can use default location, alternate address, or alternate map pin where
+supported. Request-specific location never changes primary address or creates a branch.
+Different requests may have different addresses; company sees exact request location.
+
+5. ZONE-BASED DELIVERY PRICING
+Company controls fees by destination zone, merchant plan, merchant-specific discounts,
+approved promotions/offers, and contractual terms effective at confirmation. Palestine, initial
+default ILS. Company-scoped zones must support neighborhoods/localities within a city, not only
+one city price. Clear zone identity, validated selection. No invented prices/boundaries/addresses.
+Each merchant has an active same-company commercial plan. Plans determine zone fees,
+discounts/special prices, approved offers, fee payer/settlement rules, relevant commercial terms.
+Only appropriately authorized company actors change assignments/plans. Backend-centralized
+pricing engine with unit tests, never duplicated formulas in dashboard/mobile.
+Confirmed parcels store immutable zone/base fee/discount/promotion/final fee/fee payer/plan
+identity/version or equivalent audit context. Future tariff/plan edits never rewrite snapshots.
+Post-pickup amendments require explicit auditable workflow.
+
+6. CRITICAL FINAL CUSTOMER PRICE RULE
+Merchant enters FINAL amount customer must pay; it ALREADY INCLUDES DELIVERY.
+Never add company delivery fee on top. Final 150 ILS, fee 15 ILS -> collect exactly 150,
+expected merchant proceeds 135 assuming merchant-funded delivery and full successful collection.
+Merchant pricing preview: final payable, contractual delivery fee, expected merchant proceeds
+subject to collection/charges. Backend authoritative, exact minor units/decimal, no float money.
+ZERO-COD/PREPAID: final payable ZERO allowed (prepaid/gift/no collection). Zero does not imply
+free delivery. Charge merchant according to plan through proper accounting entry, never invent
+customer payment. Financial recognition and cash movement remain separate.
+
+7. PARCEL CREATION — MERCHANT MOBILE APP
+Collect recipient name, phone, optional alternative phone, delivery city/zone, detailed address,
+optional map pin, final payable, COD/no-COD classification, description, package/piece count,
+delivery notes, optional merchant reference and necessary existing validated fields.
+Generate unique tracking identity. Associate authenticated merchant, its company, creating user.
+Appear in correct company dashboard automatically. Creation is NOT physical company receipt:
+clearly pending pickup/receipt. Real persisted data, no fake activity.
+
+8. PARCEL EDITING AND CANCELLATION
+Before physical receipt, permitted merchant users edit eligible information/cancel directly,
+with audit. After company/driver receipt, material amendments need company approval;
+address/zone/price changes recalculate fees and expose financial consequences before approval.
+Cancellation becomes a request requiring controlled custody/return workflow.
+After delivery, never overwrite finalized financial/delivery facts; explicit adjustments/returns/
+corrections. Record actor/time/old+new values/reason/approval where relevant.
+
+9. BULK PARCEL IMPORT
+Individual and bulk creation. Supply Excel template; accept Excel upload; parse/validate each
+row server-side; validate ownership, tenant, names/phones/zones/final prices; apply plan pricing;
+preview row errors/calculated fees; confirm valid parcels; persist with tracking numbers;
+honest completed/rejected/duplicate counts. Individual/bulk labels. Idempotency/import tracking
+prevents retry duplicates. No silently invalid creation or false all-success on partial failure.
+
+10. BARCODE / QR LABELS
+Unique tracking identity; QR/barcode label generation/printing. Codes may identify a parcel,
+but never expose unprotected customer personal/financial data. Scan is neither authorization
+nor custody proof. Physical handoffs require receipt/confirmation.
+
+11. PICKUP REQUESTS
+A: company pickup. Group multiple created parcels into ONE request. Merchant chooses ready
+parcels, preferred day/window, default/alternate address/pin, notes. Window is preference, NOT
+confirmed appointment. Company reviews, confirms/proposes alternative, assigns authorized
+pickup driver. Distinguish accepted/proposed/pending slots. Record actual received parcels,
+including missing/discrepant items.
+B: merchant warehouse drop-off. Merchant selects drop-off; authorized company warehouse staff
+confirms physically arrived parcels. Original creation never proves receipt.
+C: direct merchant-to-customer delivery allowed after actual pickup; warehouse not mandatory.
+Currently one warehouse; schema allows later expansion, no merchant-branch subsystem.
+
+12. DRIVER-TO-DRIVER HANDOFF RESTRICTION
+No direct driver-to-driver handoff. Reassignment passes through documented authorized company
+custody/warehouse. No transfer feature. Driver mobile remains later-phase.
+
+13. MERCHANT APP — PHASE 1 SCREENS
+Professional Flutter + Dart merchant app at apps/merchant_app. Use feature-oriented
+modules, Riverpod, go_router, Dio, typed serialization, platform secure token storage,
+Flutter gen-l10n, Material 3 and MapLibre. No direct database access or imported NestJS
+implementation. Backend APIs remain authoritative for permissions and money.
+Screens: activation/login; home; list/search; create; edit eligible parcel; details/timeline;
+pricing preview; bulk import workflow; create pickup; pickup list/details; account/profile;
+owner employee management. Arabic/English and RTL; real loading/error/empty/retry states;
+no fake activity/success.
+
+14. COMPANY DASHBOARD INTEGRATION
+Reuse Next.js operations dashboard. Display merchant-created parcels, merchant/recipient,
+destination, FINAL collection amount, contractual fee, pickup method, pending requests,
+confirmed receipts, status/history. No second parcel admin system. Protect company-only actions.
+
+15. ARCHITECTURE AND QUALITY GATES
+Mandatory quality contract: clean modular architecture, strict TS, pragmatic SOLID/DRY/KISS,
+reuse Nest/Prisma, centralized rules, DTO/API contracts, secure invitations/permissions,
+merchant AND company isolation, historical pricing, precise arithmetic, idempotent create/import,
+transactional consistency, additive migrations, no unauthorized accounting modification,
+zero regressions to map/HQ/auth/parcels/COD/returns/settlements. Preserve data/migrations.
+Only intended Neon fleetora may be migrated; never neondb. No commit/push.
+
+16. MANDATORY VERIFICATION
+1 admin creates merchant; 2 sets zone tariffs/plan; 3 issues owner invitation;
+4 merchant accepts/signs in; 5 creates parcel final150 ILS; 6 computes test-plan fee15;
+7 collect150 not165; 8 correct company dashboard visibility; 9 other merchant denied;
+10 other company denied; 11 employee finances denied; 12 zeroCOD/service fee accounted;
+13 grouped pickup; 14 company confirms/proposes slot; 15 drop-off/receipt distinctcreation;
+16 existing dashboard/parcel/COD/return/settlement tests pass; 17 AR/EN forms/navigation.
+Database-backed integration for critical flows. Report real commands/pass/fail counts.
+
+17. SCOPE AND DELIVERY ORDER
+Phase1: identity/invitations, employees/permissions, tenant/merchant isolation, zonepricing/plans,
+mobilefoundation, merchant-created lifecycle, final-inclusive COD, zeroCOD, list/details/timeline,
+bulkimport, pickups, dashboardvisibility, automated/E2Everification.
+No payroll/fullcashboxes/driverGPS/WhatsApp/laterdomains. Clean extensionpoints only.
+Follow existing implementation, no duplicates.
+
+
+FUTURE COMPATIBILITY ? APPROVED LATER DOMAINS, NOT PHASE 1 IMPLEMENTATION
+The subsequent Flutter master specification preserves these later business requirements:
+- One main company cashbox and one per driver; multiple company bank accounts.
+- Daily driver cashbox statements, partial/full remittances and cashier confirmation
+  before posting cash transfers; no spending directly from driver COD cashboxes.
+- Positive/negative merchant balances; cash/bank payouts, company expenses, driver
+  salaries, configurable commissions, advances, daily closing and discrepancy review.
+- Free/fixed/zone-based return fees, distinct failure fees, merchant attempt policies,
+  loss/damage investigations, exchanges and merchant-configured inspection rules.
+- No partial acceptance of an individual parcel's contents.
+- Per-company WhatsApp Business, customer status notifications and company inbox.
+- Future driver app call/WhatsApp/navigation controls, route planning and GPS only
+  through secure driver authentication. No driver app implementation in Phase 1.
+Direct driver-to-driver handoff remains prohibited; reassignment requires documented
+company custody procedures. These requirements do not authorize activating future domains.

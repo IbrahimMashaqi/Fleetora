@@ -1,3 +1,4 @@
+import { VehiclesRepository } from '../vehicles/vehicles.repository.js';
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -33,6 +34,13 @@ const rows = [
     fullName: 'Amina Driver',
     phone: '+970599000001',
     status: 'ACTIVE',
+    vehicle: {
+      id: '99999999-9999-4999-8999-999999999999',
+      companyId: companyA,
+      type: 'VAN',
+      plateNumber: 'DEMO-101',
+      privateField: 'fixture-private',
+    },
     password: 'fixture-private',
     refreshToken: 'fixture-private',
     verificationToken: 'fixture-private',
@@ -43,6 +51,7 @@ const rows = [
     fullName: 'Zaid Driver',
     phone: '+970599000002',
     status: 'OFFLINE',
+    vehicle: null,
   },
   {
     id: otherId,
@@ -87,6 +96,8 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
         },
       ],
     })
+      .overrideProvider(VehiclesRepository)
+      .useValue({ assign: vi.fn() })
       .overrideProvider(DriversRepository)
       .useValue({ findPage, findOne })
       .compile();
@@ -171,12 +182,20 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
           name: 'Amina Driver',
           phone: '+970599000001',
           status: 'ACTIVE',
+          vehicle: {
+            id: '99999999-9999-4999-8999-999999999999',
+            type: 'VAN',
+            manufacturer: null,
+            model: null,
+            plateNumber: 'DEMO-101',
+          },
         },
         {
           id: rows[1].id,
           name: 'Zaid Driver',
           phone: '+970599000002',
           status: 'OFFLINE',
+          vehicle: null,
         },
       ],
       page: 1,
@@ -190,6 +209,20 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
       companyA,
       expect.objectContaining({ page: 1, pageSize: 20 }),
     );
+  });
+  it('does not expose a related vehicle belonging to another company', async () => {
+    findOne.mockResolvedValue({
+      ...rows[0],
+      vehicle: {
+        id: 'foreign-vehicle',
+        companyId: companyB,
+        type: 'TRUCK',
+        plateNumber: 'PRIVATE-OTHER-TENANT',
+      },
+    });
+    const result = await get(`/drivers/${firstId}`).expect(200);
+    expect(result.body.data.driver.vehicle).toBeNull();
+    expect(JSON.stringify(result.body)).not.toContain('PRIVATE-OTHER-TENANT');
   });
   it('uses current persisted role/company instead of stale JWT claims and submitted scope', async () => {
     const response = await get(
@@ -254,6 +287,13 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
         name: 'Amina Driver',
         phone: '+970599000001',
         status: 'ACTIVE',
+        vehicle: {
+          id: '99999999-9999-4999-8999-999999999999',
+          type: 'VAN',
+          manufacturer: null,
+          model: null,
+          plateNumber: 'DEMO-101',
+        },
       },
     });
     for (const id of [otherId, '88888888-8888-4888-8888-888888888888']) {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import contract from './generated/contract.json' with { type: 'json' };
 import legacyContract from '../../migrations/snapshots/316de1e8d9642428af4648bcae6927da9aa3df855b50b4a3456412f7e40dd902/contract.json' with { type: 'json' };
+import authorizationContract from '../../migrations/snapshots/cb732e7410ed221c37e6d0e555810415ba5551ef7b1d2a81c12645466ac8236a/contract.json' with { type: 'json' };
 
 // Offline contract checks: PostgreSQL enforcement still requires a disposable DB.
 const tables: Record<string, unknown> =
@@ -51,11 +52,13 @@ describe('additive authorization persistence contract', () => {
     });
   });
 
-  it('preserves the complete storage definition of every legacy table', () => {
+  it('authorization migration preserves the complete storage definition of every legacy table', () => {
+    const authorizationTables: Record<string, unknown> =
+      authorizationContract.storage.namespaces.public.entries.table;
     for (const [name, table] of Object.entries(
       legacyContract.storage.namespaces.public.entries.table,
     )) {
-      expect(tables[name], name).toEqual(table);
+      expect(authorizationTables[name], name).toEqual(table);
     }
   });
 

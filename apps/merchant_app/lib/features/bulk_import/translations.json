@@ -1,0 +1,178 @@
+{
+  "import_title": {
+    "en": "Import parcels from Excel",
+    "ar": "استيراد طرود من Excel"
+  },
+  "import_instructions": {
+    "en": "Use the approved XLSX template. Maximum 200 rows and 1.5 MB. Keep amounts and phone numbers as text. Pricing and validation are checked by the company.",
+    "ar": "استخدم قالب XLSX المعتمد. الحد الأقصى 200 صف و1.5 ميغابايت. احتفظ بالمبالغ وأرقام الهواتف كنصوص. تتحقق الشركة من الأسعار والبيانات."
+  },
+  "import_template": {
+    "en": "Download Excel template",
+    "ar": "تنزيل قالب Excel"
+  },
+  "import_select": {
+    "en": "Select XLSX file",
+    "ar": "اختيار ملف XLSX"
+  },
+  "import_wrongType": {
+    "en": "Choose an XLSX workbook.",
+    "ar": "اختر ملف مصنف XLSX."
+  },
+  "import_tooLarge": {
+    "en": "The file exceeds the 1.5 MB limit.",
+    "ar": "يتجاوز الملف الحد الأقصى البالغ 1.5 ميغابايت."
+  },
+  "import_emptyFile": {
+    "en": "The selected file is empty.",
+    "ar": "الملف المحدد فارغ."
+  },
+  "import_denied": {
+    "en": "You do not have permission to import parcels.",
+    "ar": "ليس لديك صلاحية استيراد الطرود."
+  },
+  "import_confirm": {
+    "en": "Confirm import",
+    "ar": "تأكيد الاستيراد"
+  },
+  "import_confirmMessage": {
+    "en": "Import the valid rows only?",
+    "ar": "هل تريد استيراد الصفوف الصالحة فقط؟"
+  },
+  "import_review": {
+    "en": "Review before importing",
+    "ar": "المراجعة قبل الاستيراد"
+  },
+  "import_valid": {
+    "en": "Valid",
+    "ar": "صالح"
+  },
+  "import_invalid": {
+    "en": "Invalid",
+    "ar": "غير صالح"
+  },
+  "import_validOnly": {
+    "en": "Only valid rows will be imported. Invalid rows will be rejected. Review prices before confirming.",
+    "ar": "سيتم استيراد الصفوف الصالحة فقط ورفض الصفوف غير الصالحة. راجع الأسعار قبل التأكيد."
+  },
+  "import_uncertain": {
+    "en": "Confirmation has not been verified. Retry the same import to recover its result without creating duplicate parcels.",
+    "ar": "لم يتم التحقق من التأكيد. أعد محاولة الاستيراد نفسه لاسترداد نتيجته دون إنشاء طرود مكررة."
+  },
+  "import_retrySame": {
+    "en": "Retry this confirmation",
+    "ar": "إعادة محاولة التأكيد نفسه"
+  },
+  "import_result": {
+    "en": "Import result",
+    "ar": "نتيجة الاستيراد"
+  },
+  "import_created": {
+    "en": "Created",
+    "ar": "تم الإنشاء"
+  },
+  "import_rejected": {
+    "en": "Rejected",
+    "ar": "مرفوض"
+  },
+  "import_duplicates": {
+    "en": "Duplicates",
+    "ar": "مكرر"
+  },
+  "import_labels": {
+    "en": "Open parcel labels",
+    "ar": "فتح ملصقات الطرود"
+  },
+  "import_parcelLinks": {
+    "en": "Open a parcel to see its tracking number and details.",
+    "ar": "افتح الطرد لعرض رقم التتبع وتفاصيله."
+  },
+  "import_parcel": {
+    "en": "Parcel",
+    "ar": "طرد"
+  },
+  "import_another": {
+    "en": "Import another workbook",
+    "ar": "استيراد مصنف آخر"
+  },
+  "import_row": {
+    "en": "Row",
+    "ar": "صف"
+  },
+  "import_customerPayable": {
+    "en": "Customer payment (delivery included)",
+    "ar": "المبلغ النهائي على العميل (شامل التوصيل)"
+  },
+  "import_fee": {
+    "en": "Delivery fee",
+    "ar": "رسوم التوصيل"
+  },
+  "import_proceeds": {
+    "en": "Expected merchant proceeds",
+    "ar": "صافي مستحقات التاجر المتوقع"
+  },
+  "import_plainText": {
+    "en": "Use plain text; formulas, links and numeric cells are not accepted here.",
+    "ar": "استخدم نصاً عادياً؛ لا تُقبل الصيغ والروابط والخلايا الرقمية هنا."
+  },
+  "import_collectionMismatch": {
+    "en": "Collection mode does not match the customer payment.",
+    "ar": "طريقة التحصيل لا تتوافق مع مبلغ العميل."
+  },
+  "import_pricingUnavailable": {
+    "en": "Zone or commercial pricing is unavailable for this row.",
+    "ar": "المنطقة أو التسعير التجاري غير متاح لهذا الصف."
+  },
+  "import_invalidValue": {
+    "en": "Missing or invalid value. Correct this row using the template instructions.",
+    "ar": "قيمة مفقودة أو غير صالحة. صحح هذا الصف وفق تعليمات القالب."
+  },
+  "import_field_recipientName": {
+    "en": "Recipient name",
+    "ar": "اسم المستلم"
+  },
+  "import_field_recipientPhone": {
+    "en": "Recipient phone",
+    "ar": "هاتف المستلم"
+  },
+  "import_field_secondaryPhone": {
+    "en": "Secondary phone",
+    "ar": "هاتف إضافي"
+  },
+  "import_field_city": {
+    "en": "City",
+    "ar": "المدينة"
+  },
+  "import_field_destination": {
+    "en": "Address",
+    "ar": "العنوان"
+  },
+  "import_field_zoneId": {
+    "en": "Delivery zone",
+    "ar": "منطقة التوصيل"
+  },
+  "import_field_finalCustomerAmount": {
+    "en": "Final customer payment",
+    "ar": "المبلغ النهائي على العميل"
+  },
+  "import_field_collectionMode": {
+    "en": "Collection mode",
+    "ar": "طريقة التحصيل"
+  },
+  "import_field_description": {
+    "en": "Description",
+    "ar": "الوصف"
+  },
+  "import_field_pieces": {
+    "en": "Pieces",
+    "ar": "القطع"
+  },
+  "import_field_merchantReference": {
+    "en": "Merchant reference",
+    "ar": "مرجع التاجر"
+  },
+  "import_field_notes": {
+    "en": "Notes",
+    "ar": "ملاحظات"
+  }
+}

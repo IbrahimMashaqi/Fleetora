@@ -1,4 +1,5 @@
 import styles from "./login.module.css";
+import { useLocale } from "@/lib/i18n";
 const routePath =
   "M 76 370 C 142 370 138 318 210 318 S 294 350 318 295 S 290 224 365 218 S 440 241 486 199 S 516 150 566 150";
 
@@ -20,6 +21,7 @@ const compactRouteStops = [
 ] as const;
 
 function RouteMap({ compact = false }: { compact?: boolean }) {
+  const { t } = useLocale();
   const stops = compact ? compactRouteStops : routeStops;
   const path = compact ? compactRoutePath : routePath;
 
@@ -38,10 +40,10 @@ function RouteMap({ compact = false }: { compact?: boolean }) {
       {!compact && (
         <>
           <title id="login-route-svg-title">
-            Route from pickup through transfer and handoff to delivery
+            {t("Route from pickup through transfer and handoff to delivery")}
           </title>
           <desc id="login-route-svg-description">
-            Four marked stages follow one highlighted delivery route. A signal moves along the route.
+            {t("Four marked stages follow one highlighted delivery route. A signal moves along the route.")}
           </desc>
 
           <g
@@ -132,7 +134,7 @@ function RouteMap({ compact = false }: { compact?: boolean }) {
               fontWeight="600"
               letterSpacing="0.3"
             >
-              {stop.label}
+              {stop.label ? t(stop.label) : ""}
             </text>
           )}
         </g>
@@ -168,6 +170,7 @@ function RouteMap({ compact = false }: { compact?: boolean }) {
 }
 
 export function LoginRouteIllustration() {
+  const { t } = useLocale();
   return (
     <aside
       aria-labelledby="login-route-heading"
@@ -176,18 +179,18 @@ export function LoginRouteIllustration() {
     >
       <div className="login-route-copy relative z-10 max-w-xl">
         <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-white/80 lg:block">
-          Fleetora / Route systems
+          {t("Fleetora / Route systems")}
         </p>
         <h2 id="login-route-heading" className="sr-only lg:not-sr-only lg:mt-7 lg:max-w-lg lg:text-4xl lg:font-semibold lg:leading-[1.12] lg:tracking-[-0.035em] xl:text-[44px]">
-          Every handoff,
+          {t("Every handoff,")}
           <br />
-          <span className="text-primary">in view.</span>
+          <span className="text-primary">{t("in view.")}</span>
         </h2>
         <p className="mt-4 hidden max-w-sm text-base leading-7 text-white/80 lg:block">
-          Clear visibility from pickup to delivery.
+          {t("Clear visibility from pickup to delivery.")}
         </p>
       </div>
-      <p className="sr-only">Routes from pickup through transfer and handoff to delivery.</p>
+      <p className="sr-only">{t("Routes from pickup through transfer and handoff to delivery.")}</p>
       <RouteMap />
       <RouteMap compact />
     </aside>

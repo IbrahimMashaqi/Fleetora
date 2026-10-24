@@ -7,6 +7,7 @@ import authStyles from "../auth.module.css";
 import { Button } from "@/components/ui/button";
 import { resendVerificationAction, verifyEmailAction } from "./verification.action";
 import { useOneTimeTokenFragment } from "../one-time-token-fragment";
+import { LanguageSwitcher, useLocale } from "@/lib/i18n";
 import type {
   ResendVerificationState,
   VerificationState,
@@ -15,8 +16,9 @@ import type {
 const resendCooldownSeconds = 60;
 
 function BrandHeader() {
+  const { t } = useLocale();
   return (
-    <header className="flex h-16 shrink-0 items-center border-b border-border bg-surface px-4 sm:px-8">
+    <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-4 sm:px-8">
       <div className="flex items-center gap-3">
         <Image
           src="/fleetora-logo.png"
@@ -31,10 +33,11 @@ function BrandHeader() {
             Fleetora
           </span>
           <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
-            Logistics operations
+            {t("Logistics operations")}
           </span>
         </span>
       </div>
+      <LanguageSwitcher />
     </header>
   );
 }
@@ -72,6 +75,7 @@ export function EmailVerification({
   initialState: VerificationState;
   legacyTokenInQuery: boolean;
 }) {
+  const { t, tMessage } = useLocale();
   const [state, setState] = useState(initialState);
   const tokenSnapshot = useOneTimeTokenFragment(userId, legacyTokenInQuery);
   const token = tokenSnapshot.token;
@@ -162,16 +166,16 @@ export function EmailVerification({
         >
           <StatusMark state={displayState.status} />
           <p className="mt-6 text-sm font-semibold text-accent-foreground">
-            Account verification
+            {t("Account verification")}
           </p>
           <h1 className="mt-2 text-2xl font-semibold leading-8 tracking-tight">
-            {title}
+            {tMessage(title)}
           </h1>
           <p
             aria-live="polite"
             className="mt-3 max-w-md leading-6 text-muted-foreground"
           >
-            {description}
+            {tMessage(description)}
           </p>
 
           {(displayState.status === "verified" ||
@@ -181,10 +185,10 @@ export function EmailVerification({
                 role="status"
                 className={`${authStyles["auth-success-state"]} mt-6 rounded-md bg-success-background p-3 text-sm text-foreground`}
               >
-                Your email address has been confirmed.
+                {t("Your email address has been confirmed.")}
               </p>
               <Button asChild className={`${authStyles["auth-action-button"]} mt-7 w-full sm:w-auto`}>
-                <Link href="/login">Continue to Login</Link>
+                <Link href="/login">{t("Continue to Login")}</Link>
               </Button>
             </>
           )}
@@ -197,8 +201,8 @@ export function EmailVerification({
               className={`${authStyles["auth-action-button"]} mt-7 w-full sm:w-auto`}
             >
               {isPending
-                ? <><span aria-hidden="true" className={`${authStyles["auth-spinner"]} size-4`} />Verifying...</>
-                : "Confirm email address"}
+                ? <><span aria-hidden="true" className={`${authStyles["auth-spinner"]} size-4`} />{t("Verifying...")}</>
+                : t("Confirm email address")}
             </Button>
           )}
 
@@ -209,7 +213,7 @@ export function EmailVerification({
               onClick={confirmEmail}
               className={`${authStyles["auth-action-button"]} mt-7 w-full sm:w-auto`}
             >
-              {isPending ? <><span aria-hidden="true" className={`${authStyles["auth-spinner"]} size-4`} />Checking...</> : "Try again"}
+              {isPending ? <><span aria-hidden="true" className={`${authStyles["auth-spinner"]} size-4`} />{t("Checking...")}</> : t("Try again")}
             </Button>
           )}
 
@@ -223,10 +227,10 @@ export function EmailVerification({
                 className={`${authStyles["auth-action-button"]} w-full sm:w-auto`}
               >
                 {isPending
-                  ? <><span aria-hidden="true" className={`${authStyles["auth-spinner"]} size-4`} />Sending...</>
+                  ? <><span aria-hidden="true" className={`${authStyles["auth-spinner"]} size-4`} />{t("Sending...")}</>
                   : secondsRemaining > 0
-                    ? `Resend email in ${secondsRemaining}s`
-                    : "Resend verification email"}
+                    ? t("Resend email in {seconds}s", { seconds: secondsRemaining })
+                    : t("Resend verification email")}
               </Button>
               {resendMessage && (
                 <p
@@ -237,19 +241,19 @@ export function EmailVerification({
                       : "text-muted-foreground"
                   }`}
                 >
-                  {resendMessage}
+                  {resendMessage ? tMessage(resendMessage) : null}
                 </p>
               )}
             </div>
           )}
 
           <p className="mt-8 border-t border-border pt-5 text-sm text-muted-foreground">
-            Need to start over?{" "}
+            {t("Need to start over?")}{" "}
             <Link
               href="/signup"
               className="font-medium text-accent-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
-              Create an account
+              {t("Create an account")}
             </Link>
           </p>
         </div>

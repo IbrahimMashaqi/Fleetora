@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useProtectedSession } from "@/features/auth/session/session-context";
-import { driverStatusLabels } from "../drivers.types";
+import { useLocale } from "@/lib/i18n";
+import { DriverCard, DriverCardSkeletons } from "./driver-card";
 import type { DriverQuery, DriverRequest, DriverScope } from "../drivers.types";
 import { useDriverRead } from "../use-driver-read";
 import { DriverDetails } from "./driver-details";
@@ -40,6 +41,7 @@ function DriverList({
   scope: DriverScope;
   query: DriverQuery;
 }) {
+  const { locale, t } = useLocale();
   const router = useRouter();
   const request = useMemo<DriverRequest>(
     () => ({ kind: "list", query }),
@@ -52,9 +54,9 @@ function DriverList({
     <div className="mx-auto w-full max-w-5xl min-w-0">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Drivers</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">{t("Drivers")}</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Find and view the delivery drivers in your company.
+            {t("Find and view the delivery drivers in your company.")}
           </p>
         </div>
         <Button
@@ -63,7 +65,7 @@ function DriverList({
           disabled={!result}
           onClick={retry}
         >
-          Refresh
+          {t("Refresh")}
         </Button>
       </div>
       <form
@@ -76,32 +78,26 @@ function DriverList({
         }}
       >
         <div className="min-w-0 flex-1 basis-56 space-y-2">
-          <Label htmlFor="driver-search">Search drivers</Label>
+          <Label htmlFor="driver-search">{t("Search drivers")}</Label>
           <Input
             id="driver-search"
             type="search"
             name="search"
             maxLength={100}
             defaultValue={query.search}
-            placeholder="Search by name or phone"
+            placeholder={t("Search by name or phone")}
           />
         </div>
-        <Button type="submit">Search</Button>
+        <Button type="submit">{t("Search")}</Button>
         {query.search && (
           <Button asChild variant="ghost">
-            <Link href="/app/drivers">Clear search</Link>
+            <Link href="/app/drivers">{t("Clear search")}</Link>
           </Button>
         )}
       </form>
 
       {!result ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="rounded-lg border border-border bg-surface p-6 text-sm text-muted-foreground"
-        >
-          Loading drivers...
-        </div>
+        <DriverCardSkeletons />
       ) : !data ? (
         <DriverReadError status={result.status} retry={retry} />
       ) : (
@@ -113,74 +109,49 @@ function DriverList({
             >
               <h3 id="driver-empty-title" className="text-base font-semibold">
                 {query.page > 1
-                  ? "No drivers on this page."
+                  ? t("No drivers on this page.")
                   : query.search
-                    ? "No drivers match your search."
-                    : "No drivers yet."}
+                    ? t("No drivers match your search.")
+                    : t("No drivers yet.")}
               </h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 {query.search
-                  ? "Try a different name or phone."
-                  : "There are no drivers to display on this page."}
+                  ? t("Try a different name or phone.")
+                  : t("There are no drivers to display on this page.")}
               </p>
               {query.page > 1 && (
                 <Button asChild variant="outline" className="mt-4">
-                  <Link href={location(query.search)}>Back to first page</Link>
+                  <Link href={location(query.search)}>{t("Back to first page")}</Link>
                 </Button>
               )}
             </section>
           ) : (
             <ul
-              aria-label="Drivers"
-              className="min-w-0 divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface"
+              aria-label={t("Drivers")}
+              className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
             >
               {data.items.map((driver) => (
-                <li
+                <DriverCard
                   key={driver.id}
-                  className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3 p-4 sm:p-5"
-                >
-                  <div className="col-span-2 min-w-0 sm:col-span-1">
-                    <p className="text-sm font-semibold leading-6 [overflow-wrap:anywhere]">
-                      {driver.name || "Name not provided"}
-                    </p>
-                    <p className="mt-0.5 text-sm leading-5 text-muted-foreground [overflow-wrap:anywhere]">
-                      {driver.phone || "Phone not provided"}
-                    </p>
-                  </div>
-                  <div className="col-start-1 row-start-2 flex min-w-0 flex-wrap gap-2">
-                    <span
-                      className={`rounded-md border px-2 py-1 text-xs font-medium ${driver.status === "ACTIVE" ? "border-success-border bg-success-background" : "border-border bg-muted"}`}
-                    >
-                      {driverStatusLabels[driver.status]}
-                    </span>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    aria-label={`View ${driver.name || "driver"}`}
-                    className="col-start-2 row-start-2 self-center sm:row-span-2 sm:row-start-1"
-                    onClick={() => setSelected(driver.id)}
-                  >
-                    View details
-                  </Button>
-                </li>
+                  driver={driver}
+                  onSelect={() => setSelected(driver.id)}
+                />
               ))}
             </ul>
           )}
           <nav
-            aria-label="Driver pagination"
+            aria-label={t("Driver pagination")}
             className="mt-5 flex flex-wrap items-center justify-between gap-3"
           >
-            <p className="text-sm text-muted-foreground">Page {data.page}</p>
+            <p className="text-sm text-muted-foreground">{t("Page {page}", { page: data.page.toLocaleString(locale) })}</p>
             <div className="flex gap-2">
               {data.page > 1 ? (
                 <Button asChild variant="outline" size="sm">
                   <Link
-                    aria-label="Previous page"
+                    aria-label={t("Previous")}
                     href={location(query.search, data.page - 1)}
                   >
-                    Previous
+                    {t("Previous")}
                   </Link>
                 </Button>
               ) : (
@@ -188,19 +159,19 @@ function DriverList({
                   type="button"
                   variant="outline"
                   size="sm"
-                  aria-label="Previous page"
+                  aria-label={t("Previous")}
                   disabled
                 >
-                  Previous
+                  {t("Previous")}
                 </Button>
               )}
               {data.hasNext ? (
                 <Button asChild variant="outline" size="sm">
                   <Link
-                    aria-label="Next page"
+                    aria-label={t("Next")}
                     href={location(query.search, data.page + 1)}
                   >
-                    Next
+                    {t("Next")}
                   </Link>
                 </Button>
               ) : (
@@ -208,10 +179,10 @@ function DriverList({
                   type="button"
                   variant="outline"
                   size="sm"
-                  aria-label="Next page"
+                  aria-label={t("Next")}
                   disabled
                 >
-                  Next
+                  {t("Next")}
                 </Button>
               )}
             </div>
@@ -222,6 +193,7 @@ function DriverList({
         <DriverDetails
           id={selected}
           scope={scope}
+          onUpdated={retry}
           onClose={() => setSelected(null)}
         />
       )}

@@ -1,0 +1,237 @@
+{
+  "status": "NO_GO_PENDING_CONFIRMED_WRITER_INVENTORY_RELEASE_ARTIFACTS_AND_EXPLICIT_EXECUTION_APPROVAL",
+  "authoritativeExecutionRunbook": "production-execution.runbook.review.txt",
+  "historicalPreparationNotice": "All remaining preparation observations and old rehearsal instructions below describe the earlier review. Current live/backup/security results and the existing-branch-only procedure are in the authoritative runbook. Do not execute historical default-config commands or create a branch.",
+  "productionCommandPolicy": "Every Prisma production migration, preview and verification command MUST explicitly use --config prisma.production.config.ts. No --db override or application DATABASE_URL. Restricted SQL inspection uses fleetora_inspect and the same mandatory secure driver in read-only mode.",
+  "liveAccessThisSprint": false,
+  "knownLiveMarker": "316de1e8d9642428af4648bcae6927da9aa3df855b50b4a3456412f7e40dd902",
+  "requiredReviewedParent": "cb732e7410ed221c37e6d0e555810415ba5551ef7b1d2a81c12645466ac8236a",
+  "proposedStorageHash": "3dfdcd69d14fa5c5906a7720fd95d7cf6474d1535434f04efb18f0250c404303",
+  "schemaChanges": [
+    "Nullable vehicles.manufacturer text",
+    "Nullable vehicles.model text",
+    "UNIQUE vehicles(companyId,plateNumber); existing unique workers.vehicleId retained"
+  ],
+  "prerequisites": [
+    "Approve a separate read-only connection, or explicitly approve the owner inspection method before ANY live connection. Do not create a read-only role automatically.",
+    "Confirm Neon project/branch/endpoint/database identity out of band. Database name fleetora alone is insufficient.",
+    "Run preflight.sql and, if ledger shape matches, history.readonly.sql. Compare all public tables/columns/defaults/checks/FKs/indexes/RLS/triggers/enums against the exact 316de1e8... snapshot and baseline ops; review any extra or missing object.",
+    "Require zero exact/normalized duplicate plates, orphan assignments, duplicate assignments, orphan company references and cross-company assignments. Inspect validated non-deferrable workers.vehicleId unique/FK and all tenant FKs.",
+    "Review the existing foundation package and the newly generated vehicle package. A coherent on-disk path is not live deployment approval.",
+    "Take and restore-test backups on a separately approved isolated Neon branch. Confirm restore window and all source IDs out of band.",
+    "Rehearse the real Prisma runner, full schema verification, control-table/ledger changes, and application startup/smoke tests on the approved restored branch; local DDL rehearsal does not prove runner integration.",
+    "Complete real multi-connection PostgreSQL repository race tests. Docker CLI is installed but the local daemon is unavailable; no image pulled or container created.",
+    "Obtain explicit approval of exact package hashes, target IDs, maintenance window, backup IDs and cleanup/test-data scope before live DDL, metadata changes or writes."
+  ],
+  "deployment": [
+    "Resolve the approved inspection method, then perform read-only identity/schema/data/ledger preflight. Stop on drift or inconsistent marker/ledger; do not sign or bootstrap.",
+    "Review foundation.review.sql, canonical foundation ops.json, the generated vehicle migration.ts/ops.json/migration.json, and their bookend snapshots.",
+    "Offline path already verified: prisma db migrate --config prisma.production.config.ts --show --from 316de1e8... --to 3dfdcd69... (full hashes in this file). Never use db update/reset/db sign or the baseline migration on the existing database.",
+    "After separately approving branch creation/backup, quiesce writers for the backup boundary; capture a provider restore point and encrypted-volume logical archive; restore to a distinct branch and verify identity and contents.",
+    "On the approved isolated restore, run the exact forward path with Prisma, verify marker+profile+ledger and the complete physical schema, then run repository races and authenticated API/frontend smoke tests.",
+    "Request separate live execution approval identifying the exact two packages and backup/target. Approval of this preparation is not execution approval.",
+    "During the approved window pause ALL fleet writers, including workers/jobs and legacy clients, and drain transactions. Rerun preflight and privately save counts/digests. Use a direct migration connection, not a transaction-pooling endpoint.",
+    "Apply only the two approved packages through the installed Prisma runner to the exact 3dfdcd69... destination, with lock_timeout=5s and statement_timeout=60s configured for that session. The Postgres runner applies the path and verified marker/ledger updates in one transaction. Do not execute preview SQL independently.",
+    "Before resuming writes, run postflight.sql, preflight.sql, history.readonly.sql and full Prisma schema verification. Compare counts/ID/assignment digests and package hashes. Destination profile hash: 3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2.",
+    "Deploy compatible backend then frontend. Confirm own-company reads, legacy metadata fallbacks, local logos, dependent/custom selectors, session changes, denied roles and foreign IDs. Any live test writes/cleanup require a separately approved test manifest.",
+    "Resume writers only after gates pass. Preserve pre-deploy app artifacts and the additive schema for rollback; no automatic data/schema reversal."
+  ],
+  "verification": [
+    "Run postflight.sql and require one app marker row matching destination core/profile hashes, both vehicle columns nullable text with no defaults, empty newly created foundation tables before any approved operational writes.",
+    "Rerun preflight.sql; require unchanged saved row counts and ID/assignment digests, validated unique/FK constraints, valid indexes, and zero duplicate/orphan/cross-company counts. Digests are supplemental evidence, not a substitute for backup or schema verification.",
+    "Run history.readonly.sql only on a verified ledger shape; compare both edge hashes and origin/destination hashes with the recorded canonical packages.",
+    "Run full installed Prisma schema verification on the approved rehearsal and live deployment target, using secret-safe output handling; do not treat markers or existence-only checks as full verification.",
+    "Smoke tests on the disposable/restored branch must use server-validated Company Admin context and cover allowed/denied roles, persisted-role changes, foreign IDs, optional/custom/legacy values and uncertain writes without replay."
+  ],
+  "rollback": [
+    "Any failure before transaction commit rolls back all forward DDL and runner control metadata; keep writes paused until state is verified.",
+    "After commit prefer application rollback retaining additive columns/tables. Rehearse actual old app compatibility, including new uniqueness errors and marker warnings; compatibility is not assumed.",
+    "rollback.review.sql is a separately approved destructive reverse preview, not a deployed reverse migration. It refuses ANY non-null manufacturer/model, including empty strings; export first. It does not remove foundation tables or advance/rewrite a marker.",
+    "No reverse migration package is generated/approved here. Never hand-decrement marker/ledger or remove history.",
+    "Assignments/replacements/new vehicle rows are operational data and are not undone by removing columns. Separate before/after manifests and data recovery approval are required.",
+    "Restoring a production restore point may discard every later write. Test restoration on another branch and make an explicit incident decision."
+  ],
+  "audit": {
+    "existingMechanism": "No approved general vehicle audit/event store exists; ShipmentHistory and AIExecution are domain-specific and must not be repurposed",
+    "separateProposal": "Review an immutable company-scoped operational event store: actor ID, company ID, action, resource IDs, allowlisted before/after values, timestamp and correlation ID. Write events atomically with vehicle/assignment mutations, restrict access and define retention. No table introduced in this sprint."
+  },
+  "localVerification": {
+    "disposableEngine": "PGlite 0.3.15, owned in-memory database; no URLs/env consumed by rehearsal tests",
+    "sqlTests": 15,
+    "sqlTestCommand": "npm.cmd test -- deployment/vehicle-management/rehearsal.spec.ts src/modules/vehicles/vehicles.persistence.spec.ts --maxWorkers=2",
+    "scope": "Full recorded baseline/foundation/vehicle DDL + each operation pre/postcheck, atomic rollback, row/assignment preservation, uniqueness/FK guards, read-only scripts and protected metadata rollback. Not the Prisma runner, ledger integration or multi-session concurrency.",
+    "offlinePath": "Installed Prisma db migrate --show with explicit full --from/--to succeeds with exactly two packages and no diagnostics.",
+    "liveSchemaPreflight": "NOT RUN. No Neon connection made.",
+    "sourceSchemaOrGeneratedRuntimeChanged": false,
+    "backendSuite": {
+      "passed": 322,
+      "testFiles": 27,
+      "command": "npm.cmd test -- --maxWorkers=2"
+    },
+    "migrationAuthoringNote": "Generated getter needed the same explicit Migration<Start,End>[operations] return type as the existing foundation migration for TypeScript declaration portability. Source was fixed and self-emitted through MigrationCLI; operations hash unchanged.",
+    "typeScript": "PASS: npx.cmd --offline tsc --noEmit --incremental false",
+    "lint": "PASS: npm.cmd run lint, plus oxlint deployment/vehicle-management/rehearsal.spec.ts",
+    "backendBuild": "PASS: npm.cmd run build",
+    "frontend": "Not rerun: no frontend source changes in this preparation.",
+    "gitDiffCheck": "PASS; task files also checked for trailing whitespace, including untracked files. Generated migration JSON retains Prisma native formatting.",
+    "review": "Independent read-only review found a manifest omission; complete allReviewFiles union now includes deployment and dependent-dropdown artifacts. No other DDL correctness finding reported."
+  },
+  "reviewDate": "2026-10-16",
+  "liveInspection": {
+    "executed": false,
+    "configuredDatabase": "fleetora",
+    "configuredRole": "neondb_owner",
+    "separateReadOnlyConnectionFound": false,
+    "reason": "User Step 3 requires separate confirmation before using the privileged owner for any new live inspection. Environment values and URLs were not printed.",
+    "identityStillRequired": [
+      "Neon project ID",
+      "branch ID",
+      "compute endpoint ID",
+      "database fleetora",
+      "inspected role",
+      "inspection timestamp"
+    ],
+    "existingCounts": "UNKNOWN this review",
+    "liveDuplicatePlateGroups": "UNKNOWN this review",
+    "knownLiveMarkerProvenance": "User-provided previous preflight; not freshly verified"
+  },
+  "runtimeFindings": {
+    "legacyAuthentication": "AuthModule uses AuthRepository, AccessTokenStrategy and RefreshTokenStrategy. Persisted users.role/companyId/isActive/isEmailVerified and companies.suspended remain authoritative.",
+    "foundationTablesRequiredByActiveAuthOrFleetQueries": false,
+    "authorizationCutover": "AuthorizationContextRepository/Service exist but are not provided by AuthModule or used by the active guards. Creating empty tables does not activate them; no wiring, backfill, grant or role changes are proposed.",
+    "markerMismatch": "Installed @prisma/orm-family-sql runtime.mjs verifyMarker logs CONTRACT.MARKER_MISMATCH on first use; it does not fail queries on hash mismatch. This is not permission to bypass schema reconciliation or manually sign a database.",
+    "physicalRuntimeBlockers": "Missing vehicles.manufacturer/model break explicit vehicle projections in both drivers and vehicles repositories. Required user/company/worker/vehicle columns and existing assignment constraints must match the baseline.",
+    "logosAndDropdowns": "Logos are local frontend assets; the typed catalog is returned by GET /vehicles. No logo/catalog tables or model foreign keys are needed."
+  },
+  "recordedMigrationPath": [
+    {
+      "directory": "backend/migrations/app/20261014T0547_phase_7b1_authorization_foundation",
+      "from": "316de1e8d9642428af4648bcae6927da9aa3df855b50b4a3456412f7e40dd902",
+      "to": "cb732e7410ed221c37e6d0e555810415ba5551ef7b1d2a81c12645466ac8236a",
+      "migrationHash": "ccd5657a075d41ac54be4fbe0d5ec1473f7e3354e08eee74a26f3cf29370f5f9",
+      "operations": 15,
+      "classes": [
+        "additive"
+      ],
+      "effect": "Two empty authorization foundation tables, 7 indexes, one subject-user unique constraint and 5 foreign keys; table creation includes PK/check constraints. No data operations.",
+      "sqlPreview": "foundation.review.sql"
+    },
+    {
+      "directory": "backend/migrations/app/20261016T0622_vehicle_management",
+      "from": "cb732e7410ed221c37e6d0e555810415ba5551ef7b1d2a81c12645466ac8236a",
+      "to": "3dfdcd69d14fa5c5906a7720fd95d7cf6474d1535434f04efb18f0250c404303",
+      "migrationHash": "2421dd4426c73c729428ffa6fd2af72970c37e3466dd34d715b5911f159b898a",
+      "operations": 3,
+      "classes": [
+        "additive"
+      ],
+      "effect": "Nullable manufacturer/model text columns without defaults, plus exact company/plate unique constraint.",
+      "sqlPreview": "additive.review.sql"
+    }
+  ],
+  "referenceMetadata": {
+    "dbRef": "316de1e8d9642428af4648bcae6927da9aa3df855b50b4a3456412f7e40dd902",
+    "dbRefChanged": false,
+    "baselineMigration": "20261014T0546_baseline: null -> 316de1e8...; NEVER replay onto an existing baseline database",
+    "unlinkedSnapshot": "a92f3a70... has no migration edge and lacks the later user auth fields; not a substitute baseline",
+    "liveLedger": "Inspect only with history.readonly.sql after confirming ledger shape. No ledger records fabricated or rewritten.",
+    "newVehiclePackage": "Generated by installed Prisma CLI with explicit --from cb732e74... and unreachable loopback DATABASE_URL. Planning and --show were offline."
+  },
+  "localStorageDiff": {
+    "baselineToFoundation": [
+      "company_memberships table with its constraints/indexes",
+      "platform_admin_grants table with its constraints/indexes",
+      "three text-backed value sets represented by CHECK constraints; no native enum type creation"
+    ],
+    "foundationToCurrent": [
+      "vehicles.manufacturer nullable text",
+      "vehicles.model nullable text",
+      "UNIQUE vehicles(companyId,plateNumber)"
+    ],
+    "otherExistingTableChanges": [],
+    "livePhysicalSchemaMatchesBaseline": "UNVERIFIED; marker alone does not prove this"
+  },
+  "plateUniqueness": {
+    "databaseConstraint": "Exact pair UNIQUE(companyId,plateNumber); separate companies may reuse the same plate.",
+    "applicationRule": "VehicleInputDto trims/uppercases new plates. VehiclesRepository checks upper(btrim(plateNumber)) under a company-row lock, including padded legacy values.",
+    "preflight": "Require zero exact and normalized duplicate groups. Do not repair, delete or renumber records automatically. Blank/overlong legacy plates require an explicit editing policy; reads preserve them.",
+    "limitation": "The exact database constraint alone allows case/space variants from external writers. All fleet writers must use the approved repository; strict normalized uniqueness across arbitrary writers would require a separately approved contract/index change."
+  },
+  "expectedExistingDataEffects": [
+    "Existing tables/columns/IDs and all worker assignments are retained.",
+    "Existing vehicles get NULL manufacturer/model, with no backfill/default or inferred brand.",
+    "Only the new foundation tables are created empty; no memberships, grants, users, verification flags, passwords or legacy role values are inserted/updated.",
+    "Company/plate unique build scans and locks vehicles. Conflicting data or lock timeout must abort; no implicit duplicate cleanup.",
+    "The worker.vehicleId unique constraint and FKs are retained, not recreated or relaxed. No capacity/profile/history schema is added."
+  ],
+  "backupAndRestore": {
+    "executionApproved": false,
+    "provider": [
+      "Confirm exact project/branch/endpoint and available history window in Neon Console. After separate approval, create a pre-deploy snapshot or protected point-in-time branch and record its ID and UTC restore timestamp. Do not assume a default retention period.",
+      "Restore or clone to a DIFFERENT approved branch. Verify identity before testing; never point restore tools at the live branch."
+    ],
+    "logical": [
+      "Use a version-compatible pg_dump via a protected libpq service and password file outside this repository; never pass a connection URL/password on the command line.",
+      "After write quiescence, pg_dump --dbname=service=fleetora_live_backup --format=custom --file=<encrypted-volume>/fleetora-pre-vehicle.dump. Include public and prisma_contract; do not dump only vehicles.",
+      "Keep the archive on approved encrypted storage, access-restricted; record SHA-256 and pg_restore --list results privately. Password hashes/tokens in the archive make it sensitive. Never commit archive, connection settings, or DB query output.",
+      "Restore only to an empty, separately approved rehearsal database: pg_restore --dbname=service=fleetora_restore_rehearsal --exit-on-error --single-transaction --no-owner --no-acl <archive>. Reconcile required role ownership/ACLs separately before accepting the restore.",
+      "Verify all schema objects, counts, IDs, assignments, marker/ledger, app compatibility and separately reviewed grants. A successful pg_dump alone is not a tested restore."
+    ],
+    "recovery": "Prefer a restored alternate branch with validated app artifacts and controlled endpoint switch. Restoring the production branch/PITR can discard ALL post-restore-point writes and needs incident-specific approval.",
+    "sources": [
+      "https://neon.com/docs/manage/branches",
+      "https://neon.com/blog/announcing-neon-snapshots-a-smoother-path-to-recovery"
+    ]
+  },
+  "remainingConcurrencyTests": [
+    "Two different drivers race for one vehicle: exactly one succeeds, the loser receives 409 and its old assignment remains.",
+    "Concurrent replace/unassign/edit on the same driver: expectedVehicleId CAS protects against stale writes and stale unassignment; verify no lost update.",
+    "Concurrent normalized plate create/edit in one company: one succeeds; other company can independently reuse the plate. Include whitespace/case legacy values and external-writer limitations.",
+    "Actor role/company/active/verified status or company suspension changes while fleet write waits: persisted locked identity must deny the stale write.",
+    "Cross-company assignment attempts while another transaction assigns the same vehicle: no tenant leak or reassignment theft, unique constraint rolls back conflicts.",
+    "Exercise independent pooled/direct connections, transaction failures, deadlock/lock timeouts and disconnects; validate 409 mapping and no automatic replay of uncertain writes. PGlite single-session tests do not satisfy this gate."
+  ],
+  "unresolvedBlockers": [
+    "Live read-only inspection method not approved; only owner configured.",
+    "Live provider identity, complete schema/ledger, row counts and plate/assignment conflict counts remain unverified.",
+    "No provider backup/restore rehearsal has been performed or approved.",
+    "Real Prisma runner/schema/ledger integration on a restored Neon branch remains unverified.",
+    "Real multi-connection PostgreSQL repository races remain unrun; local Docker daemon unavailable.",
+    "Exact versus normalized DB uniqueness limitation requires all writers to use the approved service or separate contract/index approval.",
+    "Live DDL, migration, marker/ledger updates and operational test writes have NOT been approved."
+  ],
+  "assignmentIntegrity": {
+    "database": "Existing non-deferrable UNIQUE(workers.vehicleId) and validated FK workers.vehicleId -> vehicles.id enforce one driver per vehicle and referential existence. They are retained.",
+    "tenantOwnership": "The FK is not composite with companyId. Cross-company relationship prevention is enforced by server-scoped repository lookups/locks and verified in preflight; arbitrary direct SQL writers can bypass it. No unreviewed composite FK is added."
+  },
+  "currentReadinessReview": {
+    "date": "2026-10-16",
+    "runbook": "production-execution.runbook.review.txt",
+    "productionMutationPerformed": false,
+    "writersInventoryConfirmed": false,
+    "writersPauseConfirmed": false,
+    "releaseArtifactsFrozen": false,
+    "backupChecksumMatches": true,
+    "backupRestoreTestPerformed": false,
+    "consoleRestoreAvailability": "Reported unavailable by user; six-hour history window",
+    "restrictedPreflightAtUtc": "2026-10-16T18:20:35Z",
+    "liveWorkers": 12,
+    "liveVehicles": 0,
+    "legacyLedgerRows": 5,
+    "integrityConflictCounts": 0,
+    "secureConnection": "Verified TLSv1.3 with SCRAM-SHA-256-PLUS; read-only",
+    "backendSuite": {
+      "passed": 347,
+      "files": 28
+    },
+    "frontendIsolatedSuite": {
+      "passed": 308,
+      "workers": 1
+    },
+    "frontendTypeScript": "PASS",
+    "frontendLint": "PASS",
+    "destinationStrictVerification": "Not executed live; syntax and secure-driver refusal validated offline",
+    "postflightPermissions": "Three minimal SELECT grants reviewed; separate approval required; not executed",
+    "executionDecision": "NO_GO until writer inventory/pause, release artifacts and explicit approvals are confirmed"
+  }
+}

@@ -13,27 +13,6 @@ import { matchesOneTimeTokenVerifier } from './token/one-time-token.js';
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createUser(name: string, email: string, hashedPassword: string) {
-    const existingUser = await this.prisma.User.where({ email }).first();
-
-    if (existingUser) {
-      throw new BadRequestException('Email already in use');
-    }
-
-    try {
-      return await this.prisma.User.create({
-        fullName: name,
-        email,
-        password: hashedPassword,
-        role: 'MERCHANT',
-        isActive: true,
-        isEmailVerified: false,
-      });
-    } catch {
-      throw new InternalServerErrorException('Failed to create user');
-    }
-  }
-
   async findUserByEmail(email: string) {
     return this.prisma.User.where({ email }).first();
   }
@@ -228,11 +207,6 @@ export class AuthRepository {
       }
       throw new InternalServerErrorException('Failed to update refresh token');
     }
-  }
-
-  async userExistsByEmail(email: string): Promise<boolean> {
-    const user = await this.prisma.User.where({ email }).first();
-    return user !== null;
   }
 
   async createUserWithDefaultCompany(

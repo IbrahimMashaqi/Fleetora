@@ -1,0 +1,329 @@
+[
+  {
+    "id": "table.company_headquarters",
+    "label": "Create table \"company_headquarters\"",
+    "summary": "Creates table \"company_headquarters\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "company_headquarters"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"company_headquarters\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_headquarters\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"company_headquarters\"",
+        "sql": "CREATE TABLE \"public\".\"company_headquarters\" (\n  \"address\" text,\n  \"companyId\" text NOT NULL,\n  \"latitude\" float8 NOT NULL,\n  \"longitude\" float8 NOT NULL,\n  \"revision\" int4 DEFAULT 1 NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"companyId\"),\n  CONSTRAINT \"company_headquarters_coordinates_3934dade\" CHECK (\"latitude\" >= -90 AND \"latitude\" <= 90 AND \"longitude\" >= -180 AND \"longitude\" <= 180),\n  CONSTRAINT \"company_headquarters_revision_17ec8772\" CHECK (\"revision\" > 0)\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"company_headquarters\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_headquarters\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.driver_tracking_states",
+    "label": "Create table \"driver_tracking_states\"",
+    "summary": "Creates table \"driver_tracking_states\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "driver_tracking_states"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"driver_tracking_states\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"driver_tracking_states\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"driver_tracking_states\"",
+        "sql": "CREATE TABLE \"public\".\"driver_tracking_states\" (\n  \"accuracy\" float8,\n  \"capturedAt\" timestamptz,\n  \"companyId\" text NOT NULL,\n  \"heading\" float8,\n  \"latitude\" float8,\n  \"longitude\" float8,\n  \"receivedAt\" timestamptz,\n  \"revision\" int4 DEFAULT 1 NOT NULL,\n  \"sequence\" int4 DEFAULT 0 NOT NULL,\n  \"sharing\" bool DEFAULT false NOT NULL,\n  \"sharingSessionId\" text NOT NULL,\n  \"sharingStartedAt\" timestamptz NOT NULL,\n  \"speed\" float8,\n  \"workerId\" text NOT NULL,\n  PRIMARY KEY (\"workerId\"),\n  CONSTRAINT \"driver_tracking_coordinates_17d69af7\" CHECK ((\"latitude\" IS NULL AND \"longitude\" IS NULL AND \"capturedAt\" IS NULL AND \"receivedAt\" IS NULL AND \"accuracy\" IS NULL AND \"speed\" IS NULL AND \"heading\" IS NULL) OR (\"latitude\" IS NOT NULL AND \"longitude\" IS NOT NULL AND \"capturedAt\" IS NOT NULL AND \"receivedAt\" IS NOT NULL AND \"latitude\" >= -90 AND \"latitude\" <= 90 AND \"longitude\" >= -180 AND \"longitude\" <= 180)),\n  CONSTRAINT \"driver_tracking_measurements_dc4e9211\" CHECK (\"revision\" > 0 AND \"sequence\" >= 0 AND (\"accuracy\" IS NULL OR (\"accuracy\" >= 0 AND \"accuracy\" <= 10000)) AND (\"speed\" IS NULL OR (\"speed\" >= 0 AND \"speed\" <= 100)) AND (\"heading\" IS NULL OR (\"heading\" >= 0 AND \"heading\" < 360)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"driver_tracking_states\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"driver_tracking_states\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.driver_tracking_states.driver_tracking_states_workerId_companyId_key",
+    "label": "Add unique constraint on \"driver_tracking_states\" (workerId, companyId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "driver_tracking_states_workerId_companyId_key",
+        "table": "driver_tracking_states"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"driver_tracking_states_workerId_companyId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "driver_tracking_states_workerId_companyId_key",
+          "public",
+          "\"public\".\"driver_tracking_states\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"driver_tracking_states_workerId_companyId_key\"",
+        "sql": "ALTER TABLE \"public\".\"driver_tracking_states\" ADD CONSTRAINT \"driver_tracking_states_workerId_companyId_key\" UNIQUE (\"workerId\", \"companyId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"driver_tracking_states_workerId_companyId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "driver_tracking_states_workerId_companyId_key",
+          "public",
+          "\"public\".\"driver_tracking_states\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.workers.workers_id_companyId_key",
+    "label": "Add unique constraint on \"workers\" (id, companyId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "workers_id_companyId_key",
+        "table": "workers"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"workers_id_companyId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "workers_id_companyId_key",
+          "public",
+          "\"public\".\"workers\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"workers_id_companyId_key\"",
+        "sql": "ALTER TABLE \"public\".\"workers\" ADD CONSTRAINT \"workers_id_companyId_key\" UNIQUE (\"id\", \"companyId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"workers_id_companyId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "workers_id_companyId_key",
+          "public",
+          "\"public\".\"workers\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.driver_tracking_states.driver_tracking_states_companyId_idx_33acc5ed",
+    "label": "Create index \"driver_tracking_states_companyId_idx_33acc5ed\" on \"driver_tracking_states\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "driver_tracking_states_companyId_idx_33acc5ed",
+        "table": "driver_tracking_states"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"driver_tracking_states_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"driver_tracking_states_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"driver_tracking_states_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"driver_tracking_states_companyId_idx_33acc5ed\" ON \"public\".\"driver_tracking_states\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"driver_tracking_states_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"driver_tracking_states_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.company_headquarters.company_headquarters_companyId_fkey",
+    "label": "Add foreign key \"company_headquarters_companyId_fkey\" on \"company_headquarters\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "company_headquarters_companyId_fkey",
+        "table": "company_headquarters"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"company_headquarters_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_headquarters_companyId_fkey",
+          "public",
+          "\"public\".\"company_headquarters\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"company_headquarters_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"company_headquarters\"\nADD CONSTRAINT \"company_headquarters_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"company_headquarters_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_headquarters_companyId_fkey",
+          "public",
+          "\"public\".\"company_headquarters\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.driver_tracking_states.driver_tracking_states_workerId_companyId_fkey",
+    "label": "Add foreign key \"driver_tracking_states_workerId_companyId_fkey\" on \"driver_tracking_states\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "driver_tracking_states_workerId_companyId_fkey",
+        "table": "driver_tracking_states"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"driver_tracking_states_workerId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "driver_tracking_states_workerId_companyId_fkey",
+          "public",
+          "\"public\".\"driver_tracking_states\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"driver_tracking_states_workerId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"driver_tracking_states\"\nADD CONSTRAINT \"driver_tracking_states_workerId_companyId_fkey\"\nFOREIGN KEY (\"workerId\", \"companyId\")\nREFERENCES \"public\".\"workers\" (\"id\", \"companyId\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"driver_tracking_states_workerId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "driver_tracking_states_workerId_companyId_fkey",
+          "public",
+          "\"public\".\"driver_tracking_states\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.driver_tracking_states.driver_tracking_states_companyId_fkey",
+    "label": "Add foreign key \"driver_tracking_states_companyId_fkey\" on \"driver_tracking_states\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "driver_tracking_states_companyId_fkey",
+        "table": "driver_tracking_states"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"driver_tracking_states_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "driver_tracking_states_companyId_fkey",
+          "public",
+          "\"public\".\"driver_tracking_states\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"driver_tracking_states_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"driver_tracking_states\"\nADD CONSTRAINT \"driver_tracking_states_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"driver_tracking_states_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "driver_tracking_states_companyId_fkey",
+          "public",
+          "\"public\".\"driver_tracking_states\""
+        ]
+      }
+    ]
+  }
+]

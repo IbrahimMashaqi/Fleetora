@@ -7,21 +7,24 @@ import { withSessionLock } from "@/lib/auth/session-lock";
 import { unstable_rethrow } from "next/navigation";
 import { useProtectedSession } from "@/features/auth/session/session-context";
 import { notifySessionChange } from "@/features/auth/session/session-events";
+import { useLocale } from "@/lib/i18n";
+import styles from "@/components/layout/app-shell.module.css";
 
 function LogoutSubmitButton() {
   const { pending } = useFormStatus();
+  const { t } = useLocale();
 
   return (
     <Button
       type="submit"
       variant="ghost"
       disabled={pending}
-      className="min-h-10 w-full justify-start rounded-md border border-white/10 px-3 text-sidebar-foreground hover:border-white/20 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar-navy"
+      className={styles.sidebarItem}
     >
-      <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="size-4">
+      <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="size-5">
         <path d="M8 3.5H5.25A1.25 1.25 0 0 0 4 4.75v10.5a1.25 1.25 0 0 0 1.25 1.25H8m4-3 3.5-3.5L12 6.5m3.5 3.5H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
-      {pending ? "Signing out…" : "Log out"}
+      {pending ? t("Signing out...") : t("Log out")}
     </Button>
   );
 }

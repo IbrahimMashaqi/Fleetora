@@ -26,6 +26,14 @@ export class PrismaService {
     return this.db.orm.public.Vehicle;
   }
 
+  get CompanyHeadquarters() {
+    return this.db.orm.public.CompanyHeadquarters;
+  }
+
+  get DriverTrackingState() {
+    return this.db.orm.public.DriverTrackingState;
+  }
+
   get Warehouse() {
     return this.db.orm.public.Warehouse;
   }

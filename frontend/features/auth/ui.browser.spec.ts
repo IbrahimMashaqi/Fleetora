@@ -27,7 +27,7 @@ test("workspace captions and dashboard supporting text remain readable on the pa
   for (const hasCompany of [true, false]) {
     if (!hasCompany) company = null;
     await page.goto("/app");
-    const description = page.locator("main section > p");
+    const description = hasCompany ? page.getByRole("complementary", { name: "Workspace sidebar" }).getByText("Company administrator", { exact: true }) : page.getByText("You are signed in with platform-level access and no company workspace.", { exact: true });
     await expect(description).toBeVisible();
     expect(await contrastRatio(description)).toBeGreaterThanOrEqual(4.5);
   }

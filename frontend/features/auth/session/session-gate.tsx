@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { isSessionUser, type SessionUser } from "@/lib/auth/session.types";
 import { withSessionLock } from "@/lib/auth/session-lock";
+import { LanguageSwitcher, useLocale } from "@/lib/i18n";
 import { ProtectedSessionContext } from "./session-context";
 import { subscribeToSessionChanges } from "./session-events";
 
@@ -33,6 +34,7 @@ async function checkSession(): Promise<SessionGateState> {
 }
 
 export function SessionGate({ children }: { children: (user: SessionUser) => ReactNode }) {
+  const { t } = useLocale();
   const [state, setState] = useState<SessionGateState>({ status: "loading" });
   const mounted = useRef(false);
   const signingOut = useRef(false);
@@ -103,33 +105,39 @@ export function SessionGate({ children }: { children: (user: SessionUser) => Rea
 
   if (state.status === "loading" || state.status === "redirecting" || state.status === "signing-out") {
     return (
-      <main aria-busy="true" className="grid min-h-svh place-items-center bg-background px-4 text-foreground/75">
-        <p role="status" aria-live="polite">{state.status === "signing-out" ? "Signing out…" : "Checking your session…"}</p>
+      <main aria-busy="true" className="relative grid min-h-svh place-items-center bg-background px-4 text-foreground/75">
+        <div className="absolute end-4 top-4">
+          <LanguageSwitcher />
+        </div>
+        <p role="status" aria-live="polite">{state.status === "signing-out" ? t("Signing out…") : t("Checking your session…")}</p>
       </main>
     );
   }
 
   if (state.status === "error") {
     return (
-      <main className="grid min-h-svh place-items-center bg-background px-4 py-8 text-foreground">
+      <main className="relative grid min-h-svh place-items-center bg-background px-4 py-8 text-foreground">
+        <div className="absolute end-4 top-4">
+          <LanguageSwitcher />
+        </div>
         <section className="w-full max-w-md" aria-labelledby="session-error-title">
           <h1 id="session-error-title" className="text-xl font-semibold tracking-tight">
-            We couldn’t verify your session
+            {t("We couldn’t verify your session")}
           </h1>
           <p className="mt-2 text-sm leading-6 text-foreground/75" role="status" aria-live="polite">
             {state.kind === "changed"
-              ? "Your session changed while it was being checked. Please try again."
-              : "Fleetora couldn’t reach the session service. Please try again."}
+              ? t("Your session changed while it was being checked. Please try again.")
+              : t("Fleetora couldn’t reach the session service. Please try again.")}
           </p>
           <Button
             type="button"
             className="mt-5 rounded-lg bg-primary-hover text-white hover:bg-primary-active active:bg-primary-active"
             onClick={() => revalidate(true)}
           >
-            Try again
+            {t("Try again")}
           </Button>
-          <Button asChild variant="outline" className="ml-3 mt-5">
-            <Link href="/login">Sign in again</Link>
+          <Button asChild variant="outline" className="ms-3 mt-5">
+            <Link href="/login">{t("Sign in again")}</Link>
           </Button>
         </section>
       </main>

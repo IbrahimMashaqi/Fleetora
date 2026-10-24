@@ -380,7 +380,7 @@ describe('authorization persistence constraints (disposable PostgreSQL)', () => 
       });
       await expect(prisma.User.where({ id }).delete()).rejects.toMatchObject({
         kind: 'sql_query',
-        sqlState: '23503',
+        sqlState: '23001', // ON DELETE RESTRICT, not a missing FK on insert.
         constraint: `platform_admin_grants_${field}_fkey`,
       });
       await expect(prisma.User.where({ id }).first()).resolves.toMatchObject({
@@ -424,7 +424,7 @@ describe('authorization persistence constraints (disposable PostgreSQL)', () => 
           : prisma.Company.where({ id: companyId }).delete();
       await expect(deletion).rejects.toMatchObject({
         kind: 'sql_query',
-        sqlState: '23503',
+        sqlState: '23001', // Keep historical rows protected by RESTRICT.
         constraint: `company_memberships_${target === 'user' ? 'userId' : 'companyId'}_fkey`,
       });
       await expect(

@@ -7,7 +7,6 @@ let requests: { method?: string; path?: string; authorization?: string; body: un
 let signinStatus: number;
 let signinMessage: string;
 let sessionStatus: number;
-let sessionCalls: number;
 let expireFirstSession: boolean;
 let refreshStatus: number;
 let logoutStatus: number;
@@ -46,7 +45,6 @@ test.beforeAll(async () => {
       return;
     }
     if (request.url === "/auth/session") {
-      sessionCalls++;
       if (expireFirstSession) {
         expireFirstSession = false;
         response.writeHead(401);
@@ -90,7 +88,6 @@ test.beforeEach(() => {
   signinStatus = 200;
   signinMessage = "Invalid credentials";
   sessionStatus = 200;
-  sessionCalls = 0;
   expireFirstSession = false;
   refreshStatus = 200;
   logoutStatus = 200;
@@ -127,7 +124,7 @@ test("returns only public session fields even if the backend includes secret fie
   includeSessionSecrets = true;
   await fillLogin(page);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   const result = await page.evaluate(async () => {
     const response = await fetch("/api/auth/session", {
       method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: "{}",
@@ -153,11 +150,19 @@ async function fillLogin(page: Page) {
 }
 
 test("signs in, stores credentials in HttpOnly cookies, and opens the authenticated entry route", async ({ page }) => {
+  let gateChecks = 0;
+  page.on("request", request => {
+    if (new URL(request.url()).pathname === "/api/auth/session") gateChecks += 1;
+  });
   await fillLogin(page);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page).toHaveURL(/\/app$/);
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
-  expect(requests[0]).toMatchObject({ method: "POST", path: "/auth/signin", body: { email: "amina@example.com", password: "Passw0rd" } });
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  // A previous page may still have an in-flight fleet principal check when its
+  // browser context closes. Assert this form's sign-in request independently.
+  const signins = requests.filter(request => request.path === "/auth/signin");
+  expect(signins).toHaveLength(1);
+  expect(signins[0]).toMatchObject({ method: "POST", path: "/auth/signin", body: { email: "amina@example.com", password: "Passw0rd" } });
   const cookies = await page.context().cookies();
   expect(cookies.filter((cookie) => cookie.name.startsWith("fleetora_")).map(({ name, httpOnly, sameSite }) => ({ name, httpOnly, sameSite }))).toEqual([
     { name: "fleetora_access", httpOnly: true, sameSite: "Lax" },
@@ -165,8 +170,10 @@ test("signs in, stores credentials in HttpOnly cookies, and opens the authentica
   ]);
   expect(await page.evaluate(() => document.cookie)).not.toMatch(/fleetora_(access|refresh)/);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
-  expect(sessionCalls).toBe(2);
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  // Fleet server actions also validate the persisted principal. The protected
+  // session gate itself must still check exactly once per page load.
+  expect(gateChecks).toBe(2);
 });
 
 test("shows a safe incorrect-credentials error without exposing backend details", async ({ page }) => {
@@ -190,7 +197,7 @@ test("refreshes an expired access token and stores the rotated token pair", asyn
   expireFirstSession = true;
   await fillLogin(page);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   expect(requests.some((request) => request.path === "/auth/refresh" && request.authorization === "Bearer refresh-secret")).toBe(true);
   const cookies = await page.context().cookies();
   expect(cookies.find((cookie) => cookie.name === "fleetora_access")?.value).toBe("rotated-access");
@@ -214,7 +221,7 @@ test("redirects unauthenticated and expired sessions to Login", async ({ page })
   await expect(page).toHaveURL(/\/login$/);
   await fillLogin(page);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   sessionStatus = 401;
   await page.reload();
   await expect(page).toHaveURL(/\/login$/);
@@ -223,7 +230,7 @@ test("redirects unauthenticated and expired sessions to Login", async ({ page })
 test("logs out and clears both session cookies", async ({ page }) => {
   await fillLogin(page);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Log out" }).click();
   await expect(page).toHaveURL(/\/login$/);
   expect((await page.context().cookies()).filter((cookie) => cookie.name.startsWith("fleetora_"))).toEqual([]);
@@ -234,9 +241,9 @@ test("logs out through mobile navigation and clears both session cookies", async
   await page.setViewportSize({ width: 375, height: 812 });
   await fillLogin(page);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Open navigation" }).click();
-  await page.getByRole("dialog", { name: "Mobile navigation" }).getByRole("button", { name: "Log out" }).click();
+  await page.getByRole("dialog", { name: "Open navigation" }).getByRole("button", { name: "Log out" }).click();
   await expect(page).toHaveURL(/\/login$/);
   expect((await page.context().cookies()).filter((cookie) => cookie.name.startsWith("fleetora_"))).toEqual([]);
   expect(requests.some((request) => request.path === "/auth/logout")).toBe(true);
@@ -245,14 +252,18 @@ test("logs out through mobile navigation and clears both session cookies", async
 test("serializes logout after pending session refresh so late credentials cannot reappear", async ({ page }) => {
   await fillLogin(page);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  // Isolate the session race from Overview tracking polls and drain initial checks.
+  await page.goto("/app/account");
+  await expect(page.getByRole("heading", { name: "Your account", exact: true })).toBeVisible();
+  await page.evaluate(() => navigator.locks.request("fleetora-session-refresh", () => undefined));
   let releaseRefresh!: () => void;
   pendingRefresh = new Promise<void>((resolve) => { releaseRefresh = resolve; });
   const refreshStarted = new Promise<void>((resolve) => { notifyRefreshStarted = resolve; });
   const refreshingPage = await page.context().newPage();
   try {
     expireFirstSession = true;
-    await refreshingPage.goto("/app");
+    await refreshingPage.goto("/app/account");
     await refreshStarted;
     const queuedBeforeLogout = await page.evaluate(async () =>
       ((await navigator.locks.query()).pending ?? []).filter(lock => lock.name === "fleetora-session-refresh").length,
@@ -277,7 +288,7 @@ test("serializes logout after pending session refresh so late credentials cannot
 test("invalidates another protected tab when logout changes the shared session", async ({ page }) => {
   await fillLogin(page);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   const observer = await page.context().newPage();
   try {
     await observer.goto("/app");
@@ -294,7 +305,7 @@ test("invalidates another protected tab when logout changes the shared session",
 test("clears local cookies and reports when server-side logout cannot be confirmed", async ({ page }) => {
   await fillLogin(page);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   logoutStatus = 503;
   await page.getByRole("button", { name: "Log out" }).click();
   await expect(page).toHaveURL(/\/login\?logout=unconfirmed$/);

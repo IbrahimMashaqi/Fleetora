@@ -1,0 +1,361 @@
+FLEETORA PRODUCTION EXECUTION RUNBOOK - REVIEW ONLY - 2026-10-16
+
+CURRENT DECISION: NO-GO FOR EXECUTION.
+The user confirmed that the writer inventory is not yet known. No writer has
+been stopped by this review. No production migration, permission change, data
+write, restore, or branch creation is authorized by this document.
+
+VERIFICATION EVIDENCE FROM THIS READINESS REVIEW
+- Backup archive SHA-256 and manifest: PASS, including exact runbook checkpoint.
+- Restricted live preflight/history: PASS at 2026-10-16T18:20:35Z, baseline unchanged.
+- Restricted effective write privileges: 0 relations/schemas/sequences; 0 role
+  memberships; database CREATE=false. An auxiliary privilege query initially
+  failed with SQLSTATE 42809; explicit relation-kind guards corrected that query.
+- Restricted live runbook activity helper: PASS, 0 other sessions and 0 prepared
+  transactions at observation time; no conclusion that writers are paused.
+- Offline secure-config CLI preview: exit 0, exactly both approved packages.
+- Strict verification CLI syntax/secure-driver guard: PASS with a fictional
+  loopback URL; rejected before connection as expected (exit 2). No live
+  destination schema verification or DDL was attempted by that check.
+- Frontend: all 308 isolated tests PASS using the configured single worker (4.4m).
+  An initial forced two-worker attempt hit the shared fixture port: 249 passed,
+  4 failed and 55 did not run. The complete single-worker rerun passed all tests.
+  Frontend TypeScript and lint PASS. No frontend production build was rerun here.
+- Fresh backend full suite: 347 tests PASS across 28 files (61.36s), including
+  secure connection, HTTP/tenant isolation, catalog and isolated persistence tests.
+  The application source was not changed by this review.
+- Five runbook PowerShell blocks and the inline inspection JavaScript parse.
+  All three Prisma invocations explicitly use the secure production config.
+
+This runbook supersedes historical execution/rehearsal instructions in plan.json.
+Use the existing production branch only. Do not create a rehearsal branch.
+Every Prisma migration/verification invocation below explicitly selects
+--config prisma.production.config.ts. The application's default config is not
+the approved production migration entry point. Do not supply --db or DATABASE_URL.
+
+TARGET AND APPROVED PATH
+Project: patient-mud-78406881
+Branch: br-square-queen-b1jmdng0
+Direct endpoint: ep-morning-base-b1jhw9q2
+Database: fleetora
+Installed Prisma CLI: 8.0.0-rc.14; audited pg: 8.22.0.
+Starting core hash:
+316de1e8d9642428af4648bcae6927da9aa3df855b50b4a3456412f7e40dd902
+Intermediate core hash:
+cb732e7410ed221c37e6d0e555810415ba5551ef7b1d2a81c12645466ac8236a
+Destination core hash:
+3dfdcd69d14fa5c5906a7720fd95d7cf6474d1535434f04efb18f0250c404303
+Profile hash (unchanged):
+3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2
+Package 1: 20261014T0547_phase_7b1_authorization_foundation
+Migration hash: ccd5657a075d41ac54be4fbe0d5ec1473f7e3354e08eee74a26f3cf29370f5f9
+Package 2: 20261016T0622_vehicle_management
+Migration hash: 2421dd4426c73c729428ffa6fd2af72970c37e3466dd34d715b5911f159b898a
+The final apply command resolves BOTH packages in one runner-managed transaction.
+Do not split it into hand-executed SQL or replay the baseline package.
+
+CHECKPOINT A - BACKUP AND RECOVERY ACCEPTANCE
+Approved archive:
+C:\Users\barah\.config\fleetora\backups\20261016T170408Z-7150f771\fleetora-production-20261016T170408Z-7150f771.dump
+SHA-256: f1e8d0202a4b82a963c11b5b24ccedbeaa728e9aff9cf79a7e724132b3d62237
+Size: 76344 bytes. Dump started 2026-10-16T17:04:10.245Z.
+Manifest status: BACKUP_CREATED_AND_ARCHIVE_VALIDATED.
+Archive listing, offline scan, all 15 required TABLE/TABLE DATA pairs, and
+protected-directory ACL validation are recorded as successful.
+The archive was rehashed during this review and matches the approved manifest.
+Archive validation is NOT a successful restore test. No database restore has
+been tested. The user reported a six-hour history window and that Restore from
+history was unavailable in Neon Console. Do not assume provider recovery works.
+Recovery from this archive loses writes after its snapshot. The backup was not
+taken during a confirmed writer pause. The operator must explicitly accept this
+recovery point and the untested restore procedure before production execution.
+pg_dump is a database backup, not a backup of cluster roles/passwords. Ownership,
+role existence, privileges, and provider-specific objects need reconciliation
+during recovery. No automatic restore or production schema deletion is approved.
+
+BEGIN POWERSHELL
+$ApprovedBackup = 'C:\Users\barah\.config\fleetora\backups\20261016T170408Z-7150f771\fleetora-production-20261016T170408Z-7150f771.dump'
+$ApprovedBackupHash = 'f1e8d0202a4b82a963c11b5b24ccedbeaa728e9aff9cf79a7e724132b3d62237'
+if (-not (Test-Path -LiteralPath $ApprovedBackup -PathType Leaf)) { throw 'Approved backup missing' }
+if ((Get-FileHash -LiteralPath $ApprovedBackup -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ApprovedBackupHash) { throw 'Approved backup checksum mismatch' }
+$ApprovedManifestPath = [System.IO.Path]::ChangeExtension($ApprovedBackup, '.manifest.json')
+$ApprovedManifest = Get-Content -Raw -LiteralPath $ApprovedManifestPath | ConvertFrom-Json
+if ($ApprovedManifest.status -ne 'BACKUP_CREATED_AND_ARCHIVE_VALIDATED' -or $ApprovedManifest.sha256 -ne $ApprovedBackupHash -or $ApprovedManifest.sizeBytes -ne (Get-Item -LiteralPath $ApprovedBackup).Length -or -not $ApprovedManifest.validation.archiveList -or -not $ApprovedManifest.validation.offlineArchiveScan -or $ApprovedManifest.validation.requiredTableEntries -ne 15 -or $ApprovedManifest.validation.requiredTableDataEntries -ne 15 -or $ApprovedManifest.blockers.Count -ne 0) { throw 'Approved backup manifest validation failed' }
+END POWERSHELL
+
+CHECKPOINT B - RELEASE ARTIFACTS AND COMPATIBILITY
+Reviewed workspace branch: feature/premium-driver-cards.
+Git HEAD: 4c7980a7 (the vehicle/dropdown/secure-driver work is still uncommitted).
+Backend package version: 0.0.1. Frontend package version: 0.1.0; Next 16.3.8.
+These package version strings do not identify an immutable deployment bundle.
+Before execution, identify and freeze the backend/frontend artifacts built from
+this reviewed working tree, including untracked vehicle code, generated contract,
+local logo assets, the secure config/driver, both migration packages and snapshots.
+Exclude private env files, backups, test outputs and tsbuildinfo artifacts.
+Deploying HEAD alone would omit uncommitted work. Do not commit/push automatically.
+
+Current backend and frontend contracts agree on nullable manufacturer/model,
+vehicle type/plate fields, assignedDriver, catalog, pagination, and assignment
+expectedVehicleId. Drivers include nullable brand/model metadata. Existing
+unassigned workers and vehicles with NULL metadata remain readable. The current
+vehicle/driver repositories require the new columns, so apply the database path
+before starting the new backend, then deploy the matching frontend.
+The foundation creates empty tables; it does NOT activate the Phase 7B.1 auth
+cutover, create memberships/grants, or alter persisted legacy roles/login flows.
+Logos/catalogs need no database tables. Existing assignment FK/unique constraints
+remain; vehicle plates become unique on the exact (companyId, plateNumber) pair.
+External SQL can still bypass application normalization and tenant relationship
+checks. Identify external writers; they must use the supported backend rules.
+
+CHECKPOINT C - CONFIRMED WRITER PAUSE (UNRESOLVED)
+1. Obtain a named inventory of every writer and its operator: backend instances,
+   local development servers, job/worker services, schedules, imports/seed scripts,
+   CI tasks, external integrations, SQL editors and administrative sessions.
+   Record hosting/service names, instance counts, restart policy and pause method.
+   No deployment supervisor/hosting manifest or scheduled worker registration was
+   found in the inspected repository. This does not prove external jobs are absent.
+2. Obtain approval for the maintenance window/service pause. Route public traffic
+   to maintenance and block direct backend ingress. Disabling only frontend UI
+   does not pause API writers, login/token rotation, or existing clients.
+3. Disable scheduled triggers, queue consumers, autoscaling and automatic restart
+   in the ACTUAL identified supervisors. Let in-flight work finish; preserve queue
+   state. Do not delete jobs, kill arbitrary node processes, or change DB grants.
+4. Drain backend requests, then stop EVERY identified backend instance using its
+   supervisor. main.ts does not register Nest shutdown hooks: do not assume signal
+   delivery alone drained requests/transactions. For a confirmed local foreground
+   backend, Ctrl+C in its own terminal is appropriate after request draining.
+   Exact hosted stop commands cannot be supplied until the writer inventory is known.
+5. Confirm paused state in each supervisor and that no restart/schedule can reconnect.
+   Close SQL editor transactions. Record operator names and UTC pause time.
+6. Run the read-only activity observation below. Require zero other sessions and
+   zero prepared transactions, or explicitly investigate all remaining sessions.
+   Restricted inspection can hide other actors' state; NULL is unknown, not idle.
+   A zero-session snapshot does not replace steps 1-5 or prevent future reconnects.
+7. Keep writers paused until strict verification, SQL postflight and compatible
+   application checks pass. Stop if any writer cannot be identified or paused.
+
+READ-ONLY INSPECTION HELPER (DEFINE ONCE IN POWERSHELL; DOES NOT WRITE TO NEON)
+This uses fleetora_inspect only, with the same mandatory TLS/SCRAM-PLUS driver.
+backup.env is read privately for the CA path; its account is NOT connected here.
+The helper refuses the grant file and all SQL except the reviewed read-only files.
+All query results are schema/history/aggregate data. Keep them outside Git.
+
+BEGIN POWERSHELL
+Set-Location 'C:\Projects\Fleetora\backend'
+$ErrorActionPreference = 'Stop'
+$env:FLEETORA_MIGRATION_ENV_FILE = Join-Path $env:USERPROFILE '.config\fleetora\backup.env'
+$env:FLEETORA_MIGRATION_READ_ONLY = '1'
+$BaseHash = '316de1e8d9642428af4648bcae6927da9aa3df855b50b4a3456412f7e40dd902'
+$TargetHash = '3dfdcd69d14fa5c5906a7720fd95d7cf6474d1535434f04efb18f0250c404303'
+$Audit = Join-Path $env:USERPROFILE ('.config\fleetora\deployment-reviews\' + [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ') + '-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $Audit -ErrorAction Stop | Out-Null
+$AuditSid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+& icacls.exe $Audit /inheritance:r /grant:r "*${AuditSid}:(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
+if ($LASTEXITCODE -ne 0) { throw 'Protected log directory setup failed' }
+
+function Invoke-FleetoraInspection {
+  param([ValidateSet('preflight.sql','history.readonly.sql','postflight.sql','activity')][string]$Name)
+@'
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { join } from 'node:path';
+import { createJiti } from 'jiti';
+import { parse } from 'dotenv';
+import pg from 'pg';
+const jiti=createJiti(import.meta.url,{fsCache:false,moduleCache:false});
+let driver;
+try {
+  const name=process.argv[2];
+  const hashes={
+    'preflight.sql':'ebdfc1bf665dde87f733e4089d1de5e56a8344d9400efc72f2e549bffb042bb6',
+    'history.readonly.sql':'7cc23c5bfe84287bc44c0ea8f01f4a778c9f5c7dce5df6538db4bd0eac11fc1f',
+    'postflight.sql':'b418ba09f18c812f566bffaaa388f41145d362075a593676238f587e93af3ffb'
+  };
+  let sql;
+  if(name==='activity') sql=`BEGIN READ ONLY; SET LOCAL statement_timeout='10s';
+    SELECT count(*) AS other_sessions,
+      count(*) FILTER(WHERE state IS NULL OR state<>'idle' OR xact_start IS NOT NULL) AS non_idle_or_unknown
+    FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid();
+    SELECT count(*) AS prepared_transactions FROM pg_prepared_xacts WHERE database=current_database();
+    ROLLBACK;`;
+  else {
+    if(!Object.hasOwn(hashes,name)) throw Error();
+    sql=readFileSync(join('deployment/vehicle-management',name),'utf8').replaceAll('\r\n','\n');
+    if(createHash('sha256').update(sql).digest('hex')!==hashes[name]) throw Error();
+  }
+  const {createSecureMigrationDriver,readPrivateMigrationSettings}=await jiti.import('./deployment/vehicle-management/secure-driver.ts');
+  const privateDirectory=join(process.env.USERPROFILE,'.config','fleetora');
+  const text=readFileSync(join(privateDirectory,'inspect.env'),'utf8');
+  if((text.match(/^\s*(?:export\s+)?FLEETORA_INSPECT_DATABASE_URL\s*=/gm)??[]).length!==1) throw Error();
+  const url=parse(text).FLEETORA_INSPECT_DATABASE_URL;
+  if(!url||decodeURIComponent(new URL(url).username)!=='fleetora_inspect') throw Error();
+  const {caFile}=readPrivateMigrationSettings(join(privateDirectory,'backup.env'));
+  let client;
+  driver=await createSecureMigrationDriver({caFile,readOnly:true},config=>(client=new pg.Client(config))).create(url);
+  const queried=await client.query(sql);
+  const resultSets=(Array.isArray(queried)?queried:[queried]).map(result=>({command:result.command,rows:result.rows}));
+  console.log(JSON.stringify({script:name,checkedAtUtc:new Date().toISOString(),security:driver.security,resultSets}));
+} catch(error) {
+  console.error(error?.name==='MigrationSecurityError'?error.message:'READ_ONLY_INSPECTION_FAILED');
+  process.exitCode=1;
+} finally { await driver?.close(); }
+'@ | node --input-type=module - $Name
+  if ($LASTEXITCODE -ne 0) { throw 'Read-only inspection failed; stop' }
+}
+
+# Safe preparation and, later, the paused-window preflight:
+Invoke-FleetoraInspection 'activity' > (Join-Path $Audit 'activity-before.json')
+Invoke-FleetoraInspection 'preflight.sql' > (Join-Path $Audit 'preflight-before.json')
+Invoke-FleetoraInspection 'history.readonly.sql' > (Join-Path $Audit 'history-before.json')
+node .\node_modules\prisma\dist\prisma.js db migrate --config prisma.production.config.ts --show --from $BaseHash --to $TargetHash --json 1> (Join-Path $Audit 'preview.json') 2> (Join-Path $Audit 'preview.stderr.txt')
+if ($LASTEXITCODE -ne 0) { throw 'Migration preview failed; stop' }
+END POWERSHELL
+
+CHECKPOINT D - PREFLIGHT AND EXACT APPROVAL
+Review logs privately. Exit zero means a SQL script executed; it does not assert
+that all reported values passed. Require:
+- Exact project/branch/endpoint/db identity, fleetora_inspect, verified TLS and PLUS,
+  and both read-only settings ON. pg_stat_ssl=false is informational at Neon.
+- Exactly one app marker at the baseline core/profile hashes and the same five
+  historical ledger rows. Do not rewrite legacy names/hashes or fabricate history.
+- Exactly the reviewed baseline schema: the two foundation tables, vehicle brand
+  columns and company/plate unique constraint are absent before migration.
+- Zero exact/normalized duplicate plates, invalid/orphan/cross-company/duplicate
+  assignments and orphan company references; existing worker assignment FK/unique
+  and tenant FKs validated. Compare all preflight metadata with the baseline.
+- Saved row counts and ID/assignment digests. At 2026-10-16T18:20:35Z: 12 workers,
+  0 vehicles; worker IDs digest 8f77d54cd679deb0033e3b6fdfe50136;
+  assignments digest fba47462bafbc083fdef315c167fc30f. Investigate any change.
+- Preview contains exactly the TWO package names and migration hashes above.
+- Backup checksum still matches; writer pause and release artifacts confirmed;
+  untested restore/concurrency risks and recovery point explicitly accepted.
+STOP on drift, unknown writer state, unexpected package, or any nonzero exit.
+Obtain explicit approval naming the target, both package hashes and the maintenance
+window. Postflight SELECT grants need a distinct approval. Nothing below has run.
+
+CHECKPOINT E - APPROVED MIGRATION (PRODUCTION-CHANGING; DO NOT RUN YET)
+Use the existing private deployment credential from backup.env. Do not use the
+inspection account for migration. Remove inspection mode only for the apply.
+The driver explicitly sets default_transaction_read_only=off, lock_timeout=5s,
+statement_timeout=60s. URL/PGOPTIONS backup-only settings cannot override it.
+The runner applies 18 additive operations, retains all existing rows/assignments,
+adds both empty auth foundation tables, nullable text manufacturer/model columns
+without defaults and company/plate uniqueness, then advances marker/ledger in
+its transaction. No manual contract signing/bootstrap or reference advance.
+
+BEGIN POWERSHELL
+# REQUIRES EXPLICIT MIGRATION APPROVAL AND CONFIRMED WRITER PAUSE.
+Remove-Item Env:\FLEETORA_MIGRATION_READ_ONLY -ErrorAction SilentlyContinue
+try {
+  node .\node_modules\prisma\dist\prisma.js db migrate --config prisma.production.config.ts --to $TargetHash --yes --json 1> (Join-Path $Audit 'migration.json') 2> (Join-Path $Audit 'migration.stderr.txt')
+  if ($LASTEXITCODE -ne 0) { throw 'Migration failed or outcome uncertain; keep writers paused and inspect' }
+} finally {
+  $env:FLEETORA_MIGRATION_READ_ONLY = '1'
+}
+END POWERSHELL
+
+CHECKPOINT F - STRICT VERIFICATION AND SEPARATELY APPROVED GRANTS
+First use the DEPLOYMENT context in read-only mode for complete Prisma marker and
+schema verification. The restricted role deliberately lacks full control-table
+projection/schema visibility; do not broaden it to make Prisma CLI verification work.
+
+BEGIN POWERSHELL
+$env:FLEETORA_MIGRATION_READ_ONLY = '1'
+node .\node_modules\prisma\dist\prisma.js db verify --config prisma.production.config.ts --strict --json 1> (Join-Path $Audit 'verify-strict.json') 2> (Join-Path $Audit 'verify-strict.stderr.txt')
+if ($LASTEXITCODE -ne 0) { throw 'Strict verification failed; keep writers paused' }
+END POWERSHELL
+
+Require full marker PLUS schema verification, schemaVerification=performed, strict
+mode, destination core/profile hashes above, no drift/unclaimed elements. Exit 4
+means findings, exit 2 means verification could not run; both block resumption.
+Do not substitute --marker-only, skip schema checks, sign the marker or run db update.
+This command was syntax/driver-guard validated offline. Destination verification
+has NOT been run against production because the migration has not been executed.
+
+After distinct permission approval, the administrator verifies the exact target
+in Neon Console and executes ONLY postflight-grants.review.sql, while writers
+remain paused. SHA-256 of LF-normalized reviewed file:
+bdde1e0fc16977353c28e9b17247289dd1b7e8f350d67e8e6c3fa71b5ea4f6d8
+Exact statements (the reviewed file also contains explanatory comments):
+
+BEGIN;
+GRANT SELECT (manufacturer, model) ON public.vehicles TO fleetora_inspect;
+GRANT SELECT (id) ON public.company_memberships TO fleetora_inspect;
+GRANT SELECT (id) ON public.platform_admin_grants TO fleetora_inspect;
+COMMIT;
+
+No write grants, default privileges, role memberships or global SELECT grants.
+Missing tables/columns must cause failure. Do not run these grants before migration.
+If permission approval is withheld, STOP before these statements; use a separately
+approved deployment-context read-only inspection or leave postflight incomplete.
+
+BEGIN POWERSHELL
+Invoke-FleetoraInspection 'postflight.sql' > (Join-Path $Audit 'postflight.json')
+Invoke-FleetoraInspection 'preflight.sql' > (Join-Path $Audit 'preflight-after.json')
+Invoke-FleetoraInspection 'history.readonly.sql' > (Join-Path $Audit 'history-after.json')
+END POWERSHELL
+
+Require one matching destination marker; both brand columns nullable text with no
+defaults; valid company/plate uniqueness; original assignment FK/unique retained;
+unchanged counts/ID/assignment digests; zero integrity anomalies; zero newly added
+memberships/platform grants and zero vehicle metadata rows before operational writes.
+History must preserve the five original rows and add exactly two app ledger rows,
+with the reviewed hashes and baseline -> intermediate -> destination path/profile.
+Successful SELECT execution alone does not satisfy these assertions.
+
+CHECKPOINT G - APPLICATION DEPLOYMENT AND RESUME
+Deploy/start the identified compatible backend artifact, then the matching frontend.
+Keep public maintenance and jobs/external writers paused during controlled smoke.
+Authentication/refresh can write token state: obtain scope approval before login or
+token rotation. Compare integrity before any approved operational smoke writes.
+Use a valid Company Admin for /app, /app/merchants, /app/drivers and /app/vehicles;
+check corresponding GET directories, session identity and existing worker rows,
+unassigned states, nullable/legacy metadata, local logos and search/pagination.
+Verify denied roles/foreign IDs using approved accounts or isolated test fixtures.
+Do not create/assign demo vehicles or change accounts without a separate data-write
+manifest/approval. Mutation behavior already has isolated tests; that is not live
+end-to-end verification. Do not automatically replay an uncertain mutation.
+Resume ingress, backend clients, consumers and schedules only after all gates pass,
+one identified writer group at a time; monitor errors/conflicts and verify tenant
+context. Preserve protected logs, approved hashes and deployment artifact IDs.
+
+FAILURE HANDLING
+- Before apply: any failing gate means STOP. Keep production unchanged.
+- Apply error, disconnect or uncertain outcome: do not blindly rerun. Keep writers
+  paused and run restricted marker/history/preflight reads. The driver transaction
+  should roll back pre-commit failures; independently verify persisted state.
+- Baseline marker + unchanged five-row ledger + baseline physical schema indicates
+  no committed forward path. Investigate the failure and request a new execution
+  decision. Destination marker + both new ledger rows requires destination strict
+  verification/postflight before resuming. An intermediate/unexpected state is an
+  incident; do not hand-edit markers, ledger rows or constraints.
+- After commit with app failure: keep writers paused. Prefer a verified compatible
+  application artifact retaining additive schema. Old application compatibility has
+  not been restore/rehearsal tested; do not assume an arbitrary old build is safe.
+- rollback.review.sql drops metadata/uniqueness and does not reconcile marker/ledger
+  or remove foundation tables. It is NOT an approved operational rollback. New
+  manufacturer/model data would be lost; it refuses non-NULL metadata. Do not run it.
+- Logical recovery needs separate incident-specific approval, a verified archive,
+  an explicitly approved empty recovery target or reviewed destructive production
+  recovery plan, role/ACL reconciliation and complete validation before switching
+  clients/resuming. No automatic restore into the existing nonempty production DB.
+  No branch creation or destructive recovery command is approved here.
+
+UNTESTED RISKS AND FINAL APPROVAL GATE
+Skipping branch rehearsal leaves actual Prisma DDL/ledger integration, full restore,
+old-build rollback and real multi-connection assignment/plate races unproven. Local
+PGlite, protocol tests and frontend fixtures do not prove these production behaviors.
+The exact plate constraint does not normalize external writes; the assignment FK is
+not company-composite. Current backend checks/locking must remain authoritative.
+Writer inventory is unconfirmed. Release artifacts/hosting-specific pause commands
+are not yet identified. These are execution blockers, despite passing technical
+connection checks, backup checksum and the offline migration path preview.
+Request explicit migration approval only with these gates satisfied or explicit
+reviewed risk decisions. Postflight permission changes require separate approval.
+
+Official recovery references:
+https://www.postgresql.org/docs/18/backup-dump.html
+https://www.postgresql.org/docs/18/app-pgrestore.html
+https://neon.com/docs/introduction/branch-restore
+
+No production mutation has been executed by this review.

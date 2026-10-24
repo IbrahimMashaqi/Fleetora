@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "declaration": false,
+    "incremental": false
+  },
+  "include": [
+    "../src/**/*.ts",
+    "merchant-access.auth-integration.spec.ts",
+    "merchant-pricing.auth-integration.spec.ts",
+    "merchant-portal.auth-integration.spec.ts",
+    "merchant-browser.ts"
+  ],
+  "exclude": ["../node_modules", "../dist"]
+}

@@ -1,6 +1,24 @@
 import { expect, test } from "@playwright/test";
+import { createServer, type Server } from "node:http";
 
 const first = { id: "nested-reader", name: "Nested Reader", email: null, role: "COMPANY_ADMIN", orgId: "first-company", company: { id: "first-company", name: "First Company" } };
+let backend: Server;
+
+// Overview performs authenticated server actions as well as browser session
+// bootstrap. Give those actions a matching private fixture session so this
+// layout test does not accidentally navigate through an unauthenticated redirect.
+test.beforeAll(async () => {
+  backend = createServer((request, response) => {
+    response.setHeader("Content-Type", "application/json");
+    if (request.url === "/auth/session") response.end(JSON.stringify({ success: true, data: first }));
+    else response.writeHead(503).end(JSON.stringify({ success: false }));
+  });
+  await new Promise<void>((resolve, reject) => { backend.once("error", reject); backend.listen(3101, "127.0.0.1", resolve); });
+});
+test.beforeEach(async ({ context }) => {
+  await context.addCookies([{ name: "fleetora_access", value: "protected-layout-fixture", url: "http://localhost:3100", httpOnly: true }]);
+});
+test.afterAll(async () => { backend.closeAllConnections(); await new Promise<void>(resolve => backend.close(() => resolve())); });
 
 test("a nested child reuses shell and identity without repeating bootstrap", async ({ page }) => {
   let checks = 0;
@@ -16,7 +34,7 @@ test("a nested child reuses shell and identity without repeating bootstrap", asy
   expect(checks).toBe(1);
   await page.locator("header").evaluate(header => header.setAttribute("data-layout-probe", "preserved"));
   await page.getByRole("link", { name: "Dashboard content" }).click();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
   await expect(page.locator("header")).toHaveAttribute("data-layout-probe", "preserved");
   expect(checks).toBe(1);

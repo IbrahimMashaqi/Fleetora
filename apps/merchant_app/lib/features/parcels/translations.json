@@ -1,0 +1,650 @@
+{
+  "parcel_create": {
+    "en": "Create parcel",
+    "ar": "إنشاء طرد"
+  },
+  "parcel_edit": {
+    "en": "Edit parcel",
+    "ar": "تعديل الطرد"
+  },
+  "parcel_save": {
+    "en": "Save changes",
+    "ar": "حفظ التغييرات"
+  },
+  "parcel_search": {
+    "en": "Search tracking number, recipient or reference",
+    "ar": "بحث برقم التتبع أو المستلم أو المرجع"
+  },
+  "parcel_filter_status": {
+    "en": "Parcel status",
+    "ar": "حالة الطرد"
+  },
+  "parcel_all_statuses": {
+    "en": "All statuses",
+    "ar": "جميع الحالات"
+  },
+  "parcel_labels": {
+    "en": "Parcel labels",
+    "ar": "ملصقات الطرود"
+  },
+  "parcel_select": {
+    "en": "Select parcel",
+    "ar": "اختيار الطرد"
+  },
+  "parcel_details": {
+    "en": "Parcel details",
+    "ar": "تفاصيل الطرد"
+  },
+  "parcel_name_error": {
+    "en": "Enter a recipient name of 2–150 characters.",
+    "ar": "أدخل اسم المستلم من حرفين إلى 150 حرفاً."
+  },
+  "parcel_phone_error": {
+    "en": "Enter a valid phone number (6–30 characters).",
+    "ar": "أدخل رقم هاتف صحيحاً من 6 إلى 30 خانة."
+  },
+  "parcel_address_error": {
+    "en": "Enter a detailed address of 3–500 characters.",
+    "ar": "أدخل عنواناً تفصيلياً من 3 إلى 500 حرف."
+  },
+  "parcel_amount_error": {
+    "en": "Enter a positive exact amount for COD, or zero for prepaid (up to 3 decimal places).",
+    "ar": "أدخل مبلغاً موجباً للدفع عند التسليم أو صفراً للمدفوع مسبقاً، حتى 3 منازل عشرية."
+  },
+  "parcel_description_error": {
+    "en": "Enter a description up to 1000 characters.",
+    "ar": "أدخل وصفاً لا يتجاوز 1000 حرف."
+  },
+  "parcel_pieces_error": {
+    "en": "Enter a whole piece count from 1 to 1000.",
+    "ar": "أدخل عدد قطع صحيحاً من 1 إلى 1000."
+  },
+  "parcel_reference_error": {
+    "en": "Use a reference of up to 100 characters.",
+    "ar": "استخدم مرجعاً لا يتجاوز 100 حرف."
+  },
+  "parcel_notes_error": {
+    "en": "Use notes of up to 1000 characters.",
+    "ar": "استخدم ملاحظات لا تتجاوز 1000 حرف."
+  },
+  "parcel_price_preview": {
+    "en": "Contractual pricing preview",
+    "ar": "معاينة السعر التعاقدي"
+  },
+  "parcel_final_amount": {
+    "en": "Final customer payment",
+    "ar": "المبلغ النهائي المطلوب من العميل"
+  },
+  "parcel_base_fee": {
+    "en": "Base delivery fee",
+    "ar": "رسوم التوصيل الأساسية"
+  },
+  "parcel_discount": {
+    "en": "Contractual discount",
+    "ar": "الخصم التعاقدي"
+  },
+  "parcel_promotion": {
+    "en": "Promotion discount",
+    "ar": "خصم العرض"
+  },
+  "parcel_delivery_fee": {
+    "en": "Contractual delivery fee",
+    "ar": "رسوم التوصيل التعاقدية"
+  },
+  "parcel_proceeds": {
+    "en": "Expected merchant proceeds",
+    "ar": "صافي المبلغ المتوقع للتاجر"
+  },
+  "parcel_proceeds_note": {
+    "en": "Subject to collection and contractual charges.",
+    "ar": "يخضع للتحصيل والرسوم التعاقدية."
+  },
+  "parcel_choose_pin": {
+    "en": "Choose an optional location pin",
+    "ar": "اختيار موقع اختياري على الخريطة"
+  },
+  "parcel_remove_pin": {
+    "en": "Remove location pin",
+    "ar": "إزالة الموقع"
+  },
+  "parcel_pin_help": {
+    "en": "Tap the intended location on the map, or enter coordinates, then confirm. The initial map view is Palestine.",
+    "ar": "اضغط على الموقع المقصود على الخريطة أو أدخل الإحداثيات ثم أكد اختيارك. تعرض الخريطة فلسطين مبدئياً."
+  },
+  "parcel_latitude": {
+    "en": "Latitude",
+    "ar": "خط العرض"
+  },
+  "parcel_longitude": {
+    "en": "Longitude",
+    "ar": "خط الطول"
+  },
+  "parcel_pin_error": {
+    "en": "Enter both coordinates. Latitude must be −90 to 90 and longitude −180 to 180.",
+    "ar": "أدخل الإحداثيين. خط العرض بين −90 و90 وخط الطول بين −180 و180."
+  },
+  "parcel_confirm_pin": {
+    "en": "Confirm selected location",
+    "ar": "تأكيد الموقع المحدد"
+  },
+  "parcel_no_zones": {
+    "en": "Your company has no active delivery zones. Contact the company before creating a parcel.",
+    "ar": "لا توجد مناطق توصيل فعالة لدى شركتك. تواصل معها قبل إنشاء طرد."
+  },
+  "parcel_action_unavailable": {
+    "en": "This action is no longer available. Refresh parcel details to review its current state.",
+    "ar": "لم يعد هذا الإجراء متاحاً. حدث تفاصيل الطرد لمراجعة حالته الحالية."
+  },
+  "parcel_request_amendment": {
+    "en": "Request parcel amendment",
+    "ar": "طلب تعديل الطرد"
+  },
+  "parcel_amendment_help": {
+    "en": "The company must review pricing and approve this request before parcel facts change.",
+    "ar": "يجب أن تراجع الشركة التسعير وتوافق على الطلب قبل تغيير بيانات الطرد."
+  },
+  "parcel_create_help": {
+    "en": "A created parcel remains with you until physical company receipt is confirmed.",
+    "ar": "يبقى الطرد الجديد في عهدتك حتى تأكيد استلام الشركة الفعلي."
+  },
+  "parcel_amendment_reason": {
+    "en": "Amendment reason",
+    "ar": "سبب التعديل"
+  },
+  "parcel_reason_error": {
+    "en": "Enter a reason of 3–500 characters.",
+    "ar": "أدخل سبباً من 3 إلى 500 حرف."
+  },
+  "parcel_recipient": {
+    "en": "Recipient",
+    "ar": "المستلم"
+  },
+  "parcel_recipient_name": {
+    "en": "Recipient name",
+    "ar": "اسم المستلم"
+  },
+  "parcel_phone": {
+    "en": "Phone",
+    "ar": "الهاتف"
+  },
+  "parcel_secondary_phone": {
+    "en": "Alternative phone (optional)",
+    "ar": "هاتف بديل (اختياري)"
+  },
+  "parcel_destination": {
+    "en": "Delivery destination",
+    "ar": "وجهة التسليم"
+  },
+  "parcel_zone": {
+    "en": "City and delivery zone",
+    "ar": "المدينة ومنطقة التوصيل"
+  },
+  "parcel_zone_error": {
+    "en": "Choose an active delivery zone.",
+    "ar": "اختر منطقة توصيل فعالة."
+  },
+  "parcel_address": {
+    "en": "Detailed address",
+    "ar": "العنوان التفصيلي"
+  },
+  "parcel_payment": {
+    "en": "Customer payment",
+    "ar": "مبلغ العميل"
+  },
+  "parcel_collection_mode": {
+    "en": "Collection method",
+    "ar": "طريقة التحصيل"
+  },
+  "parcel_inclusive_help": {
+    "en": "Delivery is included in the final amount. It is never added on top. Currency follows your selected delivery zone.",
+    "ar": "التوصيل مشمول في المبلغ النهائي ولا يضاف فوقه. تتبع العملة منطقة التوصيل المختارة."
+  },
+  "parcel_prepaid_help": {
+    "en": "Customer pays zero. Contractual delivery charges still apply to the merchant.",
+    "ar": "لا يدفع العميل شيئاً. تبقى رسوم التوصيل التعاقدية على التاجر."
+  },
+  "parcel_preview_price": {
+    "en": "Preview contractual price",
+    "ar": "معاينة السعر التعاقدي"
+  },
+  "parcel_package": {
+    "en": "Package",
+    "ar": "الطرد"
+  },
+  "parcel_description": {
+    "en": "Contents description",
+    "ar": "وصف المحتويات"
+  },
+  "parcel_pieces": {
+    "en": "Pieces",
+    "ar": "القطع"
+  },
+  "parcel_reference": {
+    "en": "Merchant reference (optional)",
+    "ar": "مرجع التاجر (اختياري)"
+  },
+  "parcel_notes": {
+    "en": "Delivery notes (optional)",
+    "ar": "ملاحظات التسليم (اختياري)"
+  },
+  "parcel_price_required": {
+    "en": "Review a current pricing preview before saving.",
+    "ar": "راجع معاينة سعر حديثة قبل الحفظ."
+  },
+  "parcel_uncertain_write": {
+    "en": "The result is not confirmed. Retry this exact submission or check the parcel list before starting another. Your original request identity is retained.",
+    "ar": "لم تتأكد النتيجة. أعد محاولة الإرسال نفسه أو راجع قائمة الطرود قبل بدء طلب آخر. احتفظنا بهوية الطلب الأصلية."
+  },
+  "parcel_retry_write": {
+    "en": "Retry original submission",
+    "ar": "إعادة محاولة الإرسال الأصلي"
+  },
+  "parcel_send_amendment": {
+    "en": "Send amendment request",
+    "ar": "إرسال طلب التعديل"
+  },
+  "parcel_date_unavailable": {
+    "en": "Date unavailable",
+    "ar": "التاريخ غير متاح"
+  },
+  "parcel_cancel": {
+    "en": "Cancel parcel before receipt",
+    "ar": "إلغاء الطرد قبل الاستلام"
+  },
+  "parcel_request_cancellation": {
+    "en": "Request cancellation after receipt",
+    "ar": "طلب إلغاء بعد الاستلام"
+  },
+  "parcel_cancellation_help": {
+    "en": "Company approval starts a documented return. It does not mean the parcel is physically back with you.",
+    "ar": "تبدأ موافقة الشركة مسار مرتجع موثقاً ولا تعني أن الطرد عاد إليك فعلياً."
+  },
+  "parcel_cancel_confirm": {
+    "en": "Confirm cancellation before physical company receipt?",
+    "ar": "تأكيد الإلغاء قبل استلام الشركة الفعلي؟"
+  },
+  "parcel_current_location": {
+    "en": "Last confirmed operational location",
+    "ar": "آخر موقع تشغيلي مؤكد"
+  },
+  "parcel_label": {
+    "en": "Parcel label and QR code",
+    "ar": "ملصق الطرد ورمز QR"
+  },
+  "parcel_cancel_reason": {
+    "en": "Cancellation reason",
+    "ar": "سبب الإلغاء"
+  },
+  "parcel_send_cancellation": {
+    "en": "Send cancellation request",
+    "ar": "إرسال طلب الإلغاء"
+  },
+  "parcel_requests": {
+    "en": "Company-reviewed requests",
+    "ar": "الطلبات لدى الشركة"
+  },
+  "parcel_no_requests": {
+    "en": "No requests recorded.",
+    "ar": "لا توجد طلبات مسجلة."
+  },
+  "parcel_timeline": {
+    "en": "Status timeline",
+    "ar": "السجل الزمني للحالة"
+  },
+  "parcel_no_events": {
+    "en": "No activity returned.",
+    "ar": "لا توجد أحداث مسجلة."
+  },
+  "parcel_label_notice": {
+    "en": "The code identifies the parcel. Scanning does not authorize access or confirm physical receipt.",
+    "ar": "يحدد الرمز الطرد. المسح لا يمنح صلاحية وصول ولا يثبت الاستلام الفعلي."
+  },
+  "parcel_print_labels": {
+    "en": "Print labels",
+    "ar": "طباعة الملصقات"
+  },
+  "parcel_share_pdf": {
+    "en": "Share PDF",
+    "ar": "مشاركة PDF"
+  },
+  "parcel_preview_pdf": {
+    "en": "Preview PDF",
+    "ar": "معاينة PDF"
+  },
+  "parcel_print_unavailable": {
+    "en": "Printing or sharing is not available on this device. You can still view the tracking QR code.",
+    "ar": "الطباعة أو المشاركة غير متاحة على هذا الجهاز. يمكنك عرض رمز تتبع الطرد."
+  },
+  "parcel_tracking_qr": {
+    "en": "Tracking QR code",
+    "ar": "رمز QR للتتبع"
+  },
+  "refresh": {
+    "en": "Refresh",
+    "ar": "تحديث"
+  },
+  "location_MERCHANT_ADDRESS": {
+    "en": "Merchant business address",
+    "ar": "عنوان نشاط التاجر"
+  },
+  "location_WAREHOUSE": {
+    "en": "Recorded warehouse location",
+    "ar": "موقع المستودع المسجل"
+  },
+  "location_MANUAL": {
+    "en": "Company-recorded location",
+    "ar": "موقع سجلته الشركة"
+  },
+  "location_DRIVER": {
+    "en": "Recorded driver custody; not live GPS",
+    "ar": "عهدة سائق مسجلة؛ ليست تتبعاً حياً"
+  },
+  "location_WAREHOUSE_ADDRESS": {
+    "en": "Warehouse address",
+    "ar": "عنوان المستودع"
+  },
+  "location_DELIVERY_ADDRESS": {
+    "en": "Recorded delivery address",
+    "ar": "عنوان التسليم المسجل"
+  },
+  "location_PICKUP_ADDRESS": {
+    "en": "Recorded pickup address",
+    "ar": "عنوان الاستلام المسجل"
+  },
+  "status_INVITATION_ISSUED": {
+    "en": "Invitation issued",
+    "ar": "أُصدرت دعوة"
+  },
+  "status_INVITATION_ACCEPTED": {
+    "en": "Invitation accepted",
+    "ar": "قُبلت الدعوة"
+  },
+  "status_INVITATION_REVOKED": {
+    "en": "Invitation revoked",
+    "ar": "أُلغيت الدعوة"
+  },
+  "status_EMPLOYEE_UPDATED": {
+    "en": "Employee access updated",
+    "ar": "عُدّلت صلاحيات موظف"
+  },
+  "status_PICKUP_CONFIRM": {
+    "en": "Pickup window confirmed",
+    "ar": "أُكد وقت الاستلام"
+  },
+  "status_PICKUP_PROPOSE": {
+    "en": "Alternative window proposed",
+    "ar": "اقتُرح وقت بديل"
+  },
+  "status_PICKUP_CANCEL": {
+    "en": "Pickup cancelled",
+    "ar": "أُلغي طلب الاستلام"
+  },
+  "status_PICKUP_ACCEPT_PROPOSAL": {
+    "en": "Proposed window accepted",
+    "ar": "قُبل الوقت المقترح"
+  },
+  "status_PICKUP_RECEIPT_RECORDED": {
+    "en": "Physical receipt recorded",
+    "ar": "سُجل الاستلام الفعلي"
+  },
+  "status_SETTLEMENT_REQUESTED": {
+    "en": "Settlement requested",
+    "ar": "طُلبت تسوية"
+  },
+  "status_SETTLEMENT_REQUEST_REVIEWED": {
+    "en": "Settlement request reviewed",
+    "ar": "رُوجع طلب التسوية"
+  },
+  "status_REVIEWED": {
+    "en": "Reviewed",
+    "ar": "رُوجع"
+  },
+  "status_CREATED": {
+    "en": "Created — awaiting receipt",
+    "ar": "جديد — بانتظار الاستلام"
+  },
+  "status_READY_FOR_DISPATCH": {
+    "en": "Ready for dispatch",
+    "ar": "جاهز للإرسال"
+  },
+  "status_ASSIGNED": {
+    "en": "Assigned",
+    "ar": "مُسند"
+  },
+  "status_PICKED_UP": {
+    "en": "Picked up",
+    "ar": "مستلم"
+  },
+  "status_OUT_FOR_DELIVERY": {
+    "en": "Out for delivery",
+    "ar": "قيد التوصيل"
+  },
+  "status_DELIVERED": {
+    "en": "Delivered",
+    "ar": "تم التسليم"
+  },
+  "status_CANCELLED": {
+    "en": "Cancelled",
+    "ar": "ملغي"
+  },
+  "status_FAILED_DELIVERY": {
+    "en": "Delivery unsuccessful",
+    "ar": "تعذر التسليم"
+  },
+  "status_RESCHEDULED": {
+    "en": "Rescheduled",
+    "ar": "أُعيدت الجدولة"
+  },
+  "status_RETURNED": {
+    "en": "Returned",
+    "ar": "مرتجع"
+  },
+  "status_ON_HOLD": {
+    "en": "On hold",
+    "ar": "معلّق"
+  },
+  "status_RECEIVED_FROM_MERCHANT": {
+    "en": "Received from merchant",
+    "ar": "مستلم من التاجر"
+  },
+  "status_AT_WAREHOUSE": {
+    "en": "At warehouse",
+    "ar": "في المستودع"
+  },
+  "status_RETURN_IN_PROGRESS": {
+    "en": "Return in progress",
+    "ar": "قيد الإرجاع"
+  },
+  "status_RETURNED_TO_WAREHOUSE": {
+    "en": "Returned to warehouse",
+    "ar": "أعيد للمستودع"
+  },
+  "status_RETURNED_TO_MERCHANT": {
+    "en": "Returned to merchant",
+    "ar": "أعيد للتاجر"
+  },
+  "status_MERCHANT": {
+    "en": "With merchant",
+    "ar": "لدى التاجر"
+  },
+  "status_COMPANY": {
+    "en": "Company custody",
+    "ar": "عهدة الشركة"
+  },
+  "status_WAREHOUSE": {
+    "en": "Warehouse custody",
+    "ar": "عهدة المستودع"
+  },
+  "status_DRIVER": {
+    "en": "Driver custody",
+    "ar": "عهدة السائق"
+  },
+  "status_CUSTOMER": {
+    "en": "With recipient",
+    "ar": "لدى المستلم"
+  },
+  "status_COD": {
+    "en": "Cash on delivery",
+    "ar": "الدفع عند التسليم"
+  },
+  "status_PREPAID": {
+    "en": "Prepaid / no collection",
+    "ar": "مدفوع مسبقًا / دون تحصيل"
+  },
+  "status_REQUESTED": {
+    "en": "Awaiting review",
+    "ar": "بانتظار المراجعة"
+  },
+  "status_PROPOSED": {
+    "en": "Alternative window proposed",
+    "ar": "وقت بديل مقترح"
+  },
+  "status_CONFIRMED": {
+    "en": "Confirmed",
+    "ar": "مؤكد"
+  },
+  "status_RECEIVED": {
+    "en": "Physically received",
+    "ar": "مستلم فعليًا"
+  },
+  "status_PENDING": {
+    "en": "Awaiting receipt",
+    "ar": "بانتظار الاستلام"
+  },
+  "status_MISSING": {
+    "en": "Missing",
+    "ar": "ناقص"
+  },
+  "status_DISCREPANT": {
+    "en": "Received with discrepancy",
+    "ar": "مستلم مع اختلاف"
+  },
+  "status_GOODS": {
+    "en": "Collected customer amount",
+    "ar": "مبلغ العميل المحصّل"
+  },
+  "status_DELIVERY_FEE": {
+    "en": "Delivery service charge",
+    "ar": "رسوم خدمة التوصيل"
+  },
+  "status_RETURN_FEE": {
+    "en": "Return service charge",
+    "ar": "رسوم الإرجاع"
+  },
+  "status_ADJUSTMENT": {
+    "en": "Accounting adjustment",
+    "ar": "تسوية محاسبية"
+  },
+  "status_REVERSAL": {
+    "en": "Reversal",
+    "ar": "عكس قيد"
+  },
+  "status_ACTIVE": {
+    "en": "Active",
+    "ar": "فعّال"
+  },
+  "status_REVOKED": {
+    "en": "Revoked",
+    "ar": "ملغي"
+  },
+  "status_OWNER": {
+    "en": "Merchant owner",
+    "ar": "مالك التاجر"
+  },
+  "status_EMPLOYEE": {
+    "en": "Merchant employee",
+    "ar": "موظف التاجر"
+  },
+  "status_MERCHANT_PARCEL_CREATED": {
+    "en": "Merchant created parcel",
+    "ar": "أنشأ التاجر الطرد"
+  },
+  "status_MERCHANT_PARCEL_EDITED": {
+    "en": "Parcel amended",
+    "ar": "عُدّل الطرد"
+  },
+  "status_MERCHANT_PARCEL_CANCELLED": {
+    "en": "Merchant cancelled parcel",
+    "ar": "ألغى التاجر الطرد"
+  },
+  "status_PICKUP_REQUESTED": {
+    "en": "Pickup requested",
+    "ar": "طُلب الاستلام"
+  },
+  "status_PHYSICAL_RECEIPT_CONFIRMED": {
+    "en": "Physical receipt confirmed",
+    "ar": "تأكد الاستلام الفعلي"
+  },
+  "status_STATUS_CHANGED": {
+    "en": "Status changed",
+    "ar": "تغيرت الحالة"
+  },
+  "status_DRIVER_ASSIGNED": {
+    "en": "Driver assigned",
+    "ar": "أُسند السائق"
+  },
+  "status_DELIVERY_ATTEMPT": {
+    "en": "Delivery attempt",
+    "ar": "محاولة تسليم"
+  },
+  "status_COD_COLLECTED": {
+    "en": "Customer amount collected",
+    "ar": "حُصّل مبلغ العميل"
+  },
+  "status_CASH_REMITTED": {
+    "en": "Cash remitted to company",
+    "ar": "وُرّد النقد للشركة"
+  },
+  "status_MERCHANT_AMEND_REQUESTED": {
+    "en": "Amendment requested",
+    "ar": "طُلب التعديل"
+  },
+  "status_MERCHANT_CANCEL_REQUESTED": {
+    "en": "Cancellation requested",
+    "ar": "طُلب الإلغاء"
+  },
+  "status_MERCHANT_REQUEST_APPROVED": {
+    "en": "Company approved request",
+    "ar": "وافقت الشركة على الطلب"
+  },
+  "status_MERCHANT_REQUEST_REJECTED": {
+    "en": "Company rejected request",
+    "ar": "رفضت الشركة الطلب"
+  },
+  "status_PARCEL_CREATED": {
+    "en": "Parcel created",
+    "ar": "أُنشئ الطرد"
+  },
+  "status_PARCEL_EDITED": {
+    "en": "Parcel edited",
+    "ar": "عُدّل الطرد"
+  },
+  "status_CUSTODY_RECORDED": {
+    "en": "Custody recorded",
+    "ar": "سُجلت العهدة"
+  },
+  "status_RETURN_INITIATED": {
+    "en": "Return initiated",
+    "ar": "بدأ الإرجاع"
+  },
+  "location_CONFIRMED_RECEIPT": {
+    "en": "Confirmed physical receipt",
+    "ar": "?????? ???? ????"
+  },
+  "location_VERIFIED_DELIVERY": {
+    "en": "Verified delivery location",
+    "ar": "???? ????? ????"
+  },
+  "location_VERIFIED_RETURN_HANDOFF": {
+    "en": "Verified return handoff",
+    "ar": "????? ????? ????"
+  },
+  "location_OPERATIONAL_EVENT": {
+    "en": "Last recorded operational event",
+    "ar": "??? ??? ?????? ????"
+  },
+  "parcel_document_error": {
+    "en": "Could not generate or open the document. Try again or use another available print/share option.",
+    "ar": "???? ????? ??????? ?? ????. ???? ?????? ?? ?????? ???? ????? ?? ?????? ??? ????."
+  }
+}

@@ -7,9 +7,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { HttpExceptionFilter } from './common/exceptions-filter/http-exception.filter.js';
+import { configureMerchantImportBody } from './modules/merchant-portal/merchant-import-body.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  configureMerchantImportBody(app);
   const configService = app.get(ConfigService);
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true }),

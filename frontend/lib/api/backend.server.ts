@@ -8,8 +8,15 @@ export function getBackendEndpoint(path: string): URL | null {
 
 export async function requestBackend(
   endpoint: URL,
-  { method, body, bearer, timeoutMs = 15_000 }: {
-    method: "GET" | "POST";
+  {
+    method,
+    body,
+    bearer,
+    timeoutMs = 15_000,
+    expectedCompany,
+  }: {
+    method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+    expectedCompany?: string;
     body?: unknown;
     bearer?: string;
     timeoutMs?: number;
@@ -17,6 +24,8 @@ export async function requestBackend(
 ): Promise<Response> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (expectedCompany !== undefined)
+    headers["X-Fleetora-Company-Context"] = expectedCompany;
   if (bearer !== undefined) headers.Authorization = `Bearer ${bearer}`;
   return fetch(endpoint, {
     method,
@@ -29,5 +38,9 @@ export async function requestBackend(
 }
 
 export async function readBackendBody(response: Response): Promise<unknown> {
-  try { return await response.json(); } catch { return null; }
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
 }

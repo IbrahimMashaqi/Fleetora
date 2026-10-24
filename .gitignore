@@ -1,2 +1,30 @@
 # Local phase verification artifacts
 .phase*-verification-*/
+.task-work/
+**/*.tsbuildinfo
+
+# Private configuration and portable backup/signing material
+.env
+.env.*
+!.env.example
+*.dump
+*.backup
+*.pfx
+*.p12
+*.jks
+*.keystore
+*.key
+*.pem
+*.crt
+
+# Self-signed, offline TLS regression fixtures; never production credentials
+!backend/deployment/vehicle-management/test-support/test-only.key
+!backend/deployment/vehicle-management/test-support/test-only.crt
+!backend/deployment/vehicle-management/test-support/untrusted-test-only.key
+!backend/deployment/vehicle-management/test-support/untrusted-test-only.crt
+!backend/deployment/vehicle-management/test-support/wrong-host-test-only.key
+!backend/deployment/vehicle-management/test-support/wrong-host-test-only.crt
+
+# Local terminal captures, inspected and retained outside the source inventory
+/Fleetora
+/tore `

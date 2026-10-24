@@ -21,6 +21,18 @@ export class DriversRepository {
       : scoped;
     return await filtered
       .select('id', 'fullName', 'phone', 'status')
+      .include('vehicle', (vehicle) =>
+        vehicle
+          .where({ companyId })
+          .select(
+            'id',
+            'companyId',
+            'type',
+            'plateNumber',
+            'manufacturer',
+            'model',
+          ),
+      )
       .orderBy([(worker) => worker.fullName.asc(), (worker) => worker.id.asc()])
       .offset((query.page - 1) * query.pageSize)
       .limit(query.pageSize + 1)
@@ -30,6 +42,18 @@ export class DriversRepository {
   async findOne(companyId: string, id: string): Promise<DriverRow | null> {
     return this.prisma.Worker.where({ companyId, id })
       .select('id', 'fullName', 'phone', 'status')
+      .include('vehicle', (vehicle) =>
+        vehicle
+          .where({ companyId })
+          .select(
+            'id',
+            'companyId',
+            'type',
+            'plateNumber',
+            'manufacturer',
+            'model',
+          ),
+      )
       .first();
   }
 }

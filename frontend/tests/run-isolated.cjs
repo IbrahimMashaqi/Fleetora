@@ -18,7 +18,7 @@ for (const entry of fs.readdirSync(frontend, { withFileTypes: true })) {
   fs.cpSync(path.join(frontend, entry.name), path.join(target, entry.name), { recursive: true, errorOnExist: true });
 }
 fs.symlinkSync(path.join(frontend, 'node_modules'), path.join(target, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
-for (const [route, fixture] of [['app/app/test-child', 'protected-child'], ['app/test-ui', 'primitive-probe']]) {
+for (const [route, fixture] of [['app/app/test-child', 'protected-child'], ['app/test-ui', 'primitive-probe'], ['app/test-vehicle-brand', 'vehicle-brand-probe']]) {
   fs.mkdirSync(path.join(target, route), { recursive: true });
   fs.writeFileSync(path.join(target, route, 'page.tsx'), `export { default } from "@/tests/fixtures/${fixture}";\n`, { flag: 'wx' });
 }
@@ -43,7 +43,9 @@ async function run() {
   fs.writeFileSync(path.join(target, 'isolated-server.json'), JSON.stringify({ pid: server.pid, parentPid: process.pid, cwd: target }, null, 2), { flag: 'wx' });
   console.log('Isolated frontend: ' + target);
   await new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Isolated server startup timed out')), 120000);
+    // Cold compilation now includes both Fleet and parcel workspaces. This is a
+    // process-readiness budget; individual Playwright test limits stay unchanged.
+    const timeout = setTimeout(() => reject(new Error('Isolated server startup timed out')), 240000);
     server.once('message', message => {
       clearTimeout(timeout);
       if (message === 'ready') resolve();
@@ -52,7 +54,7 @@ async function run() {
     server.once('exit', () => { clearTimeout(timeout); reject(new Error('Isolated server exited before readiness')); });
   });
   const args = ['node_modules/playwright/cli.js', 'test', ...arguments_, '--config=isolated.config.ts'];
-  const result = cp.spawnSync(process.execPath, args, { cwd: target, env: environment, windowsHide: true, encoding: 'utf8', timeout: 900000, maxBuffer: 32 * 1024 * 1024 });
+  const result = cp.spawnSync(process.execPath, args, { cwd: target, env: environment, windowsHide: true, encoding: 'utf8', timeout: 1800000, maxBuffer: 32 * 1024 * 1024 });
   fs.writeFileSync(path.join(target, 'isolated-tests.log'), (result.stdout ?? '') + (result.stderr ?? ''), { flag: 'wx' });
   fs.writeFileSync(path.join(target, 'isolated-command.json'), JSON.stringify({ executable: process.execPath, args, exitCode: result.status, error: result.error?.message }, null, 2), { flag: 'wx' });
   console.log(((result.stdout ?? '') + (result.stderr ?? '')).slice(-18000));

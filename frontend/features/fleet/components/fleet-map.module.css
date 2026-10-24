@@ -1,0 +1,28 @@
+.canvas, .canvas:global(.maplibregl-map) { position: absolute; inset: 0; width: 100%; height: 100%; background: #f5f3ee; color-scheme: light; }
+.canvas :global(.maplibregl-canvas) { outline: none; }
+.canvas :global(.maplibregl-canvas):focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.canvas :global(.maplibregl-ctrl-top-left) { top: 76px; left: 12px; }
+.canvas :global(.maplibregl-ctrl-group) { border: 1px solid #d5d8d5; border-radius: 8px; background: #fff; color: #182d3f; box-shadow: 0 4px 12px rgb(15 23 42 / .08); }
+.canvas :global(.maplibregl-ctrl-group button) { width: 44px; height: 44px; }
+.canvas :global(.maplibregl-ctrl-group button):focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
+.canvas :global(.maplibregl-ctrl-attrib) { font: 10px/18px sans-serif; direction: ltr; background: rgb(255 255 255 / .9); color: #263745; }
+.canvas :global(.maplibregl-ctrl-attrib a) { color: #263745; }
+.headquarters { display: grid; place-items: center; width: 44px; height: 44px; border: 3px solid var(--surface); border-radius: 12px; color: var(--primary-foreground); background: var(--brand-navy); box-shadow: 0 0 0 5px rgb(15 159 149 / .13), 0 4px 12px rgb(15 23 42 / .14); cursor: pointer; }
+.headquarters:focus-visible { outline: 3px solid var(--primary); outline-offset: 5px; }
+.temporary { background: var(--primary-hover); cursor: grab; }
+.canvas :global(.maplibregl-popup-content) { border-radius: 10px; padding: 20px; color: var(--foreground); border: 1px solid var(--border); box-shadow: 0 4px 12px rgb(15 23 42 / .08); }
+.popup { text-align: start; font: 14px/1.8 var(--font-noto-sans-arabic), var(--font-inter), Tahoma, Arial, sans-serif; min-width: 180px; }
+.popup strong { display:block; padding-inline-end: 12px; }
+.popup p { margin: 6px 0; color: var(--muted-foreground); }
+.popup button { margin-top: 8px; color: var(--primary-hover); font-weight: 600; cursor: pointer; }
+.popup button:focus-visible { outline: 2px solid var(--primary); }
+.mapViewport { position: absolute; inset: 0; }
+.panel { position: absolute; inset-inline-start: 20px; top: 20px; bottom: 24px; width: 320px; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 4px 12px rgb(15 23 42 / .08); z-index: 10; }
+.details { position: absolute; inset-inline-end: 20px; bottom: 40px; width: 320px; max-height: calc(100% - 150px); overflow-y: auto; z-index: 12; }
+.editor { position: absolute; inset-inline-end: 20px; bottom: 40px; margin: 0; width: 360px; max-height: calc(100% - 100px); overflow-y: auto; z-index: 30; border: 1px solid var(--border); border-radius: 12px; padding: 0; color: var(--foreground); background: var(--surface); box-shadow: 0 4px 12px rgb(15 23 42 / .08); }
+@media (min-width: 768px) { .withPanel { inset-inline-start: 360px; } }
+@media (max-width: 767px) {
+  .panel { top: auto; inset-inline: 12px; bottom: 32px; width: auto; max-height: 43%; }
+  .details, .editor { inset-inline: 12px; bottom: 32px; width: auto; max-height: 70%; }
+  .canvas :global(.maplibregl-ctrl-top-left) { top: 108px; left: 2px; }
+}

@@ -1,6 +1,24 @@
 import { expect, test } from "@playwright/test";
+import { createServer, type Server } from "node:http";
 
 const user = { id: "lifecycle-user", name: "Lifecycle Reader", email: null, role: "COMPANY_ADMIN", orgId: "lifecycle-company", company: { id: "lifecycle-company", name: "Lifecycle Company" } };
+let backend: Server;
+
+// Browser session checks are controlled separately by each test. The Overview
+// now also makes real server actions, which need a matching private test session.
+test.beforeAll(async () => {
+  backend = createServer((request, response) => {
+    response.setHeader("Content-Type", "application/json");
+    if (request.url === "/auth/session" || request.url === "/auth/logout") {
+      response.end(JSON.stringify({ success: true, data: request.url === "/auth/session" ? user : null }));
+    } else response.writeHead(503).end(JSON.stringify({ success: false }));
+  });
+  await new Promise<void>((resolve, reject) => { backend.once("error", reject); backend.listen(3101, "127.0.0.1", resolve); });
+});
+test.beforeEach(async ({ context }) => {
+  await context.addCookies([{ name: "fleetora_access", value: "session-lifecycle-fixture", url: "http://localhost:3100", httpOnly: true }]);
+});
+test.afterAll(async () => { backend.closeAllConnections(); await new Promise<void>(resolve => backend.close(() => resolve())); });
 
 test("offers explicit sign-in recovery after an ambiguous refresh rejection", async ({ page }) => {
   await page.route("**/api/auth/session", route => route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ message: "Session changed" }) }));
@@ -31,12 +49,12 @@ test("bootstraps direct entry and reload exactly once without duplicating the pr
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user }) });
   });
   await page.goto("/app");
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   expect(requests).toEqual([{ method: "POST", body: "{}" }]);
   await expect(page.getByRole("main")).toHaveCount(1);
   await expect(page.getByRole("complementary", { name: "Workspace sidebar" })).toHaveCount(1);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   expect(requests).toEqual([{ method: "POST", body: "{}" }, { method: "POST", body: "{}" }]);
 });
 
@@ -51,7 +69,7 @@ test("coalesces focus and reconnect events while one session check is pending", 
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user: rechecking ? { ...user, name: "Revalidated Reader" } : user }) });
   });
   await page.goto("/app");
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   expect(calls).toBe(1);
   rechecking = true;
   await page.evaluate(() => {
@@ -90,7 +108,7 @@ for (const failure of ["service", "network"] as const) {
     await expect(page.getByText("Lifecycle Reader")).toHaveCount(0);
     unavailable = false;
     await page.evaluate(() => window.dispatchEvent(new Event("online")));
-    await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
     await expect(page.getByText("Lifecycle Reader").first()).toBeVisible();
   });
 }

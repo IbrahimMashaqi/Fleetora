@@ -1,0 +1,66 @@
+{
+  "purpose": "Manufacturer identification only; no endorsement or affiliation implied. Trademark rights are separate from copyright and remain with their respective owners.",
+  "sourcePolicy": "Unmodified SVGs hosted locally; no runtime hotlinking or third-party image requests. Unknown brands use generic vehicle icons.",
+  "assets": [
+    {
+      "brand": "Škoda",
+      "file": "skoda.svg",
+      "source": "https://commons.wikimedia.org/wiki/File:%C5%A0koda_Auto_2022_text_logo.svg",
+      "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/7/76/%C5%A0koda_Auto_2022_text_logo.svg",
+      "copyrightStatus": "Public domain (PD-textlogo), as stated by source description",
+      "trademarkOwner": "Škoda",
+      "modified": false,
+      "sha256": "b7188eecdfb4ccc6cdff094f70d2d3913895b2d76693ddbe31998cf25d2536d3"
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "file": "mercedes-benz.svg",
+      "source": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_Star_2022.svg",
+      "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/3/32/Mercedes-Benz_Star_2022.svg",
+      "copyrightStatus": "Public domain (PD-textlogo), as stated by source description",
+      "trademarkOwner": "Mercedes-Benz",
+      "modified": false,
+      "sha256": "1c35cb516ffff6dc694730726a19241b0af8ad5c5d4a5e8e449954601b9d46c9"
+    },
+    {
+      "brand": "BMW",
+      "file": "bmw.svg",
+      "source": "https://commons.wikimedia.org/wiki/File:BMW_logo_%28gray%29.svg",
+      "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f4/BMW_logo_%28gray%29.svg",
+      "copyrightStatus": "Public domain (PD-textlogo), as stated by source description",
+      "trademarkOwner": "BMW",
+      "modified": false,
+      "sha256": "d797f1774d210ba5d2854dfca6927ca95e8fa3c464efb1800bd2f4b90b91413a"
+    },
+    {
+      "brand": "Toyota",
+      "file": "toyota.svg",
+      "source": "https://commons.wikimedia.org/wiki/File:Toyota_Logo.svg",
+      "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/7/78/Toyota_Logo.svg",
+      "copyrightStatus": "Public domain (PD-textlogo), as stated by source description",
+      "trademarkOwner": "Toyota",
+      "modified": false,
+      "sha256": "3b296a990cd920263474ced8dc2dc2ff84926f6ec099c7de96d205849ff592db"
+    },
+    {
+      "brand": "Hyundai",
+      "file": "hyundai.svg",
+      "source": "https://commons.wikimedia.org/wiki/File:Hyundai_Motor_Company_logo.svg",
+      "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/4/44/Hyundai_Motor_Company_logo.svg",
+      "copyrightStatus": "Public domain (PD-textlogo), as stated by source description",
+      "trademarkOwner": "Hyundai",
+      "modified": false,
+      "sha256": "03cda6235efc7bdac40c8c3eb34824d007fc69143e0b130dd45ec07d846cdfa0"
+    },
+    {
+      "brand": "Volkswagen",
+      "file": "volkswagen.svg",
+      "source": "https://commons.wikimedia.org/wiki/File:Volkswagen_logo_2019.svg",
+      "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/6/6d/Volkswagen_logo_2019.svg",
+      "copyrightStatus": "Public domain (PD-textlogo), as stated by source description",
+      "trademarkOwner": "Volkswagen",
+      "modified": false,
+      "sha256": "5e9fb889f1ccc7776dd9305b235be41a256265d3fef19f26945ea414eb65edf5"
+    }
+  ]
+}

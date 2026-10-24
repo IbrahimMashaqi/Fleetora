@@ -1,0 +1,10 @@
+.headerTitle { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; font-weight: 600; }
+.workspaceName { min-width: 0; max-width: min(20vw, 16rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted-foreground); font-size: .75rem; line-height: 1.25rem; }
+.sidebarItem { position: relative; display: flex; align-items: center; justify-content: flex-start; gap: .75rem; min-height: 44px; width: 100%; border: 0; border-radius: var(--radius); padding: .625rem .75rem; color: var(--sidebar-foreground); text-align: start; font-size: .875rem; font-weight: 500; outline: none; transition: background-color var(--motion-default); }
+.sidebarItem:hover { background: rgb(255 255 255 / .06); color: var(--sidebar-foreground); }
+.sidebarItem:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sidebarItem svg { width: 20px; height: 20px; flex-shrink: 0; }
+.sidebarItem > span { min-width: 0; white-space: nowrap; }
+.active, .active:hover { background: rgb(255 255 255 / .1); }
+.active::before { content: ""; position: absolute; inset-inline-start: 0; inset-block: 8px; width: 2px; border-radius: 2px; background: var(--primary); }
+@media (prefers-reduced-motion: reduce) { .sidebarItem { transition: none; } }

@@ -1,0 +1,166 @@
+{
+  "pickup_title": {
+    "en": "Pickup requests",
+    "ar": "طلبات الاستلام"
+  },
+  "pickup_new": {
+    "en": "New pickup request",
+    "ar": "طلب استلام جديد"
+  },
+  "pickup_details": {
+    "en": "Pickup details",
+    "ar": "تفاصيل الاستلام"
+  },
+  "pickup_method": {
+    "en": "Handover method",
+    "ar": "طريقة التسليم"
+  },
+  "pickup_method_COMPANY_PICKUP": {
+    "en": "Company pickup",
+    "ar": "استلام بواسطة الشركة"
+  },
+  "pickup_method_WAREHOUSE_DROPOFF": {
+    "en": "Warehouse drop-off",
+    "ar": "تسليم إلى المستودع"
+  },
+  "pickup_receiptNotice": {
+    "en": "Parcels remain in your custody until the company confirms physical receipt.",
+    "ar": "تبقى الطرود في عهدتك حتى تؤكد الشركة الاستلام الفعلي."
+  },
+  "pickup_preferred": {
+    "en": "Preferred window",
+    "ar": "الفترة المفضلة"
+  },
+  "pickup_proposed": {
+    "en": "Company proposal",
+    "ar": "الفترة المقترحة من الشركة"
+  },
+  "pickup_confirmed": {
+    "en": "Confirmed window",
+    "ar": "الفترة المؤكدة"
+  },
+  "pickup_notScheduled": {
+    "en": "Not scheduled",
+    "ar": "غير محدد"
+  },
+  "pickup_preferenceNotice": {
+    "en": "Choose a future time window. This is a preference until the company confirms it.",
+    "ar": "اختر فترة زمنية مستقبلية. هذه الفترة مفضلة فقط إلى أن تؤكدها الشركة."
+  },
+  "pickup_from": {
+    "en": "From",
+    "ar": "من"
+  },
+  "pickup_to": {
+    "en": "To",
+    "ar": "إلى"
+  },
+  "pickup_alternate": {
+    "en": "Use an alternative address",
+    "ar": "استخدام عنوان بديل"
+  },
+  "pickup_alternateNotice": {
+    "en": "Applies to this request only. Your business address stays the same.",
+    "ar": "يُستخدم لهذا الطلب فقط دون تغيير عنوان نشاطك."
+  },
+  "pickup_address": {
+    "en": "Alternative pickup address",
+    "ar": "عنوان الاستلام البديل"
+  },
+  "pickup_addressInvalid": {
+    "en": "Enter an address of at least 3 characters.",
+    "ar": "أدخل عنواناً من 3 أحرف على الأقل."
+  },
+  "pickup_notes": {
+    "en": "Pickup notes (optional)",
+    "ar": "ملاحظات الاستلام (اختياري)"
+  },
+  "pickup_parcels": {
+    "en": "Selected parcels",
+    "ar": "الطرود المحددة"
+  },
+  "pickup_readyNotice": {
+    "en": "Select up to 200 ready parcels. The company checks that parcels are not already in another active request.",
+    "ar": "حدد حتى 200 طرد جاهز. تتحقق الشركة من عدم ارتباط الطرود بطلب نشط آخر."
+  },
+  "pickup_chooseParcels": {
+    "en": "Select between 1 and 200 parcels.",
+    "ar": "حدد من طرد واحد إلى 200 طرد."
+  },
+  "pickup_windowInvalid": {
+    "en": "Choose a future start time and an end time after it.",
+    "ar": "اختر وقت بداية مستقبلياً ووقت نهاية بعده."
+  },
+  "pickup_submit": {
+    "en": "Request pickup",
+    "ar": "إرسال طلب الاستلام"
+  },
+  "pickup_retrySame": {
+    "en": "Retry this request",
+    "ar": "إعادة محاولة الطلب نفسه"
+  },
+  "pickup_uncertain": {
+    "en": "The request was not confirmed. Retry the same request to check its outcome without creating a duplicate.",
+    "ar": "لم يتم تأكيد الطلب. أعد محاولة الطلب نفسه للتحقق من نتيجته دون إنشاء طلب مكرر."
+  },
+  "pickup_denied": {
+    "en": "You do not have permission to manage pickup requests.",
+    "ar": "ليس لديك صلاحية إدارة طلبات الاستلام."
+  },
+  "pickup_parcelPermission": {
+    "en": "Parcel viewing permission is required to select parcels. Contact the business owner.",
+    "ar": "تحتاج إلى صلاحية عرض الطرود لتحديدها. تواصل مع مالك النشاط."
+  },
+  "pickup_cancel": {
+    "en": "Cancel pickup request",
+    "ar": "إلغاء طلب الاستلام"
+  },
+  "pickup_accept": {
+    "en": "Accept proposed window",
+    "ar": "قبول الفترة المقترحة"
+  },
+  "pickup_cancelMessage": {
+    "en": "Cancel this grouped pickup request? No physical receipt will be recorded.",
+    "ar": "هل تريد إلغاء طلب الاستلام المجمع؟ لن يتم تسجيل استلام فعلي."
+  },
+  "pickup_acceptMessage": {
+    "en": "Confirm the time window proposed by the company?",
+    "ar": "هل تريد تأكيد الفترة الزمنية المقترحة من الشركة؟"
+  },
+  "pickup_refresh": {
+    "en": "Refresh request",
+    "ar": "تحديث الطلب"
+  },
+  "pickup_receipt_PENDING": {
+    "en": "Awaiting physical receipt",
+    "ar": "بانتظار الاستلام الفعلي"
+  },
+  "pickup_receipt_RECEIVED": {
+    "en": "Received by the company",
+    "ar": "تم الاستلام بواسطة الشركة"
+  },
+  "pickup_receipt_MISSING": {
+    "en": "Not received",
+    "ar": "لم يُستلم"
+  },
+  "pickup_receipt_DISCREPANT": {
+    "en": "Received with a discrepancy",
+    "ar": "تم الاستلام مع اختلاف"
+  },
+  "status_REQUESTED": {
+    "en": "Requested",
+    "ar": "مطلوب"
+  },
+  "status_PROPOSED": {
+    "en": "Proposed time",
+    "ar": "وقت مقترح"
+  },
+  "status_CONFIRMED": {
+    "en": "Confirmed",
+    "ar": "مؤكد"
+  },
+  "status_RECEIVED": {
+    "en": "Received",
+    "ar": "تم الاستلام"
+  }
+}
