@@ -112,9 +112,17 @@ test("validates confirmation and password policy before backend mutation", async
 
 test("submits once through the real action and clears sensitive values on success", async ({ page }) => {
   delay = 900;
+  let actionBody: string | undefined;
+  // Capture the actual server response before delivering it to Chrome. Chrome
+  // can release a streamed action body during React's subsequent update.
+  await page.route("**/app/account", async route => {
+    if (route.request().method() !== "POST") return route.continue();
+    const response = await route.fetch({ maxRedirects: 0, maxRetries: 0 });
+    actionBody = await response.text();
+    await route.fulfill({ response, body: actionBody });
+  });
   await page.goto("/app/account");
   await fillPasswords(page);
-  const actionResponse = page.waitForResponse(response => response.request().method() === "POST" && new URL(response.url()).pathname === "/app/account");
   await page.getByRole("button", { name: "Change password", exact: true }).click();
   await expect(page.getByRole("button", { name: "Changing password...", exact: true })).toBeDisabled();
   await expect(page.getByLabel("Current password", { exact: true })).toBeDisabled();
@@ -126,8 +134,8 @@ test("submits once through the real action and clears sensitive values on succes
     await expect(page.getByLabel(label, { exact: true })).toHaveValue("");
   }
   expect(updates).toEqual([{ body: { oldPassword: "CurrentPassword9", newPassword: "NewPassword9" }, authorization: "Bearer fixture-account-access" }]);
-  const returned = await (await actionResponse).text();
-  expect(returned).not.toMatch(/CurrentPassword9|NewPassword9|fixture-account-(access|refresh)/);
+  expect(actionBody).toBeDefined();
+  expect(actionBody).not.toMatch(/CurrentPassword9|NewPassword9|fixture-account-(access|refresh)/);
   expect(await page.evaluate(() => JSON.stringify({ cookies: document.cookie, local: localStorage, session: sessionStorage }))).not.toMatch(/CurrentPassword9|NewPassword9|fixture-account-(access|refresh)/);
 });
 
@@ -168,14 +176,14 @@ test("does not replay an uncertain password change or expose upstream details", 
 test("navigates between Overview and Account without duplicating the shell", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/app");
-  await page.getByRole("main").getByRole("link", { name: "Account & security", exact: true }).click();
+  await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "Account & security", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Account & security", exact: true })).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Primary navigation" });
   await expect(nav.getByRole("link", { name: "Account & security", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link", { name: "Overview", exact: true })).not.toHaveAttribute("aria-current");
   await expect(page.getByRole("complementary", { name: "Workspace sidebar" })).toHaveCount(1);
   await nav.getByRole("link", { name: "Overview", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
 });
 
 test("supports responsive account content and keyboard mobile navigation", async ({ page }) => {
@@ -192,7 +200,7 @@ test("supports responsive account content and keyboard mobile navigation", async
   const trigger = page.getByRole("button", { name: "Open navigation" });
   await trigger.focus();
   await page.keyboard.press("Enter");
-  const dialog = page.getByRole("dialog", { name: "Mobile navigation" });
+  const dialog = page.getByRole("dialog", { name: "Open navigation" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Close navigation" })).toBeFocused();
   await expect(dialog.getByRole("link", { name: "Account & security", exact: true })).toHaveAttribute("aria-current", "page");
@@ -201,7 +209,7 @@ test("supports responsive account content and keyboard mobile navigation", async
   await trigger.click();
   await dialog.getByRole("link", { name: "Overview", exact: true }).click();
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByRole("heading", { name: "Welcome to Fleetora" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
 });
 
 test("discards password drafts when verified identity changes and preserves logout", async ({ page }) => {

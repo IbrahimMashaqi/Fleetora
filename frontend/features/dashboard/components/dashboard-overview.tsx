@@ -1,28 +1,15 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import type { SessionUser } from "@/lib/auth/session.types";
+import { useLocale } from "@/lib/i18n";
+import { FleetPreview } from "@/features/fleet/components/fleet-preview";
 
 export function DashboardOverview({ user }: { user: SessionUser }) {
+  const { t } = useLocale();
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <section aria-labelledby="overview-welcome-title" className="max-w-3xl">
-        <h2 id="overview-welcome-title" className="break-words text-2xl font-semibold leading-8 tracking-tight sm:text-3xl sm:leading-9">
-          Welcome to Fleetora
-        </h2>
-        {user.company ? (
-          <p className="mt-3 max-w-xl break-words text-sm leading-6 text-foreground/75">
-            Your company workspace is active.
-          </p>
-        ) : (
-          <p className="mt-3 max-w-2xl break-words text-sm leading-6 text-foreground/75">
-            You’re signed in as a Fleetora platform administrator. This workspace isn’t associated with a company.
-          </p>
-        )}
-        <Button asChild variant="outline" className="mt-6">
-          <Link href="/app/account">Account &amp; security</Link>
-        </Button>
-      </section>
-
+    <div className="w-full">
+      {user.role === "PLATFORM_ADMIN" && !user.company && (
+        <p className="mb-6 max-w-2xl text-sm leading-6 text-foreground">{t("You are signed in with platform-level access and no company workspace.")}</p>
+      )}
+      {user.role === "COMPANY_ADMIN" && user.company && <FleetPreview key={`${user.id}:${user.company.id}`} user={user} />}
     </div>
   );
 }

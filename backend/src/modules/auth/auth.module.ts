@@ -27,5 +27,6 @@ import {
     },
   ],
   controllers: [AuthController],
+  exports: [AuthRepository],
 })
 export class AuthModule {}

@@ -1,0 +1,128 @@
+[
+  {
+    "id": "column.public.vehicles.manufacturer",
+    "label": "Add column \"manufacturer\" to \"vehicles\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "manufacturer",
+        "table": "vehicles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"manufacturer\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "vehicles",
+          "manufacturer"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"manufacturer\"",
+        "sql": "ALTER TABLE \"public\".\"vehicles\" ADD COLUMN \"manufacturer\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"manufacturer\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "vehicles",
+          "manufacturer"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.vehicles.model",
+    "label": "Add column \"model\" to \"vehicles\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "model",
+        "table": "vehicles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"model\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "vehicles",
+          "model"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"model\"",
+        "sql": "ALTER TABLE \"public\".\"vehicles\" ADD COLUMN \"model\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"model\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "vehicles",
+          "model"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.vehicles.vehicles_companyId_plateNumber_key",
+    "label": "Add unique constraint on \"vehicles\" (companyId, plateNumber)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "vehicles_companyId_plateNumber_key",
+        "table": "vehicles"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"vehicles_companyId_plateNumber_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "vehicles_companyId_plateNumber_key",
+          "public",
+          "\"public\".\"vehicles\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"vehicles_companyId_plateNumber_key\"",
+        "sql": "ALTER TABLE \"public\".\"vehicles\" ADD CONSTRAINT \"vehicles_companyId_plateNumber_key\" UNIQUE (\"companyId\", \"plateNumber\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"vehicles_companyId_plateNumber_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "vehicles_companyId_plateNumber_key",
+          "public",
+          "\"public\".\"vehicles\""
+        ]
+      }
+    ]
+  }
+]

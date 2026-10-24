@@ -18,6 +18,14 @@ export type Driver = {
   name: string;
   phone: string;
   status: DriverStatus;
+  vehicle: DriverVehicle | null;
+};
+export type DriverVehicle = {
+  manufacturer?: string | null;
+  model?: string | null;
+  id: string;
+  type: "MOTORCYCLE" | "CAR" | "VAN" | "TRUCK";
+  plateNumber: string;
 };
 export type DriverQuery = { search: string; page: number; pageSize: number };
 export type DriverPage = {

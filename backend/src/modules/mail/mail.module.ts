@@ -1,6 +1,5 @@
 import { Global, Module } from '@nestjs/common';
 import { MailService } from './mail.service.js';
-import { MailController } from './mail.controller.js';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { fileURLToPath } from 'url';
@@ -31,7 +30,6 @@ const templatesDir = fileURLToPath(new URL('./templates', import.meta.url));
   ],
 
   providers: [MailService],
-  controllers: [MailController],
   exports: [MailService],
 })
 export class MailModule {}

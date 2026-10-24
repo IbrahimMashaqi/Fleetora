@@ -1,0 +1,210 @@
+Fleetora Live Fleet Tracking — implementation and local verification
+
+SCHEMA AND DEPLOYMENT
+
+The migration and source below describe the feature, not the current live database.
+Recheck the live marker through an explicitly authorized read-only inspection before
+any deployment. Local tests/builds cannot prove remote deployment. Production DDL
+requires separate authorization and the reviewed secure migration workflow.
+
+Migration: backend/migrations/app/20261017T1156_live_fleet_tracking
+Parent: 3dfdcd69d14fa5c5906a7720fd95d7cf6474d1535434f04efb18f0250c404303
+Target: 9a81be706b19e625d323a75966347489edab4d41d74b73b445d7392c5989323c
+Migration hash: 3f532b068a151bc81b62853774c0d0e2cb1627099fc80ce9fdfc08f88fb738d4
+
+Eight additive operations create company_headquarters and driver_tracking_states,
+their indexes/constraints, and workers(id, companyId) uniqueness. Existing worker
+IDs are already unique, so that composite key does not require changing records.
+The composite tracking -> worker FK enforces company ownership in the database.
+There are no existing-column changes, data backfills, or location-history imports.
+Existing users, vehicles, assignments, authentication and signup remain intact.
+New tracking-table cascades only remove that company's/worker's tracking state
+when its parent is deleted; they do not delete workers or vehicles.
+
+Before deployment, review the package, confirm the exact live parent contract,
+back up, pause writers, and use the existing secure production Prisma config.
+Historical migration refs and older vehicle deployment reports are not evidence
+of the current live state. This feature does not automatically reconcile them.
+Rollback should retain additive tables; dropping them would destroy saved HQ/GPS
+data. No destructive rollback or automatic restore is supplied or executed.
+
+CONFIGURATION
+
+Backend (private environment, never browser variables):
+- DATABASE_URL: the intended application's PostgreSQL database. Tests below use
+  only an explicit owned loopback *_test database, never the application value.
+- Existing ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET and existing auth/mail
+  configuration continue to apply; do not replace them with example credentials.
+- FRONTEND_URL: exact permitted browser origin. Development normally uses
+  http://localhost:3000. Production requires HTTPS. Do not include a route/query.
+- PORT: normally 3001.
+
+Frontend:
+- FLEETORA_API_URL: server-only REST base, normally http://localhost:3001 locally.
+- NEXT_PUBLIC_FLEETORA_REALTIME_URL: browser-reachable backend origin, normally
+  http://localhost:3001 locally; HTTPS required in production. Set explicitly when
+  the server-only REST origin is private or different from the public socket host.
+  Socket.IO uses /socket.io and namespace /fleet; proxy WebSocket upgrades there.
+- NEXT_PUBLIC_FLEETORA_MAP_STYLE_URL: HTTPS URL of a MapLibre style JSON with its
+  provider's permitted sources, glyphs, attribution and public browser token.
+  Only deliberately public tokens belong here. No private API keys or URL userinfo.
+  Local HTTP style URLs are accepted only for development loopback hosts.
+Set NEXT_PUBLIC_* values before building the frontend; changing a deployed public
+value requires rebuilding/redeploying the matching frontend artifact.
+
+The shared Overview/Live Map renderer uses an explicit style URL first, then
+MapTiler Streets when NEXT_PUBLIC_MAPTILER_KEY is configured, otherwise the public
+attributed OpenFreeMap Liberty vector style. MapTiler browser keys must be public
+and restricted appropriately; private credentials never belong in NEXT_PUBLIC_*.
+The provider, glyphs, sources and attribution must be licensed for the deployment.
+No unauthorized Google tiles, synthetic driver positions or offline tile downloads
+are supplied. Provider availability and place-label coverage are external limits.
+
+Arabic place labels depend on the selected style/data and available fonts.
+MapLibre 6.14 shapes Arabic/bidirectional text internally; an external RTL plugin
+is unnecessary. OSM raster labels are already rendered by their provider.
+Reference: https://maplibre.org/maplibre-gl-js/docs/API/functions/setRTLTextPlugin/
+MapLibre's worker is emitted locally by Next; no third-party script CDN is needed.
+
+HTTP AND REALTIME CONTRACT
+
+All REST routes require the existing access-token strategy and persisted, active,
+verified COMPANY_ADMIN identity in an active company. PLATFORM_ADMIN does not gain
+tenant access. The backend derives companyId from that principal; the UI company
+header only rejects stale session context and never authorizes a tenant.
+
+GET /fleet/locations
+  {companyId, serverTime, freshnessSeconds:45, headquarters, drivers}
+  Each driver contains id/name/phone, allowlisted actual assigned vehicle, and
+  tracking {revision, sharing, sharingStartedAt, location|null}.
+  Location: latitude/longitude/capturedAt/receivedAt/accuracy/speed/heading.
+  Snapshot covers all workers up to 10,000; larger fleets return unavailable,
+  rather than silently truncating counts. Marker rendering uses clustered layers;
+  the panel searches the complete snapshot and incrementally displays rows.
+
+GET /companies/me/headquarters
+  {companyId, headquarters:null|{latitude,longitude,address,revision,updatedAt}}
+PATCH /companies/me/headquarters
+  {latitude, longitude, address:null|string, expectedRevision}
+  Latitude [-90,90], longitude [-180,180], <=7 decimal places; address <=300 chars.
+  Revision 0 means no saved HQ yet; stale writes return 409. Both write and read
+  transactions pin persisted actor/company context. No automatic mutation retry.
+
+POST /fleet/socket-ticket
+  Requires x-fleetora-company-context, as does HQ PATCH.
+  Returns {companyId,ticket,expiresAt}; ticket is a random, single-use 30-second
+  transport capability. Access/refresh JWTs remain in existing HttpOnly cookies
+  and server-side requests, not JavaScript storage or WebSocket query strings.
+
+Socket.IO /fleet handshake auth: {ticket}
+  Browser origin must match FRONTEND_URL. Company rooms are chosen by the server.
+  fleet:ready {companyId} follows authorization and subscription setup.
+  fleet:location-updated and fleet:driver-status-changed carry:
+    {companyId,driverId,serverTime,tracking}
+  fleet:headquarters-updated carries {companyId,headquarters}.
+  Every outgoing data event rechecks persisted permissions. Idle connections are
+  rechecked every 15 seconds. Role/company changes, suspension and auth failures
+  disconnect the subscriber. Tickets are consumed before asynchronous checks.
+
+The client acquires a new ticket on reconnect and reconciles a new REST snapshot
+with buffered monotonic revisions. Late responses/events from a previous identity
+are discarded. Transport connection, sharing consent and GPS freshness are
+separate states. A healthy socket alone never makes a driver online.
+
+Online requires active sharing, a point captured/received in the current sharing
+session, and both clocks within 45 seconds. Offline includes never-shared and
+expired/stopped sharing. Last-known coordinates remain visible and muted when
+stale or transport is disconnected. No-location workers never become map points.
+Speed is stored in metres/second and displayed as km/h. Heading is real degrees.
+No synthetic positions, direction, movement, timestamps or operational metrics.
+
+CURRENT SCALE LIMIT
+
+Tickets/event delivery are intentionally in-process. Use one backend instance.
+Horizontal scaling requires a shared ticket store and company-scoped pub/sub;
+sticky sessions alone do not distribute events published by another instance.
+There is no durable event replay/outbox: reconnect/manual Retry resnapshots from
+the database. Application crashes between commit and publish can delay delivery
+until resnapshot. Company-first row locks prioritize consistency at current scale.
+
+FUTURE DRIVER APP — EXTERNAL INGESTION IS DISABLED
+
+There is no DRIVER User login mapped to Worker in the current application.
+POST /drivers/me/location and socket GPS-ingestion handlers are NOT registered.
+DriverTelemetryService exists with a typed DriverIdentityVerifier port; the
+registered UnconfiguredDriverIdentityVerifier rejects every proof by default.
+Company-admin credentials must never be used as a driver identity substitute.
+
+A future reviewed driver-auth integration must provide a trusted verifier that
+derives the Worker/company from a server-validated credential and checks expiry,
+revocation, device/session ownership and tenant context. Do not construct identity
+from body fields or model/AI output. Existing User auth/signup is not changed.
+
+Service contract after that adapter exists:
+  startSharing(proof, {consent:true, expectedRevision}) -> {sessionId,tracking}
+  accept(proof, {sessionId,sequence,latitude,longitude,capturedAt,
+                 accuracy?,speed?,heading?}) -> tracking
+  stopSharing(proof, sessionId) -> tracking
+  sessionId is returned only to the trusted ingestion caller, never fleet viewers.
+
+Explicit consent starts a server-generated session. Stop retains the last point
+but prevents more samples; an old session cannot stop/overwrite a newer one.
+Sequence/capture time must increase; duplicates and out-of-order samples fail.
+Only latest state is stored, not an unbounded stream in legacy location_events.
+Captures >120s old, >30s in the future, or before current consent are rejected.
+Minimum accepted sample interval is 2s; a mobile app should normally sample/send
+every 5–15s during approved operations, adapt to battery/background restrictions,
+and stop when consent is withdrawn. No background tracking app is included.
+Speed 0..100m/s, heading [0,360), accuracy 0..10,000m; finite valid coordinates
+are mandatory. Implausible jumps are rejected with bounded accuracy tolerance.
+Do not queue/replay unlimited old points; rejected/uncertain writes must not be
+blindly retried. Authenticated-driver and company/worker checks run under locks.
+
+LOCAL RUN / VERIFICATION
+
+Safe UI/browser tests require no Neon account or application environment file:
+  Set-Location C:\Projects\Fleetora\frontend
+  npm.cmd ci
+  npm.cmd run test:isolated -- --workers=1
+This copies source without .env files into a new temp directory and starts owned
+fixture services on localhost:3100/127.0.0.1:3101. Ports must be free. Fictional
+GPS/tiles in test fixtures are test inputs, never production fallback data.
+The runner prints the retained report/screenshot directory and stops its server.
+
+Backend unit checks (no production database connection required):
+  Set-Location C:\Projects\Fleetora\backend
+  npm.cmd ci
+  npm.cmd test -- --maxWorkers=1 --no-file-parallelism
+  npm.cmd run lint
+  npm.cmd run typecheck
+  npm.cmd run build:isolated
+
+Database integration uses the existing test:auth:integration guard. Configure
+FLEETORA_TEST_DATABASE_URL and FLEETORA_TEST_DATABASE_NAME privately for a wholly
+disposable loopback database/role ending _test, with the latest migration applied
+ONLY to that disposable database. Set FLEETORA_ALLOW_DESTRUCTIVE_AUTH_TESTS=true.
+Tests verify current_database/current_user/session_user before fixtures/cleanup.
+The application's DATABASE_URL and remote hosts are explicitly disallowed here.
+Run the fleet HTTP, fleet tracking and vehicle deletion integration files with
+test:auth:integration and --maxWorkers=1. Tests delete their fictional fixture rows.
+
+Normal application preview requires an approved matching database schema and a
+legitimately provisioned/verified Company Admin; do not invent passwords, bypass
+verification, or copy production records into fixtures. With that prerequisite:
+  Backend terminal: Set-Location C:\Projects\Fleetora\backend
+                    npm.cmd run start:dev
+  Frontend terminal: Set-Location C:\Projects\Fleetora\frontend
+                     npm.cmd run dev
+  http://localhost:3000/app
+  http://localhost:3000/app/live-map
+Use localhost consistently with FRONTEND_URL. Do not start duplicate services if
+ports 3000/3001 are already occupied. Do not restart existing production writers
+or point a local migration command at Neon as part of this preview.
+
+After Company Admin login, open التتبع المباشر, choose حدد مقر شركتك, click the map
+or enter latitude/longitude, optionally drag the preview/add an address, and press
+حفظ الموقع. Cancel must make no change. Reload and check the saved HQ on both
+the full map and Overview. Existing real workers appear without fabricated GPS;
+no current mobile integration means they have no new live positions to show.
+On an unapplied tracking schema, endpoints return 503 and the UI must show a
+recoverable unavailable state, not an empty company or successful HQ save.

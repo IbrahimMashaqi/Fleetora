@@ -1,0 +1,12 @@
+/* Scope the requested dark presentation to this dialog, using Fleetora tokens. */
+@media (prefers-color-scheme: dark) {
+  .editor {
+    color-scheme: dark;
+    --surface: var(--sidebar-navy);
+    --background: var(--brand-navy);
+    --foreground: var(--sidebar-foreground);
+    --muted-foreground: var(--border-strong);
+    --input: var(--border-strong);
+    --border: var(--border-strong);
+  }
+}

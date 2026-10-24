@@ -102,4 +102,8 @@
   body {
     @apply bg-background font-sans text-sm leading-5 text-foreground;
   }
+
+  html[lang="ar"] body {
+    font-family: var(--font-noto-sans-arabic), var(--font-inter), Tahoma, Arial, sans-serif;
+  }
 }

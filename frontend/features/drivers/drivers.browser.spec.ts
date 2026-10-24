@@ -1,6 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { expect, test, type Page } from "@playwright/test";
 import type { SessionUser } from "@/lib/auth/session.types";
+import type { Driver } from "./drivers.types";
 import { contrastRatio } from "@/tests/ui-assertions";
 
 const admin: SessionUser = {
@@ -11,11 +12,12 @@ const admin: SessionUser = {
   orgId: "company-a",
   company: { id: "company-a", name: "Directory Logistics" },
 };
-const driver = {
+const driver: Driver = {
   id: "33333333-3333-4333-8333-333333333333",
   name: "Amina Driver",
   phone: "+970599000001",
   status: "ACTIVE",
+  vehicle: null,
 };
 let server: Server;
 let user: SessionUser;
@@ -24,6 +26,7 @@ let empty: boolean;
 let delay: number;
 let requests: URL[];
 let driverName: string;
+let fleet: Driver[] | null;
 
 test.beforeAll(async () => {
   server = createServer(async (request, response) => {
@@ -45,7 +48,10 @@ test.beforeAll(async () => {
     }
     requests.push(url);
     const requestUser = user;
-    const record = { ...driver, name: driverName };
+    const record = fleet?.find((item) => url.pathname.endsWith(item.id)) ?? {
+      ...driver,
+      name: driverName,
+    };
     await new Promise((resolve) => setTimeout(resolve, delay));
     if (status !== 200) {
       response
@@ -61,12 +67,12 @@ test.beforeAll(async () => {
             items:
               empty || url.searchParams.get("search") === "missing"
                 ? []
-                : [
+                : (fleet ?? [
                     {
                       ...record,
                       name: page > 1 ? "Second Page Driver" : record.name,
                     },
-                  ],
+                  ]),
             page,
             pageSize: 20,
             hasNext: page === 1 && !empty && !url.searchParams.get("search"),
@@ -86,6 +92,7 @@ test.beforeEach(async ({ context }) => {
   delay = 0;
   requests = [];
   driverName = driver.name;
+  fleet = null;
   await context.addCookies([
     {
       name: "fleetora_access",
@@ -143,7 +150,7 @@ test("supports backend search, URL pagination, and detail lookup", async ({
   page,
 }) => {
   await directory(page);
-  await page.getByRole("link", { name: "Next page", exact: true }).click();
+  await page.getByRole("link", { name: "Next", exact: true }).click();
   await expect(page).toHaveURL(/page=2/);
   await expect(
     page
@@ -316,7 +323,7 @@ test("keeps mobile layout, navigation, and details usable", async ({
   const trigger = page.getByRole("button", { name: "Open navigation" });
   await trigger.focus();
   await page.keyboard.press("Enter");
-  const dialog = page.getByRole("dialog", { name: "Mobile navigation" });
+  const dialog = page.getByRole("dialog", { name: "Open navigation" });
   await expect(
     dialog.getByRole("link", { name: "Drivers", exact: true }),
   ).toHaveAttribute("aria-current", "page");
@@ -492,4 +499,109 @@ test("provides labeled keyboard controls and readable text contrast", async ({
   await expect(
     page.getByRole("button", { name: "View Amina Driver" }),
   ).toBeFocused();
+});
+
+test("renders the real assigned vehicle summary, every status, and unassigned cards in a responsive grid", async ({
+  page,
+}) => {
+  fleet = [
+    {
+      ...driver,
+      name: "Amina Driver",
+      status: "ACTIVE",
+      vehicle: {
+        id: "99999999-9999-4999-8999-999999999999",
+        type: "VAN",
+        plateNumber: "DEMO-101",
+      },
+    },
+    {
+      ...driver,
+      id: "44444444-4444-4444-8444-444444444444",
+      name: "Omar Rider",
+      status: "ON_BREAK",
+      vehicle: {
+        id: "88888888-8888-4888-8888-888888888888",
+        type: "MOTORCYCLE",
+        plateNumber: "",
+      },
+    },
+    {
+      ...driver,
+      id: "55555555-5555-4555-8555-555555555555",
+      name: "Lina Driver",
+      status: "SUSPENDED",
+      vehicle: null,
+    },
+    {
+      ...driver,
+      id: "66666666-6666-4666-8666-666666666666",
+      name: "Zaid Driver",
+      status: "OFFLINE",
+      vehicle: {
+        id: "77777777-7777-4777-8777-777777777777",
+        type: "TRUCK",
+        plateNumber: "DEMO-TRUCK",
+      },
+    },
+  ];
+  await directory(page);
+  const cards = page.getByRole("list", { name: "Drivers", exact: true });
+  await expect(cards.getByRole("article")).toHaveCount(4);
+  for (const text of [
+    "Active",
+    "On break",
+    "Suspended",
+    "Offline",
+    "DEMO-101",
+    "No vehicle assigned",
+    "Not provided",
+  ])
+    await expect(cards.getByText(text, { exact: true }).first()).toBeVisible();
+  await expect(
+    cards.getByRole("img", { name: "Vehicle type icon: Motorcycle" }),
+  ).toBeVisible();
+  await expect(cards.getByRole("img", { name: /logo$/ })).toHaveCount(0);
+  await expect(cards.getByText("Brand not recorded")).toHaveCount(3);
+  for (const [width, columns] of [
+    [375, 1],
+    [900, 2],
+    [1440, 3],
+  ]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await expect
+      .poll(() =>
+        cards.evaluate(
+          (element) =>
+            getComputedStyle(element).gridTemplateColumns.split(" ").length,
+        ),
+      )
+      .toBe(columns);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  await page.screenshot({
+    path: test.info().outputPath("driver-cards-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 375, height: 900 });
+  await page.screenshot({
+    path: test.info().outputPath("driver-cards-mobile.png"),
+    fullPage: true,
+  });
+  await cards
+    .getByRole("button", { name: "View Amina Driver", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Driver details" });
+  await expect(dialog.getByText("DEMO-101", { exact: true })).toBeVisible();
+  await expect(
+    dialog.getByRole("heading", { name: "Assigned vehicle" }),
+  ).toBeVisible();
+  await expect(dialog.getByText("Brand not recorded")).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Change vehicle", exact: true }),
+  ).toBeVisible();
 });

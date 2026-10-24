@@ -1,6 +1,6 @@
 # Security gates for future Fleetora features
 
-Phase 6B does not implement Orders, Drivers, Dispatch, Tracking, Analytics, platform administration, organization memberships or a permissions framework.
+Apply these boundaries to existing tenant modules and future work. This checklist defines security gates; the implemented modules and currently enabled authorization model must be verified in source. It does not activate the Phase 7B.1 authorization cutover.
 
 ## Existing enforcement
 

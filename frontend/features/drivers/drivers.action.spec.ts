@@ -30,6 +30,7 @@ const driver = {
   name: "Amina Driver",
   phone: "+970599000001",
   status: "ACTIVE",
+  vehicle: null,
 };
 const query = { search: "", page: 1, pageSize: 20 };
 const identity = { success: true, data: user };
@@ -321,4 +322,81 @@ test("preserves cookies and does not retry an uncertain refresh rejection", asyn
   expect(await list()).toEqual({ status: "changed" });
   expect(paths).toEqual(["/auth/session", "/auth/refresh"]);
   expect(values.get("fleetora_refresh")).toBe("fixture-refresh");
+});
+
+for (const kind of ["list", "detail"] as const) {
+  test(`projects assigned vehicle fields for ${kind} including saved manufacturer and model`, async () => {
+    const vehicle = {
+      id: "99999999-9999-4999-8999-999999999999",
+      type: "VAN",
+      plateNumber: "DEMO-101",
+      manufacturer: "Toyota",
+      model: "Corolla",
+    };
+    const record = {
+      ...driver,
+      vehicle: {
+        ...vehicle,
+
+        companyId: "private-company",
+      },
+    };
+    replies[1] = {
+      path: kind === "list" ? "/drivers" : `/drivers/${driver.id}`,
+      body: {
+        success: true,
+        data: {
+          companyId: scope.companyId,
+          ...page,
+          items: [record],
+          driver: record,
+        },
+      },
+    };
+    const result = await readDriversForSession(
+      jar,
+      scope,
+      kind === "list" ? { kind, query } : { kind, id: driver.id },
+    );
+    expect(result).toEqual(
+      kind === "list"
+        ? { status: "list", data: { ...page, items: [{ ...driver, vehicle }] } }
+        : { status: "detail", data: { ...driver, vehicle } },
+    );
+  });
+}
+for (const vehicle of [
+  { id: "invalid", type: "CAR", plateNumber: "" },
+  {
+    id: "99999999-9999-4999-8999-999999999999",
+    type: "INVALID",
+    plateNumber: "",
+  },
+  {
+    id: "99999999-9999-4999-8999-999999999999",
+    type: "CAR",
+    plateNumber: null,
+  },
+]) {
+  test(`rejects malformed assigned vehicle: ${JSON.stringify(vehicle)}`, async () => {
+    replies[1].body = {
+      success: true,
+      data: {
+        companyId: scope.companyId,
+        ...page,
+        items: [{ ...driver, vehicle }],
+      },
+    };
+    expect(await list()).toEqual({ status: "unavailable" });
+  });
+}
+
+test("supports an older backend that omits the additive vehicle summary", async () => {
+  const { vehicle: omitted, ...legacy } = driver;
+  expect(omitted).toBeNull();
+  replies[1].body = {
+    success: true,
+    data: { companyId: scope.companyId, ...page, items: [legacy] },
+  };
+  expect(await list()).toEqual({ status: "list", data: page });
 });

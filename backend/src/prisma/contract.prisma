@@ -61,6 +61,11 @@ enum ShipmentStatus {
   RESCHEDULED
   RETURNED
   ON_HOLD
+  RECEIVED_FROM_MERCHANT
+  AT_WAREHOUSE
+  RETURN_IN_PROGRESS
+  RETURNED_TO_WAREHOUSE
+  RETURNED_TO_MERCHANT
 }
 
 enum ShipmentPriority {
@@ -98,6 +103,17 @@ enum AIExecutionStatus {
 // ------------------------------------------------------------
 
 model Company {
+  merchantParcelRequests MerchantParcelRequest[]
+  merchantAccessEvents MerchantAccessEvent[]
+  merchantMemberships MerchantMembership[]
+  merchantInvitations MerchantInvitation[]
+  deliveryZones DeliveryZone[]
+  merchantPlans MerchantPlan[]
+  planZoneTariffs PlanZoneTariff[]
+  pickupRequests PickupRequest[]
+  merchantImports MerchantImport[]
+  merchantSettlementRequests MerchantSettlementRequest[]
+
   id        String   @id @default(uuid())
   name      String
   plan      Plan     @default(TRIAL)
@@ -111,11 +127,26 @@ model Company {
   warehouses Warehouse[]
   shipments  Shipment[]
   memberships CompanyMembership[]
+  headquarters CompanyHeadquarters?
+  trackingStates DriverTrackingState[]
+  businessMerchants Merchant[]
+  parcelAttempts ParcelAttempt[]
+  parcelReturns ParcelReturn[]
+  collections CodCollection[]
+  ledgerEntries MerchantLedgerEntry[]
+  settlements MerchantSettlement[]
+  settlementLines MerchantSettlementLine[]
+  allocations SettlementAllocation[]
+  payments SettlementPayment[]
+  monetaryRequests MonetaryRequest[]
 
   @@map("companies")
 }
 
 model User {
+  @@unique([id,companyId])
+  merchantMembership MerchantMembership?
+
   id        String   @id @default(uuid())
   email     String?   @unique
   password  String
@@ -185,6 +216,8 @@ model PlatformAdminGrant {
 }
 
 model Worker {
+  pickupRequests PickupRequest[]
+
   id          String       @id @default(uuid())
   companyId   String
   fullName    String
@@ -201,6 +234,10 @@ model Worker {
   locationEvents LocationEvent[]
   notifications  Notification[]
 
+  trackingState DriverTrackingState?
+  collections CodCollection[]
+
+  @@unique([id, companyId])
   @@index([companyId])
   @@map("workers")
 }
@@ -210,12 +247,15 @@ model Vehicle {
   companyId   String
   type        VehicleType
   plateNumber String
+  manufacturer String?
+  model        String?
   createdAt   DateTime    @default(now())
   updatedAt temporal.updatedAt()  
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   worker  Worker?
 
+  @@unique([companyId, plateNumber])
   @@index([companyId])
   @@map("vehicles")
 }
@@ -225,6 +265,8 @@ model Vehicle {
 // ------------------------------------------------------------
 
 model Warehouse {
+  pickupRequests PickupRequest[]
+
   id        String   @id @default(uuid())
   companyId String
   name      String
@@ -236,6 +278,7 @@ model Warehouse {
   zones     Zone[]
   shipments Shipment[]
 
+  @@unique([id, companyId])
   @@index([companyId])
   @@map("warehouses")
 }
@@ -257,10 +300,59 @@ model Zone {
 // ------------------------------------------------------------
 
 model Shipment {
+  merchantRequests MerchantParcelRequest[]
+  deliveryZoneId String?
+  pricingPlanId String?
+  pricingMode String @default("LEGACY")
+  pricingPlanVersion String?
+  baseDeliveryFeeMinor BigInt?
+  discountMinor BigInt?
+  promotionDiscountMinor BigInt?
+  collectionMode String @default("COD")
+  pickupMethod String?
+  deliveryZone DeliveryZone? @relation(fields:[deliveryZoneId,companyId],references:[id,companyId],onDelete:Restrict)
+  pricingPlan MerchantPlan? @relation(fields:[pricingPlanId,companyId],references:[id,companyId],onDelete:Restrict)
+  pickupParcels PickupParcel[]
+  @@unique([id,companyId,merchantId])
+  @@check(expression:"\"pricingMode\" IN ('LEGACY','FINAL_INCLUSIVE') AND (\"pricingMode\" = 'LEGACY' OR (\"deliveryZoneId\" IS NOT NULL AND \"pricingPlanId\" IS NOT NULL AND \"pricingPlanVersion\" IS NOT NULL AND \"baseDeliveryFeeMinor\" IS NOT NULL AND \"discountMinor\" IS NOT NULL AND \"promotionDiscountMinor\" IS NOT NULL AND \"feePayer\" = 'MERCHANT' AND \"serviceFeeMinor\" = 0 AND \"discountMinor\" >= 0 AND \"promotionDiscountMinor\" >= 0 AND \"baseDeliveryFeeMinor\" >= \"discountMinor\"+\"promotionDiscountMinor\" AND \"deliveryFeeMinor\" = \"baseDeliveryFeeMinor\"-\"discountMinor\"-\"promotionDiscountMinor\"))",name:"shipment_pricing_snapshot")
+  @@check(expression:"\"collectionMode\" IN ('COD','PREPAID') AND (\"pricingMode\" = 'LEGACY' OR (\"collectionMode\" = 'PREPAID' AND \"codMinor\" = 0) OR (\"collectionMode\" = 'COD' AND \"codMinor\" > 0))",name:"shipment_collection_mode")
+
   id           String           @id @default(uuid())
   companyId    String
   warehouseId  String?
-  requestedBy  String // merchant who created the shipment
+  requestedBy  String // authenticated creator (legacy requester preserved)
+  merchantId String?
+  trackingNumber String? @unique
+  merchantReference String?
+  recipientName String?
+  recipientPhone String?
+  customerNotes String?
+  secondaryPhone String?
+  city String?
+  latitude Float?
+  longitude Float?
+  instructions String?
+  description String?
+  pieces Int @default(1)
+  weight Float?
+  declaredValueMinor BigInt?
+  codMinor BigInt @default(0)
+  deliveryFeeMinor BigInt @default(0)
+  returnFeeMinor BigInt @default(0)
+  returnFeePolicy String @default("ON_MERCHANT_HANDOFF")
+  serviceFeeMinor BigInt @default(0)
+  currency String @default("ILS")
+  feePayer String @default("MERCHANT")
+  scheduledAt DateTime?
+  custody String @default("MERCHANT")
+  locationLabel String?
+  locationSource String?
+  locationUpdatedAt DateTime?
+  responsibleActorId String?
+  attemptCount Int @default(0)
+  deliveredAt DateTime?
+  returnedAt DateTime?
+  revision Int @default(1)
   workerId     String?
   status       ShipmentStatus   @default(CREATED)
   priority     ShipmentPriority @default(NORMAL)
@@ -270,24 +362,46 @@ model Shipment {
   updatedAt temporal.updatedAt()  
 
   company    Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  warehouse  Warehouse?        @relation(fields: [warehouseId], references: [id])
+  warehouse  Warehouse?        @relation(fields: [warehouseId, companyId], references: [id, companyId])
   requester  User              @relation("ShipmentRequestedBy", fields: [requestedBy], references: [id])
-  worker     Worker?           @relation("ShipmentFulfilledBy", fields: [workerId], references: [id])
+  worker     Worker?           @relation("ShipmentFulfilledBy", fields: [workerId, companyId], references: [id, companyId])
   history    ShipmentHistory[]
   proof      ProofOfDelivery?
   executions AIExecution[]
+  merchant Merchant? @relation(fields: [merchantId, companyId], references: [id, companyId], onDelete: Restrict)
+  attempts ParcelAttempt[]
+  returnRecord ParcelReturn?
+  collection CodCollection?
+  ledgerEntries MerchantLedgerEntry[]
 
   @@index([companyId])
   @@index([warehouseId])
   @@index([workerId])
+  @@unique([id, companyId])
+  @@index([companyId, status])
+  @@index([companyId, merchantId])
+  @@index([companyId, createdAt])
+  @@check(expression: "\"pieces\" > 0 AND \"revision\" > 0 AND \"attemptCount\" >= 0 AND (\"declaredValueMinor\" IS NULL OR \"declaredValueMinor\" >= 0) AND (\"weight\" IS NULL OR \"weight\" > 0) AND \"codMinor\" >= 0 AND \"deliveryFeeMinor\" >= 0 AND \"returnFeeMinor\" >= 0 AND \"serviceFeeMinor\" >= 0", name: "shipments_parcel_amounts")
   @@index([requestedBy])
   @@map("shipments")
+  @@check(expression: "\"currency\" IN ('ILS','USD','EUR','JOD') AND \"feePayer\" IN ('MERCHANT','CUSTOMER') AND \"returnFeePolicy\" IN ('NONE','ON_MERCHANT_HANDOFF')", name:"shipment_fee_policy")
+  @@check(expression: "(\"latitude\" IS NULL AND \"longitude\" IS NULL) OR (\"latitude\" IS NOT NULL AND \"longitude\" IS NOT NULL AND \"latitude\" BETWEEN -90 AND 90 AND \"longitude\" BETWEEN -180 AND 180)", name:"shipment_coordinates")
 }
 
 model ShipmentHistory {
   id         String   @id @default(uuid())
   shipmentId String
   event      String
+  actorId String?
+  oldWorkerId String?
+  newWorkerId String?
+  oldWorkerName String?
+  newWorkerName String?
+  fromStatus String?
+  toStatus String?
+  note String?
+  custody String?
+  locationLabel String?
   occurredAt DateTime @default(now())
 
   shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
@@ -325,6 +439,46 @@ model LocationEvent {
 
   @@index([workerId, recordedAt])
   @@map("location_events")
+}
+
+// Latest state only. Legacy location_events are not imported as consented GPS.
+model CompanyHeadquarters {
+  companyId String @id
+  latitude Float
+  longitude Float
+  address String?
+  revision Int @default(1)
+  updatedAt DateTime @default(now())
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@check(expression: "\"latitude\" >= -90 AND \"latitude\" <= 90 AND \"longitude\" >= -180 AND \"longitude\" <= 180", name: "company_headquarters_coordinates")
+  @@check(expression: "\"revision\" > 0", name: "company_headquarters_revision")
+  @@map("company_headquarters")
+}
+
+model DriverTrackingState {
+  workerId String @id
+  companyId String
+  sharing Boolean @default(false)
+  sharingSessionId String
+  sharingStartedAt DateTime
+  revision Int @default(1)
+  sequence Int @default(0)
+  latitude Float?
+  longitude Float?
+  capturedAt DateTime?
+  receivedAt DateTime?
+  accuracy Float?
+  speed Float?
+  heading Float?
+  worker Worker @relation(fields: [workerId, companyId], references: [id, companyId], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@check(expression: "(\"latitude\" IS NULL AND \"longitude\" IS NULL AND \"capturedAt\" IS NULL AND \"receivedAt\" IS NULL AND \"accuracy\" IS NULL AND \"speed\" IS NULL AND \"heading\" IS NULL) OR (\"latitude\" IS NOT NULL AND \"longitude\" IS NOT NULL AND \"capturedAt\" IS NOT NULL AND \"receivedAt\" IS NOT NULL AND \"latitude\" >= -90 AND \"latitude\" <= 90 AND \"longitude\" >= -180 AND \"longitude\" <= 180)", name: "driver_tracking_coordinates")
+  @@check(expression: "\"revision\" > 0 AND \"sequence\" >= 0 AND (\"accuracy\" IS NULL OR (\"accuracy\" >= 0 AND \"accuracy\" <= 10000)) AND (\"speed\" IS NULL OR (\"speed\" >= 0 AND \"speed\" <= 100)) AND (\"heading\" IS NULL OR (\"heading\" >= 0 AND \"heading\" < 360))", name: "driver_tracking_measurements")
+  @@unique([workerId, companyId])
+  @@index([companyId])
+  @@map("driver_tracking_states")
 }
 
 model Notification {
@@ -368,4 +522,495 @@ model AIExecution {
   @@index([shipmentId])
   @@index([approvedBy])
   @@map("ai_executions")
+}
+
+// Staff-managed business records, deliberately independent of User accounts.
+model Merchant {
+  parcelRequests MerchantParcelRequest[]
+  accessEvents MerchantAccessEvent[]
+  memberships MerchantMembership[]
+  invitations MerchantInvitation[]
+  planId String?
+  pricingDiscountMinor BigInt @default(0)
+  plan MerchantPlan? @relation(fields:[planId,companyId],references:[id,companyId],onDelete:Restrict)
+  pickupRequests PickupRequest[]
+  imports MerchantImport[]
+  settlementRequests MerchantSettlementRequest[]
+  @@check(expression:"\"pricingDiscountMinor\" >= 0",name:"merchant_pricing_discount")
+
+  id String @id @default(uuid())
+  companyId String
+  name String
+  contactName String
+  phone String
+  secondaryPhone String?
+  pickupAddress String
+  city String
+  latitude Float?
+  longitude Float?
+  notes String?
+  active Boolean @default(true)
+  currency String
+  deliveryFeeMinor BigInt
+  returnFeeMinor BigInt
+  returnFeePolicy String @default("ON_MERCHANT_HANDOFF")
+  serviceFeeMinor BigInt @default(0)
+  feePayer String
+  paymentNotes String?
+  revision Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt temporal.updatedAt()
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  shipments Shipment[]
+  collections CodCollection[]
+  ledgerEntries MerchantLedgerEntry[]
+  settlements MerchantSettlement[]
+  @@unique([id,companyId])
+  @@index([companyId,name], name:"parcel_ops_index_2")
+  @@check(expression: "\"deliveryFeeMinor\" >= 0 AND \"returnFeeMinor\" >= 0 AND \"serviceFeeMinor\" >= 0 AND \"revision\" > 0", name:"merchant_terms_amounts")
+  @@map("merchants")
+  @@check(expression: "\"currency\" IN ('ILS','USD','EUR','JOD') AND \"feePayer\" IN ('MERCHANT','CUSTOMER') AND \"returnFeePolicy\" IN ('NONE','ON_MERCHANT_HANDOFF')", name:"merchant_terms_policy")
+  @@check(expression: "(\"latitude\" IS NULL AND \"longitude\" IS NULL) OR (\"latitude\" IS NOT NULL AND \"longitude\" IS NOT NULL AND \"latitude\" BETWEEN -90 AND 90 AND \"longitude\" BETWEEN -180 AND 180)", name:"merchant_coordinates")
+}
+model ParcelAttempt {
+  id String @id @default(uuid())
+  companyId String
+  shipmentId String
+  outcome String
+  reason String?
+  note String?
+  actorId String
+  createdAt DateTime @default(now())
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  shipment Shipment @relation(fields:[shipmentId,companyId],references:[id,companyId],onDelete:Restrict)
+  @@index([companyId,shipmentId,createdAt], name:"parcel_ops_index_3")
+  @@map("parcel_attempts")
+}
+model ParcelReturn {
+  id String @id @default(uuid())
+  companyId String
+  shipmentId String @unique
+  reason String
+  note String?
+  status String
+  initiatedBy String
+  createdAt DateTime @default(now())
+  warehouseAt DateTime?
+  merchantAt DateTime?
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  shipment Shipment @relation(fields:[shipmentId,companyId],references:[id,companyId],onDelete:Restrict)
+  @@index([companyId,status,createdAt], name:"parcel_ops_index_4")
+  @@map("parcel_returns")
+  @@unique([shipmentId,companyId])
+  @@check(expression: "\"status\" IN ('RETURN_IN_PROGRESS','RETURNED_TO_WAREHOUSE','RETURNED_TO_MERCHANT') AND \"reason\" IN ('CUSTOMER_REFUSED','UNREACHABLE','WRONG_ADDRESS','DAMAGED','OTHER','CUSTOMER_CANCELLED','ATTEMPTS_EXHAUSTED','MERCHANT_REQUESTED')", name:"parcel_return_stage")
+}
+model CodCollection {
+  id String @id @default(uuid())
+  companyId String
+  shipmentId String @unique
+  merchantId String
+  workerId String?
+  currency String
+  amountMinor BigInt
+  goodsMinor BigInt
+  method String
+  reference String?
+  notes String?
+  recordedBy String
+  collectedAt DateTime @default(now())
+  remittance CashRemittance?
+  ledgerEntries MerchantLedgerEntry[]
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  shipment Shipment @relation(fields:[shipmentId,companyId],references:[id,companyId],onDelete:Restrict)
+  merchant Merchant @relation(fields:[merchantId,companyId],references:[id,companyId],onDelete:Restrict)
+  worker Worker? @relation(fields:[workerId,companyId],references:[id,companyId],onDelete:Restrict)
+  @@unique([id,companyId])
+  @@index([companyId,merchantId,collectedAt], name:"parcel_ops_index_7")
+  @@index([companyId,workerId], name:"parcel_ops_index_8")
+  @@check(expression: "\"amountMinor\" > 0 AND \"goodsMinor\" >= 0 AND \"goodsMinor\" <= \"amountMinor\"",name:"collection_amounts")
+  @@map("cod_collections")
+  @@unique([shipmentId,companyId])
+}
+model CashRemittance {
+  id String @id @default(uuid())
+  companyId String
+  collectionId String @unique
+  amountMinor BigInt
+  method String
+  reference String?
+  notes String?
+  actorId String
+  createdAt DateTime @default(now())
+  collection CodCollection @relation(fields:[collectionId,companyId],references:[id,companyId],onDelete:Restrict)
+  @@index([companyId,createdAt], name:"parcel_ops_index_10")
+  @@check(expression: "\"amountMinor\" > 0",name:"remittance_amount")
+  @@map("cash_remittances")
+  @@unique([collectionId,companyId])
+}
+model MerchantLedgerEntry {
+  id String @id @default(uuid())
+  companyId String
+  merchantId String
+  shipmentId String?
+  collectionId String?
+  originalId String? @unique
+  currency String
+  kind String
+  amountMinor BigInt
+  reason String
+  actorId String
+  postingKey String
+  createdAt DateTime @default(now())
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  merchant Merchant @relation(fields:[merchantId,companyId],references:[id,companyId],onDelete:Restrict)
+  shipment Shipment? @relation(fields:[shipmentId,companyId],references:[id,companyId],onDelete:Restrict)
+  collection CodCollection? @relation(fields:[collectionId,companyId],references:[id,companyId],onDelete:Restrict)
+  original MerchantLedgerEntry? @relation("LedgerReversal",fields:[originalId,companyId],references:[id,companyId],onDelete:Restrict)
+  reversal MerchantLedgerEntry? @relation("LedgerReversal")
+  lines MerchantSettlementLine[]
+  allocation SettlementAllocation?
+  @@unique([id,companyId])
+  @@unique([companyId,postingKey])
+  @@index([companyId,merchantId,currency,createdAt], name:"parcel_ops_index_14")
+  @@map("merchant_ledger_entries")
+  @@unique([originalId,companyId])
+  @@check(expression: "(\"kind\" = 'GOODS' AND \"amountMinor\" > 0 AND \"collectionId\" IS NOT NULL AND \"originalId\" IS NULL) OR (\"kind\" IN ('DELIVERY_FEE','RETURN_FEE') AND \"amountMinor\" < 0 AND \"shipmentId\" IS NOT NULL AND \"originalId\" IS NULL) OR (\"kind\" = 'ADJUSTMENT' AND \"amountMinor\" <> 0 AND \"originalId\" IS NULL) OR (\"kind\" = 'REVERSAL' AND \"amountMinor\" <> 0 AND \"originalId\" IS NOT NULL)", name:"merchant_ledger_kind_sign")
+}
+model MerchantSettlement {
+  id String @id @default(uuid())
+  companyId String
+  merchantId String
+  currency String
+  status String @default("DRAFT")
+  grossCollectedMinor BigInt
+  deliveryFeesMinor BigInt
+  returnFeesMinor BigInt
+  adjustmentsMinor BigInt
+  netPayableMinor BigInt
+  revision Int @default(1)
+  createdBy String
+  createdAt DateTime @default(now())
+  finalizedBy String?
+  finalizedAt DateTime?
+  cancelledBy String?
+  cancelledAt DateTime?
+  cancellationReason String?
+  paidAt DateTime?
+  from DateTime?
+  to DateTime?
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  merchant Merchant @relation(fields:[merchantId,companyId],references:[id,companyId],onDelete:Restrict)
+  lines MerchantSettlementLine[]
+  allocations SettlementAllocation[]
+  payments SettlementPayment[]
+  @@unique([id,companyId])
+  @@index([companyId,merchantId,status,createdAt], name:"parcel_ops_index_17")
+  @@check(expression: "\"netPayableMinor\" > 0 AND \"revision\" > 0",name:"settlement_amount")
+  @@map("merchant_settlements")
+  @@check(expression: "(\"status\" = 'DRAFT' AND \"finalizedAt\" IS NULL AND \"paidAt\" IS NULL AND \"cancelledAt\" IS NULL) OR (\"status\" = 'FINALIZED' AND \"finalizedAt\" IS NOT NULL AND \"finalizedBy\" IS NOT NULL AND \"paidAt\" IS NULL AND \"cancelledAt\" IS NULL) OR (\"status\" = 'PAID' AND \"finalizedAt\" IS NOT NULL AND \"finalizedBy\" IS NOT NULL AND \"paidAt\" IS NOT NULL AND \"cancelledAt\" IS NULL) OR (\"status\" = 'CANCELLED' AND \"cancelledAt\" IS NOT NULL AND \"cancelledBy\" IS NOT NULL AND \"cancellationReason\" IS NOT NULL AND \"finalizedAt\" IS NULL AND \"paidAt\" IS NULL)", name:"merchant_settlement_state")
+}
+model MerchantSettlementLine {
+  id String @id @default(uuid())
+  companyId String
+  settlementId String
+  ledgerEntryId String
+  shipmentId String?
+  kind String
+  amountMinor BigInt
+  reason String
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  settlement MerchantSettlement @relation(fields:[settlementId,companyId],references:[id,companyId],onDelete:Restrict)
+  entry MerchantLedgerEntry @relation(fields:[ledgerEntryId,companyId],references:[id,companyId],onDelete:Restrict)
+  @@unique([settlementId,ledgerEntryId])
+  @@index([companyId,settlementId], name:"parcel_ops_index_19")
+  @@map("merchant_settlement_lines")
+}
+model SettlementAllocation {
+  id String @id @default(uuid())
+  companyId String
+  settlementId String
+  ledgerEntryId String @unique
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  settlement MerchantSettlement @relation(fields:[settlementId,companyId],references:[id,companyId],onDelete:Restrict)
+  entry MerchantLedgerEntry @relation(fields:[ledgerEntryId,companyId],references:[id,companyId],onDelete:Restrict)
+  @@index([companyId,settlementId], name:"parcel_ops_index_20")
+  @@map("settlement_allocations")
+  @@unique([ledgerEntryId,companyId])
+}
+model SettlementPayment {
+  id String @id @default(uuid())
+  companyId String
+  settlementId String @unique
+  amountMinor BigInt
+  currency String
+  method String
+  reference String
+  paidAt DateTime
+  recordedBy String
+  createdAt DateTime @default(now())
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  settlement MerchantSettlement @relation(fields:[settlementId,companyId],references:[id,companyId],onDelete:Restrict)
+  @@index([companyId,createdAt], name:"parcel_ops_index_22")
+  @@check(expression: "\"amountMinor\" > 0",name:"settlement_payment_amount")
+  @@map("settlement_payments")
+}
+model MonetaryRequest {
+  id String @id @default(uuid())
+  companyId String
+  key String
+  payloadHash String
+  resultId String
+  createdAt DateTime @default(now())
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  @@unique([companyId,key])
+  @@map("monetary_requests")
+}
+
+// Add to Company: merchantMemberships MerchantMembership[]; merchantInvitations MerchantInvitation[]; merchantAccessEvents MerchantAccessEvent[]
+// Add to User: merchantMembership MerchantMembership?
+// Add to Merchant: memberships MerchantMembership[]; invitations MerchantInvitation[]; accessEvents MerchantAccessEvent[]
+model MerchantMembership {
+  @@unique([userId,companyId])
+  id String @id @default(uuid())
+  userId String @unique
+  companyId String
+  merchantId String
+  role String
+  status String @default("ACTIVE")
+  permissions Json
+  createdAt DateTime @default(now())
+  updatedAt temporal.updatedAt()
+  user User @relation(fields:[userId,companyId], references:[id,companyId], onDelete:Restrict)
+  company Company @relation(fields:[companyId], references:[id], onDelete:Restrict)
+  merchant Merchant @relation(fields:[merchantId,companyId], references:[id,companyId], onDelete:Restrict)
+  @@index([companyId,merchantId,status])
+  @@index([merchantId], unique:true, where:"\"role\" = 'OWNER' AND \"status\" = 'ACTIVE'", name:"merchant_memberships_one_owner")
+  @@check(expression:"\"role\" IN ('OWNER','EMPLOYEE') AND \"status\" IN ('ACTIVE','REVOKED')", name:"merchant_membership_state")
+  @@map("merchant_memberships")
+}
+model MerchantInvitation {
+  id String @id @default(uuid())
+  companyId String
+  merchantId String
+  email String
+  role String
+  permissions Json
+  tokenHash String @unique
+  issuedById String
+  acceptedById String?
+  expiresAt DateTime
+  acceptedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  company Company @relation(fields:[companyId], references:[id], onDelete:Restrict)
+  merchant Merchant @relation(fields:[merchantId,companyId], references:[id,companyId], onDelete:Restrict)
+  @@index([companyId,merchantId,createdAt], name:"p1_merchantinvitation_1")
+  @@check(expression:"\"role\" IN ('OWNER','EMPLOYEE') AND NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL) AND ((\"acceptedAt\" IS NULL AND \"acceptedById\" IS NULL) OR (\"acceptedAt\" IS NOT NULL AND \"acceptedById\" IS NOT NULL))", name:"merchant_invitation_state")
+  @@map("merchant_invitations")
+}
+model MerchantAccessEvent {
+  id String @id @default(uuid())
+  companyId String
+  merchantId String
+  actorId String
+  action String
+  details Json
+  createdAt DateTime @default(now())
+  company Company @relation(fields:[companyId], references:[id], onDelete:Restrict)
+  merchant Merchant @relation(fields:[merchantId,companyId], references:[id,companyId], onDelete:Restrict)
+  @@index([companyId,merchantId,createdAt], name:"p1_merchantaccessevent_1")
+  @@map("merchant_access_events")
+}
+
+// Add to Company: deliveryZones DeliveryZone[]; merchantPlans MerchantPlan[];
+// planZoneTariffs PlanZoneTariff[]
+// Add to Merchant:
+// planId String?
+// pricingDiscountMinor BigInt @default(0)
+// plan MerchantPlan? @relation(fields:[planId,companyId],references:[id,companyId],onDelete:Restrict)
+// Add to Shipment:
+// deliveryZoneId String?
+// pricingPlanId String?
+// pricingMode String @default("LEGACY")
+// pricingPlanVersion String?
+// baseDeliveryFeeMinor BigInt?
+// discountMinor BigInt?
+// promotionDiscountMinor BigInt?
+// deliveryZone DeliveryZone? @relation(fields:[deliveryZoneId,companyId],references:[id,companyId],onDelete:Restrict)
+// pricingPlan MerchantPlan? @relation(fields:[pricingPlanId,companyId],references:[id,companyId],onDelete:Restrict)
+// Add Merchant check pricingDiscountMinor >= 0.
+// Add Shipment check pricingMode IN ('LEGACY','FINAL_INCLUSIVE') and final-inclusive
+// requires all pricing fields, feePayer='MERCHANT', serviceFeeMinor=0,
+// baseDeliveryFeeMinor >= discountMinor+promotionDiscountMinor and
+// deliveryFeeMinor=baseDeliveryFeeMinor-discountMinor-promotionDiscountMinor.
+
+model DeliveryZone {
+  id String @id @default(uuid())
+  companyId String
+  name String
+  city String
+  baseFeeMinor BigInt
+  currency String @default("ILS")
+  active Boolean @default(true)
+  revision Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt temporal.updatedAt()
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  tariffs PlanZoneTariff[]
+  shipments Shipment[]
+  @@unique([id,companyId])
+  @@index([companyId,city,name])
+  @@check(expression: "\"baseFeeMinor\" >= 0 AND \"revision\" > 0 AND \"currency\" IN ('ILS','USD','EUR','JOD')", name:"delivery_zone_terms")
+  @@map("delivery_zones")
+}
+
+model MerchantPlan {
+  id String @id @default(uuid())
+  companyId String
+  name String
+  currency String @default("ILS")
+  active Boolean @default(true)
+  revision Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt temporal.updatedAt()
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  tariffs PlanZoneTariff[]
+  merchants Merchant[]
+  shipments Shipment[]
+  @@unique([id,companyId])
+  @@index([companyId,name])
+  @@check(expression: "\"revision\" > 0 AND \"currency\" IN ('ILS','USD','EUR','JOD')", name:"merchant_plan_terms")
+  @@map("merchant_plans")
+}
+
+model PlanZoneTariff {
+  id String @id @default(uuid())
+  companyId String
+  planId String
+  zoneId String
+  feeMinor BigInt
+  discountMinor BigInt @default(0)
+  promotionDiscountMinor BigInt @default(0)
+  promotionLabel String?
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  plan MerchantPlan @relation(fields:[planId,companyId],references:[id,companyId],onDelete:Restrict)
+  zone DeliveryZone @relation(fields:[zoneId,companyId],references:[id,companyId],onDelete:Restrict)
+  @@unique([planId,zoneId,companyId])
+  @@index([companyId,zoneId])
+  @@check(expression: "\"feeMinor\" >= 0 AND \"discountMinor\" >= 0 AND \"promotionDiscountMinor\" >= 0 AND \"feeMinor\" >= \"discountMinor\"+\"promotionDiscountMinor\" AND (\"promotionDiscountMinor\" = 0 OR (\"promotionLabel\" IS NOT NULL AND length(trim(\"promotionLabel\")) > 0))", name:"plan_zone_tariff_amounts")
+  @@map("plan_zone_tariffs")
+}
+
+model PickupRequest {
+  id String @id @default(uuid())
+  companyId String
+  merchantId String
+  method String
+  status String @default("REQUESTED")
+  preferredFrom DateTime?
+  preferredTo DateTime?
+  proposedFrom DateTime?
+  proposedTo DateTime?
+  confirmedFrom DateTime?
+  confirmedTo DateTime?
+  pickupAddress String
+  latitude Float?
+  longitude Float?
+  notes String?
+  workerId String?
+  warehouseId String?
+  createdBy String
+  reviewedBy String?
+  revision Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt temporal.updatedAt()
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  merchant Merchant @relation(fields:[merchantId,companyId],references:[id,companyId],onDelete:Restrict)
+  worker Worker? @relation(fields:[workerId,companyId],references:[id,companyId],onDelete:Restrict)
+  warehouse Warehouse? @relation(fields:[warehouseId,companyId],references:[id,companyId],onDelete:Restrict)
+  parcels PickupParcel[]
+  @@unique([id,companyId,merchantId])
+  @@index([companyId,status,createdAt], name:"p1_pickuprequest_1")
+  @@index([companyId,merchantId,createdAt], name:"p1_pickuprequest_2")
+  @@check(expression:"\"method\" IN ('COMPANY_PICKUP','WAREHOUSE_DROPOFF') AND \"status\" IN ('REQUESTED','PROPOSED','CONFIRMED','RECEIVED','CANCELLED') AND \"revision\" > 0",name:"pickup_request_state")
+  @@check(expression:"(\"preferredFrom\" IS NULL AND \"preferredTo\" IS NULL) OR (\"preferredFrom\" IS NOT NULL AND \"preferredTo\" IS NOT NULL AND \"preferredTo\" > \"preferredFrom\")",name:"pickup_preferred_window")
+  @@check(expression:"(\"confirmedFrom\" IS NULL AND \"confirmedTo\" IS NULL) OR (\"confirmedFrom\" IS NOT NULL AND \"confirmedTo\" IS NOT NULL AND \"confirmedTo\" > \"confirmedFrom\")",name:"pickup_confirmed_window")
+  @@check(expression:"(\"latitude\" IS NULL AND \"longitude\" IS NULL) OR (\"latitude\" IS NOT NULL AND \"longitude\" IS NOT NULL AND \"latitude\" BETWEEN -90 AND 90 AND \"longitude\" BETWEEN -180 AND 180)",name:"pickup_coordinates")
+  @@map("pickup_requests")
+}
+model PickupParcel {
+  id String @id @default(uuid())
+  companyId String
+  merchantId String
+  pickupId String
+  shipmentId String
+  active Boolean @default(true)
+  receipt String @default("PENDING")
+  receiptNotes String?
+  receivedBy String?
+  receivedAt DateTime?
+  pickup PickupRequest @relation(fields:[pickupId,companyId,merchantId],references:[id,companyId,merchantId],onDelete:Restrict)
+  shipment Shipment @relation(fields:[shipmentId,companyId,merchantId],references:[id,companyId,merchantId],onDelete:Restrict)
+  @@unique([pickupId,shipmentId])
+  @@index([shipmentId],unique:true,where:"\"active\" = true",name:"one_active_pickup_per_parcel")
+  @@check(expression:"\"receipt\" IN ('PENDING','RECEIVED','MISSING','DISCREPANT') AND (\"receipt\" = 'PENDING' OR (\"receivedBy\" IS NOT NULL AND \"receivedAt\" IS NOT NULL))",name:"pickup_parcel_receipt")
+  @@map("pickup_parcels")
+}
+model MerchantImport {
+  id String @id @default(uuid())
+  companyId String
+  merchantId String
+  createdBy String
+  digest String
+  rows Json
+  result Json?
+  confirmedAt DateTime?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  merchant Merchant @relation(fields:[merchantId,companyId],references:[id,companyId],onDelete:Restrict)
+  @@unique([companyId,merchantId,digest])
+  @@index([companyId,merchantId,createdAt], name:"p1_merchantimport_1")
+  @@map("merchant_imports")
+}
+model MerchantSettlementRequest {
+  id String @id @default(uuid())
+  companyId String
+  merchantId String
+  requestedBy String
+  currency String @default("ILS")
+  notes String?
+  status String @default("REQUESTED")
+  createdAt DateTime @default(now())
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  merchant Merchant @relation(fields:[merchantId,companyId],references:[id,companyId],onDelete:Restrict)
+  @@index([companyId,merchantId,createdAt], name:"p1_merchantsettlementrequest_1")
+  @@index([merchantId], name:"p1_merchantsettlementrequest_2")
+  @@check(expression:"\"status\" IN ('REQUESTED','REVIEWED') AND \"currency\" IN ('ILS','USD','EUR','JOD')",name:"merchant_settlement_request_state")
+  @@map("merchant_settlement_requests")
+}
+model MerchantParcelRequest {
+  id String @id @default(uuid())
+  companyId String
+  merchantId String
+  shipmentId String
+  kind String
+  status String @default("REQUESTED")
+  parcelRevision Int
+  proposed Json
+  previous Json
+  reason String
+  requestedBy String
+  reviewedBy String?
+  reviewedAt DateTime?
+  reviewReason String?
+  createdAt DateTime @default(now())
+  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  merchant Merchant @relation(fields:[merchantId,companyId],references:[id,companyId],onDelete:Restrict)
+  shipment Shipment @relation(fields:[shipmentId,companyId,merchantId],references:[id,companyId,merchantId],onDelete:Restrict)
+  @@index([companyId,status,createdAt],name:"p1_parcel_requests_queue")
+  @@index([companyId,merchantId,shipmentId],name:"p1_parcel_requests_merchant")
+  @@index([shipmentId],unique:true,where:"\"status\" = 'REQUESTED'",name:"one_pending_parcel_request")
+  @@check(expression:"\"kind\" IN ('AMEND','CANCEL') AND ((\"status\" = 'REQUESTED' AND \"reviewedBy\" IS NULL AND \"reviewedAt\" IS NULL) OR (\"status\" IN ('APPROVED','REJECTED') AND \"reviewedBy\" IS NOT NULL AND \"reviewedAt\" IS NOT NULL))",name:"merchant_parcel_request_state")
+  @@map("merchant_parcel_requests")
 }

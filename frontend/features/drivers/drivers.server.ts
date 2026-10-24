@@ -18,6 +18,7 @@ import type {
   DriverRequest,
   DriverResult,
   DriverScope,
+  DriverVehicle,
 } from "./drivers.types";
 
 type SessionCookies = Parameters<typeof setSessionTokens>[0] &
@@ -51,12 +52,45 @@ function parseDriver(value: unknown): Driver | null {
     !isDriverStatus(value.status)
   )
     return null;
+  // Older backend responses may omit the additive vehicle field during rollout.
+  let vehicle: DriverVehicle | null = null;
+  if (value.vehicle !== undefined && value.vehicle !== null) {
+    const item = value.vehicle;
+    if (
+      !object(item) ||
+      typeof item.id !== "string" ||
+      !uuid.test(item.id) ||
+      !isVehicleType(item.type) ||
+      typeof item.plateNumber !== "string" ||
+      (item.manufacturer != null && typeof item.manufacturer !== "string") ||
+      (item.model != null && typeof item.model !== "string")
+    )
+      return null;
+    vehicle = {
+      id: item.id,
+      type: item.type,
+      plateNumber: item.plateNumber,
+      ...(item.manufacturer === undefined
+        ? {}
+        : { manufacturer: item.manufacturer }),
+      ...(item.model === undefined ? {} : { model: item.model }),
+    };
+  }
   return {
     id: value.id,
     name: value.name,
     phone: value.phone,
     status: value.status,
+    vehicle,
   };
+}
+function isVehicleType(value: unknown): value is DriverVehicle["type"] {
+  return (
+    value === "MOTORCYCLE" ||
+    value === "CAR" ||
+    value === "VAN" ||
+    value === "TRUCK"
+  );
 }
 
 export async function readDriversForSession(

@@ -1,26 +1,34 @@
 "use client";
 
 import { useProtectedSession } from "@/features/auth/session/session-context";
-import { sessionRoleLabels } from "@/lib/auth/session.types";
+import { useLocale } from "@/lib/i18n";
 import { ChangePasswordForm } from "./change-password-form";
 
 export function AccountOverview() {
   const { user } = useProtectedSession();
+  const { t } = useLocale();
+  const role = user.role === "COMPANY_ADMIN"
+    ? t("Company administrator")
+    : user.role === "PLATFORM_ADMIN"
+      ? t("Platform administrator")
+      : user.role === "MERCHANT"
+        ? t("Merchant")
+        : t("Accountant");
   const details = [
-    { label: "Display name", value: user.name },
-    { label: "Email", value: user.email ?? "Email not provided" },
-    { label: "Role", value: sessionRoleLabels[user.role] },
-    { label: user.company ? "Company" : "Workspace", value: user.company?.name ?? "Platform administration" },
+    { label: t("Display name"), value: user.name },
+    { label: t("Email"), value: user.email ?? t("Email not provided") },
+    { label: t("Role"), value: role },
+    { label: user.company ? t("Company") : t("Workspace"), value: user.company?.name ?? t("Platform administration") },
   ];
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <p className="mb-6 max-w-2xl text-sm leading-6 text-muted-foreground">Review your account and keep your password up to date.</p>
+      <p className="mb-6 max-w-2xl text-sm leading-6 text-muted-foreground">{t("Review your account and keep your password up to date.")}</p>
       <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <section aria-labelledby="account-details-title" className="min-w-0 rounded-lg border border-border bg-surface p-5 sm:p-6">
-          <h2 id="account-details-title" className="text-lg font-semibold tracking-tight">Your account</h2>
+          <h2 id="account-details-title" className="text-lg font-semibold tracking-tight">{t("Your account")}</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {user.company ? "Your account is associated with this company." : "Your account has platform-level context and is not associated with a company."}
+            {user.company ? t("Your account is associated with this company.") : t("Your account has platform-level context and is not associated with a company.")}
           </p>
           <dl className="mt-6 divide-y divide-border">
             {details.map(detail => (

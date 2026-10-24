@@ -51,12 +51,13 @@ describe('driver query isolation (offline ORM plans, no database)', () => {
       'verificationToken',
       'company_memberships',
       'platform_admin_grants',
-      'vehicleId',
       'successRate',
       'location_events',
     ])
       expect(ast).not.toContain(field);
-    expect(values()).toContain('company-a');
+    expect(values().filter((value) => value === 'company-a')).toHaveLength(2);
+    expect(ast).toContain('plateNumber');
+    expect(ast).toContain('vehicles');
   }
   function whereClause() {
     const ast: unknown = JSON.parse(JSON.stringify(plans[0].ast));

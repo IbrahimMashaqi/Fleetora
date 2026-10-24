@@ -1,0 +1,17 @@
+{
+  "accounting": {"en":"Financial statement","ar":"الكشف المالي"},
+  "financeAccessRequired": {"en":"Financial access is required to view this page.","ar":"تحتاج إلى صلاحية الاطلاع على البيانات المالية لعرض هذه الصفحة."},
+  "balances": {"en":"Balances","ar":"الأرصدة"},
+  "balance": {"en":"Balance","ar":"الرصيد"},
+  "eligibleBalance": {"en":"Eligible for settlement","ar":"المؤهل للتسوية"},
+  "paidBalance": {"en":"Paid","ar":"المدفوع"},
+  "statementEntries": {"en":"Statement entries","ar":"قيود الكشف"},
+  "relatedParcel": {"en":"Related parcel","ar":"الطرد المرتبط"},
+  "refreshStatement": {"en":"Refresh statement","ar":"تحديث الكشف"},
+  "ledger_GOODS": {"en":"Goods collected","ar":"قيمة البضاعة المحصلة"},
+  "ledger_DELIVERY_FEE": {"en":"Delivery fee","ar":"رسوم التوصيل"},
+  "ledger_RETURN_FEE": {"en":"Return fee","ar":"رسوم الإرجاع"},
+  "ledger_ADJUSTMENT": {"en":"Adjustment","ar":"تعديل مالي"},
+  "ledger_REVERSAL": {"en":"Reversal","ar":"قيد عكسي"},
+  "ledger_entry": {"en":"Financial entry","ar":"قيد مالي"}
+}

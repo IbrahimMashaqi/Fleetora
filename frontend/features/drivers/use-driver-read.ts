@@ -4,6 +4,7 @@ import { unstable_rethrow } from "next/navigation";
 import { withSessionLock } from "@/lib/auth/session-lock";
 import { readDriversAction } from "./drivers.action";
 import type { DriverRequest, DriverResult, DriverScope } from "./drivers.types";
+import { subscribeToVehicleChanges } from "@/features/vehicles/vehicle-events";
 
 export function useDriverRead(request: DriverRequest, scope: DriverScope) {
   const [attempt, setAttempt] = useState(0);
@@ -15,6 +16,13 @@ export function useDriverRead(request: DriverRequest, scope: DriverScope) {
     null,
   );
   const { userId, companyId } = scope;
+  useEffect(
+    () =>
+      subscribeToVehicleChanges({ userId, companyId }, () =>
+        setAttempt((value) => value + 1),
+      ),
+    [userId, companyId],
+  );
   const key = JSON.stringify([userId, companyId, request, attempt]);
   useEffect(() => {
     let active = true;

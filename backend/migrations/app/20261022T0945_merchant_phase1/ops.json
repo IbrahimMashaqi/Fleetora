@@ -1,0 +1,4334 @@
+[
+  {
+    "id": "table.delivery_zones",
+    "label": "Create table \"delivery_zones\"",
+    "summary": "Creates table \"delivery_zones\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "delivery_zones"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"delivery_zones\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_zones\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"delivery_zones\"",
+        "sql": "CREATE TABLE \"public\".\"delivery_zones\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"baseFeeMinor\" int8 NOT NULL,\n  \"city\" text NOT NULL,\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"currency\" text DEFAULT 'ILS' NOT NULL,\n  \"id\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"revision\" int4 DEFAULT 1 NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"delivery_zone_terms_304e5d3f\" CHECK (\"baseFeeMinor\" >= 0 AND \"revision\" > 0 AND \"currency\" IN ('ILS','USD','EUR','JOD'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"delivery_zones\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_zones\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.merchant_access_events",
+    "label": "Create table \"merchant_access_events\"",
+    "summary": "Creates table \"merchant_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "merchant_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"merchant_access_events\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_access_events\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"merchant_access_events\"",
+        "sql": "CREATE TABLE \"public\".\"merchant_access_events\" (\n  \"action\" text NOT NULL,\n  \"actorId\" text NOT NULL,\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"details\" json NOT NULL,\n  \"id\" text NOT NULL,\n  \"merchantId\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"merchant_access_events\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_access_events\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.merchant_imports",
+    "label": "Create table \"merchant_imports\"",
+    "summary": "Creates table \"merchant_imports\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "merchant_imports"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"merchant_imports\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_imports\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"merchant_imports\"",
+        "sql": "CREATE TABLE \"public\".\"merchant_imports\" (\n  \"companyId\" text NOT NULL,\n  \"confirmedAt\" timestamptz,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"createdBy\" text NOT NULL,\n  \"digest\" text NOT NULL,\n  \"expiresAt\" timestamptz NOT NULL,\n  \"id\" text NOT NULL,\n  \"merchantId\" text NOT NULL,\n  \"result\" json,\n  \"rows\" json NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"merchant_imports\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_imports\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.merchant_invitations",
+    "label": "Create table \"merchant_invitations\"",
+    "summary": "Creates table \"merchant_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "merchant_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"merchant_invitations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_invitations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"merchant_invitations\"",
+        "sql": "CREATE TABLE \"public\".\"merchant_invitations\" (\n  \"acceptedAt\" timestamptz,\n  \"acceptedById\" text,\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"expiresAt\" timestamptz NOT NULL,\n  \"id\" text NOT NULL,\n  \"issuedById\" text NOT NULL,\n  \"merchantId\" text NOT NULL,\n  \"permissions\" json NOT NULL,\n  \"revokedAt\" timestamptz,\n  \"role\" text NOT NULL,\n  \"tokenHash\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"merchant_invitation_state_866e5749\" CHECK (\"role\" IN ('OWNER','EMPLOYEE') AND NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL) AND ((\"acceptedAt\" IS NULL AND \"acceptedById\" IS NULL) OR (\"acceptedAt\" IS NOT NULL AND \"acceptedById\" IS NOT NULL)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"merchant_invitations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_invitations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.merchant_memberships",
+    "label": "Create table \"merchant_memberships\"",
+    "summary": "Creates table \"merchant_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "merchant_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"merchant_memberships\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"merchant_memberships\"",
+        "sql": "CREATE TABLE \"public\".\"merchant_memberships\" (\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"merchantId\" text NOT NULL,\n  \"permissions\" json NOT NULL,\n  \"role\" text NOT NULL,\n  \"status\" text DEFAULT 'ACTIVE' NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"userId\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"merchant_membership_state_8d4514eb\" CHECK (\"role\" IN ('OWNER','EMPLOYEE') AND \"status\" IN ('ACTIVE','REVOKED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"merchant_memberships\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.merchant_parcel_requests",
+    "label": "Create table \"merchant_parcel_requests\"",
+    "summary": "Creates table \"merchant_parcel_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "merchant_parcel_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"merchant_parcel_requests\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_parcel_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"merchant_parcel_requests\"",
+        "sql": "CREATE TABLE \"public\".\"merchant_parcel_requests\" (\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"kind\" text NOT NULL,\n  \"merchantId\" text NOT NULL,\n  \"parcelRevision\" int4 NOT NULL,\n  \"previous\" json NOT NULL,\n  \"proposed\" json NOT NULL,\n  \"reason\" text NOT NULL,\n  \"requestedBy\" text NOT NULL,\n  \"reviewReason\" text,\n  \"reviewedAt\" timestamptz,\n  \"reviewedBy\" text,\n  \"shipmentId\" text NOT NULL,\n  \"status\" text DEFAULT 'REQUESTED' NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"merchant_parcel_request_state_9f2bdd06\" CHECK (\"kind\" IN ('AMEND','CANCEL') AND ((\"status\" = 'REQUESTED' AND \"reviewedBy\" IS NULL AND \"reviewedAt\" IS NULL) OR (\"status\" IN ('APPROVED','REJECTED') AND \"reviewedBy\" IS NOT NULL AND \"reviewedAt\" IS NOT NULL)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"merchant_parcel_requests\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_parcel_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.merchant_plans",
+    "label": "Create table \"merchant_plans\"",
+    "summary": "Creates table \"merchant_plans\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "merchant_plans"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"merchant_plans\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_plans\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"merchant_plans\"",
+        "sql": "CREATE TABLE \"public\".\"merchant_plans\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"currency\" text DEFAULT 'ILS' NOT NULL,\n  \"id\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"revision\" int4 DEFAULT 1 NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"merchant_plan_terms_eae8fe0e\" CHECK (\"revision\" > 0 AND \"currency\" IN ('ILS','USD','EUR','JOD'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"merchant_plans\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_plans\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.merchant_settlement_requests",
+    "label": "Create table \"merchant_settlement_requests\"",
+    "summary": "Creates table \"merchant_settlement_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "merchant_settlement_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"merchant_settlement_requests\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_settlement_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"merchant_settlement_requests\"",
+        "sql": "CREATE TABLE \"public\".\"merchant_settlement_requests\" (\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"currency\" text DEFAULT 'ILS' NOT NULL,\n  \"id\" text NOT NULL,\n  \"merchantId\" text NOT NULL,\n  \"notes\" text,\n  \"requestedBy\" text NOT NULL,\n  \"status\" text DEFAULT 'REQUESTED' NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"merchant_settlement_request_state_8bcfc360\" CHECK (\"status\" IN ('REQUESTED','REVIEWED') AND \"currency\" IN ('ILS','USD','EUR','JOD'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"merchant_settlement_requests\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_settlement_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.pickup_parcels",
+    "label": "Create table \"pickup_parcels\"",
+    "summary": "Creates table \"pickup_parcels\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "pickup_parcels"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"pickup_parcels\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_parcels\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"pickup_parcels\"",
+        "sql": "CREATE TABLE \"public\".\"pickup_parcels\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"companyId\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"merchantId\" text NOT NULL,\n  \"pickupId\" text NOT NULL,\n  \"receipt\" text DEFAULT 'PENDING' NOT NULL,\n  \"receiptNotes\" text,\n  \"receivedAt\" timestamptz,\n  \"receivedBy\" text,\n  \"shipmentId\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"pickup_parcel_receipt_6cdef2b2\" CHECK (\"receipt\" IN ('PENDING','RECEIVED','MISSING','DISCREPANT') AND (\"receipt\" = 'PENDING' OR (\"receivedBy\" IS NOT NULL AND \"receivedAt\" IS NOT NULL)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"pickup_parcels\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_parcels\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.pickup_requests",
+    "label": "Create table \"pickup_requests\"",
+    "summary": "Creates table \"pickup_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"pickup_requests\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"pickup_requests\"",
+        "sql": "CREATE TABLE \"public\".\"pickup_requests\" (\n  \"companyId\" text NOT NULL,\n  \"confirmedFrom\" timestamptz,\n  \"confirmedTo\" timestamptz,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"createdBy\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"latitude\" float8,\n  \"longitude\" float8,\n  \"merchantId\" text NOT NULL,\n  \"method\" text NOT NULL,\n  \"notes\" text,\n  \"pickupAddress\" text NOT NULL,\n  \"preferredFrom\" timestamptz,\n  \"preferredTo\" timestamptz,\n  \"proposedFrom\" timestamptz,\n  \"proposedTo\" timestamptz,\n  \"reviewedBy\" text,\n  \"revision\" int4 DEFAULT 1 NOT NULL,\n  \"status\" text DEFAULT 'REQUESTED' NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"warehouseId\" text,\n  \"workerId\" text,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"pickup_confirmed_window_50678bdd\" CHECK ((\"confirmedFrom\" IS NULL AND \"confirmedTo\" IS NULL) OR (\"confirmedFrom\" IS NOT NULL AND \"confirmedTo\" IS NOT NULL AND \"confirmedTo\" > \"confirmedFrom\")),\n  CONSTRAINT \"pickup_coordinates_6e73a6d3\" CHECK ((\"latitude\" IS NULL AND \"longitude\" IS NULL) OR (\"latitude\" IS NOT NULL AND \"longitude\" IS NOT NULL AND \"latitude\" BETWEEN -90 AND 90 AND \"longitude\" BETWEEN -180 AND 180)),\n  CONSTRAINT \"pickup_preferred_window_68f78b5a\" CHECK ((\"preferredFrom\" IS NULL AND \"preferredTo\" IS NULL) OR (\"preferredFrom\" IS NOT NULL AND \"preferredTo\" IS NOT NULL AND \"preferredTo\" > \"preferredFrom\")),\n  CONSTRAINT \"pickup_request_state_3d349cea\" CHECK (\"method\" IN ('COMPANY_PICKUP','WAREHOUSE_DROPOFF') AND \"status\" IN ('REQUESTED','PROPOSED','CONFIRMED','RECEIVED','CANCELLED') AND \"revision\" > 0)\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"pickup_requests\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.plan_zone_tariffs",
+    "label": "Create table \"plan_zone_tariffs\"",
+    "summary": "Creates table \"plan_zone_tariffs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "plan_zone_tariffs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"plan_zone_tariffs\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"plan_zone_tariffs\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"plan_zone_tariffs\"",
+        "sql": "CREATE TABLE \"public\".\"plan_zone_tariffs\" (\n  \"companyId\" text NOT NULL,\n  \"discountMinor\" int8 DEFAULT '0'::int8 NOT NULL,\n  \"feeMinor\" int8 NOT NULL,\n  \"id\" text NOT NULL,\n  \"planId\" text NOT NULL,\n  \"promotionDiscountMinor\" int8 DEFAULT '0'::int8 NOT NULL,\n  \"promotionLabel\" text,\n  \"zoneId\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"plan_zone_tariff_amounts_e0c86530\" CHECK (\"feeMinor\" >= 0 AND \"discountMinor\" >= 0 AND \"promotionDiscountMinor\" >= 0 AND \"feeMinor\" >= \"discountMinor\"+\"promotionDiscountMinor\" AND (\"promotionDiscountMinor\" = 0 OR (\"promotionLabel\" IS NOT NULL AND length(trim(\"promotionLabel\")) > 0)))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"plan_zone_tariffs\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"plan_zone_tariffs\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.merchants.planId",
+    "label": "Add column \"planId\" to \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "planId",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"planId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "planId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"planId\"",
+        "sql": "ALTER TABLE \"public\".\"merchants\" ADD COLUMN \"planId\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"planId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "planId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.merchants.pricingDiscountMinor",
+    "label": "Add column \"pricingDiscountMinor\" to \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "pricingDiscountMinor",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"pricingDiscountMinor\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "pricingDiscountMinor"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"pricingDiscountMinor\"",
+        "sql": "ALTER TABLE \"public\".\"merchants\" ADD COLUMN \"pricingDiscountMinor\" int8 DEFAULT '0'::int8 NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"pricingDiscountMinor\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "pricingDiscountMinor"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.shipments.baseDeliveryFeeMinor",
+    "label": "Add column \"baseDeliveryFeeMinor\" to \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "baseDeliveryFeeMinor",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"baseDeliveryFeeMinor\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "baseDeliveryFeeMinor"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"baseDeliveryFeeMinor\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD COLUMN \"baseDeliveryFeeMinor\" int8"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"baseDeliveryFeeMinor\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "baseDeliveryFeeMinor"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.shipments.collectionMode",
+    "label": "Add column \"collectionMode\" to \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "collectionMode",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"collectionMode\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "collectionMode"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"collectionMode\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD COLUMN \"collectionMode\" text DEFAULT 'COD' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"collectionMode\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "collectionMode"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.shipments.deliveryZoneId",
+    "label": "Add column \"deliveryZoneId\" to \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "deliveryZoneId",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"deliveryZoneId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "deliveryZoneId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"deliveryZoneId\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD COLUMN \"deliveryZoneId\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"deliveryZoneId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "deliveryZoneId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.shipments.discountMinor",
+    "label": "Add column \"discountMinor\" to \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "discountMinor",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"discountMinor\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "discountMinor"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"discountMinor\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD COLUMN \"discountMinor\" int8"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"discountMinor\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "discountMinor"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.shipments.pickupMethod",
+    "label": "Add column \"pickupMethod\" to \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "pickupMethod",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"pickupMethod\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "pickupMethod"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"pickupMethod\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD COLUMN \"pickupMethod\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"pickupMethod\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "pickupMethod"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.shipments.pricingMode",
+    "label": "Add column \"pricingMode\" to \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "pricingMode",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"pricingMode\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "pricingMode"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"pricingMode\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD COLUMN \"pricingMode\" text DEFAULT 'LEGACY' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"pricingMode\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "pricingMode"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.shipments.pricingPlanId",
+    "label": "Add column \"pricingPlanId\" to \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "pricingPlanId",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"pricingPlanId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "pricingPlanId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"pricingPlanId\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD COLUMN \"pricingPlanId\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"pricingPlanId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "pricingPlanId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.shipments.pricingPlanVersion",
+    "label": "Add column \"pricingPlanVersion\" to \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "pricingPlanVersion",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"pricingPlanVersion\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "pricingPlanVersion"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"pricingPlanVersion\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD COLUMN \"pricingPlanVersion\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"pricingPlanVersion\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "pricingPlanVersion"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.shipments.promotionDiscountMinor",
+    "label": "Add column \"promotionDiscountMinor\" to \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "promotionDiscountMinor",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"promotionDiscountMinor\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "promotionDiscountMinor"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"promotionDiscountMinor\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD COLUMN \"promotionDiscountMinor\" int8"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"promotionDiscountMinor\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "shipments",
+          "promotionDiscountMinor"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.delivery_zones.delivery_zones_id_companyId_key",
+    "label": "Add unique constraint on \"delivery_zones\" (id, companyId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "delivery_zones_id_companyId_key",
+        "table": "delivery_zones"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"delivery_zones_id_companyId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "delivery_zones_id_companyId_key",
+          "public",
+          "\"public\".\"delivery_zones\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"delivery_zones_id_companyId_key\"",
+        "sql": "ALTER TABLE \"public\".\"delivery_zones\" ADD CONSTRAINT \"delivery_zones_id_companyId_key\" UNIQUE (\"id\", \"companyId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"delivery_zones_id_companyId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "delivery_zones_id_companyId_key",
+          "public",
+          "\"public\".\"delivery_zones\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.merchant_imports.merchant_imports_companyId_merchantId_digest_key",
+    "label": "Add unique constraint on \"merchant_imports\" (companyId, merchantId, digest)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "merchant_imports_companyId_merchantId_digest_key",
+        "table": "merchant_imports"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"merchant_imports_companyId_merchantId_digest_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_imports_companyId_merchantId_digest_key",
+          "public",
+          "\"public\".\"merchant_imports\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"merchant_imports_companyId_merchantId_digest_key\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_imports\" ADD CONSTRAINT \"merchant_imports_companyId_merchantId_digest_key\" UNIQUE (\"companyId\", \"merchantId\", \"digest\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"merchant_imports_companyId_merchantId_digest_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_imports_companyId_merchantId_digest_key",
+          "public",
+          "\"public\".\"merchant_imports\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.merchant_invitations.merchant_invitations_tokenHash_key",
+    "label": "Add unique constraint on \"merchant_invitations\" (tokenHash)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "merchant_invitations_tokenHash_key",
+        "table": "merchant_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"merchant_invitations_tokenHash_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_invitations_tokenHash_key",
+          "public",
+          "\"public\".\"merchant_invitations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"merchant_invitations_tokenHash_key\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_invitations\" ADD CONSTRAINT \"merchant_invitations_tokenHash_key\" UNIQUE (\"tokenHash\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"merchant_invitations_tokenHash_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_invitations_tokenHash_key",
+          "public",
+          "\"public\".\"merchant_invitations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.merchant_memberships.merchant_memberships_userId_key",
+    "label": "Add unique constraint on \"merchant_memberships\" (userId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "merchant_memberships_userId_key",
+        "table": "merchant_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"merchant_memberships_userId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_memberships_userId_key",
+          "public",
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"merchant_memberships_userId_key\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_memberships\" ADD CONSTRAINT \"merchant_memberships_userId_key\" UNIQUE (\"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"merchant_memberships_userId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_memberships_userId_key",
+          "public",
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.merchant_memberships.merchant_memberships_userId_companyId_key",
+    "label": "Add unique constraint on \"merchant_memberships\" (userId, companyId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "merchant_memberships_userId_companyId_key",
+        "table": "merchant_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"merchant_memberships_userId_companyId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_memberships_userId_companyId_key",
+          "public",
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"merchant_memberships_userId_companyId_key\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_memberships\" ADD CONSTRAINT \"merchant_memberships_userId_companyId_key\" UNIQUE (\"userId\", \"companyId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"merchant_memberships_userId_companyId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_memberships_userId_companyId_key",
+          "public",
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.merchant_plans.merchant_plans_id_companyId_key",
+    "label": "Add unique constraint on \"merchant_plans\" (id, companyId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "merchant_plans_id_companyId_key",
+        "table": "merchant_plans"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"merchant_plans_id_companyId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_plans_id_companyId_key",
+          "public",
+          "\"public\".\"merchant_plans\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"merchant_plans_id_companyId_key\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_plans\" ADD CONSTRAINT \"merchant_plans_id_companyId_key\" UNIQUE (\"id\", \"companyId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"merchant_plans_id_companyId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_plans_id_companyId_key",
+          "public",
+          "\"public\".\"merchant_plans\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.merchants.merchant_pricing_discount_1ffead40",
+    "label": "Add check constraint \"merchant_pricing_discount_1ffead40\" on \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "merchant_pricing_discount_1ffead40",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"merchant_pricing_discount_1ffead40\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_pricing_discount_1ffead40",
+          "public",
+          "\"public\".\"merchants\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"merchant_pricing_discount_1ffead40\"",
+        "sql": "ALTER TABLE \"public\".\"merchants\" ADD CONSTRAINT \"merchant_pricing_discount_1ffead40\" CHECK (\"pricingDiscountMinor\" >= 0)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"merchant_pricing_discount_1ffead40\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_pricing_discount_1ffead40",
+          "public",
+          "\"public\".\"merchants\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.pickup_parcels.pickup_parcels_pickupId_shipmentId_key",
+    "label": "Add unique constraint on \"pickup_parcels\" (pickupId, shipmentId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "pickup_parcels_pickupId_shipmentId_key",
+        "table": "pickup_parcels"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"pickup_parcels_pickupId_shipmentId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_parcels_pickupId_shipmentId_key",
+          "public",
+          "\"public\".\"pickup_parcels\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"pickup_parcels_pickupId_shipmentId_key\"",
+        "sql": "ALTER TABLE \"public\".\"pickup_parcels\" ADD CONSTRAINT \"pickup_parcels_pickupId_shipmentId_key\" UNIQUE (\"pickupId\", \"shipmentId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"pickup_parcels_pickupId_shipmentId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_parcels_pickupId_shipmentId_key",
+          "public",
+          "\"public\".\"pickup_parcels\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.pickup_requests.pickup_requests_id_companyId_merchantId_key",
+    "label": "Add unique constraint on \"pickup_requests\" (id, companyId, merchantId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "pickup_requests_id_companyId_merchantId_key",
+        "table": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"pickup_requests_id_companyId_merchantId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_requests_id_companyId_merchantId_key",
+          "public",
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"pickup_requests_id_companyId_merchantId_key\"",
+        "sql": "ALTER TABLE \"public\".\"pickup_requests\" ADD CONSTRAINT \"pickup_requests_id_companyId_merchantId_key\" UNIQUE (\"id\", \"companyId\", \"merchantId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"pickup_requests_id_companyId_merchantId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_requests_id_companyId_merchantId_key",
+          "public",
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.plan_zone_tariffs.plan_zone_tariffs_planId_zoneId_companyId_key",
+    "label": "Add unique constraint on \"plan_zone_tariffs\" (planId, zoneId, companyId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "plan_zone_tariffs_planId_zoneId_companyId_key",
+        "table": "plan_zone_tariffs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"plan_zone_tariffs_planId_zoneId_companyId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "plan_zone_tariffs_planId_zoneId_companyId_key",
+          "public",
+          "\"public\".\"plan_zone_tariffs\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"plan_zone_tariffs_planId_zoneId_companyId_key\"",
+        "sql": "ALTER TABLE \"public\".\"plan_zone_tariffs\" ADD CONSTRAINT \"plan_zone_tariffs_planId_zoneId_companyId_key\" UNIQUE (\"planId\", \"zoneId\", \"companyId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"plan_zone_tariffs_planId_zoneId_companyId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "plan_zone_tariffs_planId_zoneId_companyId_key",
+          "public",
+          "\"public\".\"plan_zone_tariffs\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.shipments.shipment_collection_mode_de16e4c5",
+    "label": "Add check constraint \"shipment_collection_mode_de16e4c5\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "shipment_collection_mode_de16e4c5",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"shipment_collection_mode_de16e4c5\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipment_collection_mode_de16e4c5",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"shipment_collection_mode_de16e4c5\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD CONSTRAINT \"shipment_collection_mode_de16e4c5\" CHECK (\"collectionMode\" IN ('COD','PREPAID') AND (\"pricingMode\" = 'LEGACY' OR (\"collectionMode\" = 'PREPAID' AND \"codMinor\" = 0) OR (\"collectionMode\" = 'COD' AND \"codMinor\" > 0)))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"shipment_collection_mode_de16e4c5\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipment_collection_mode_de16e4c5",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.shipments.shipment_pricing_snapshot_7447c32c",
+    "label": "Add check constraint \"shipment_pricing_snapshot_7447c32c\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "shipment_pricing_snapshot_7447c32c",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"shipment_pricing_snapshot_7447c32c\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipment_pricing_snapshot_7447c32c",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"shipment_pricing_snapshot_7447c32c\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD CONSTRAINT \"shipment_pricing_snapshot_7447c32c\" CHECK (\"pricingMode\" IN ('LEGACY','FINAL_INCLUSIVE') AND (\"pricingMode\" = 'LEGACY' OR (\"deliveryZoneId\" IS NOT NULL AND \"pricingPlanId\" IS NOT NULL AND \"pricingPlanVersion\" IS NOT NULL AND \"baseDeliveryFeeMinor\" IS NOT NULL AND \"discountMinor\" IS NOT NULL AND \"promotionDiscountMinor\" IS NOT NULL AND \"feePayer\" = 'MERCHANT' AND \"serviceFeeMinor\" = 0 AND \"discountMinor\" >= 0 AND \"promotionDiscountMinor\" >= 0 AND \"baseDeliveryFeeMinor\" >= \"discountMinor\"+\"promotionDiscountMinor\" AND \"deliveryFeeMinor\" = \"baseDeliveryFeeMinor\"-\"discountMinor\"-\"promotionDiscountMinor\")))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"shipment_pricing_snapshot_7447c32c\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipment_pricing_snapshot_7447c32c",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.shipments.shipments_id_companyId_merchantId_key",
+    "label": "Add unique constraint on \"shipments\" (id, companyId, merchantId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "shipments_id_companyId_merchantId_key",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"shipments_id_companyId_merchantId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_id_companyId_merchantId_key",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"shipments_id_companyId_merchantId_key\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD CONSTRAINT \"shipments_id_companyId_merchantId_key\" UNIQUE (\"id\", \"companyId\", \"merchantId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"shipments_id_companyId_merchantId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_id_companyId_merchantId_key",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.users.users_id_companyId_key",
+    "label": "Add unique constraint on \"users\" (id, companyId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "users_id_companyId_key",
+        "table": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"users_id_companyId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "users_id_companyId_key",
+          "public",
+          "\"public\".\"users\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"users_id_companyId_key\"",
+        "sql": "ALTER TABLE \"public\".\"users\" ADD CONSTRAINT \"users_id_companyId_key\" UNIQUE (\"id\", \"companyId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"users_id_companyId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "users_id_companyId_key",
+          "public",
+          "\"public\".\"users\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.delivery_zones.delivery_zones_companyId_city_name_idx_8c744ff0",
+    "label": "Create index \"delivery_zones_companyId_city_name_idx_8c744ff0\" on \"delivery_zones\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "delivery_zones_companyId_city_name_idx_8c744ff0",
+        "table": "delivery_zones"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"delivery_zones_companyId_city_name_idx_8c744ff0\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_zones_companyId_city_name_idx_8c744ff0\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"delivery_zones_companyId_city_name_idx_8c744ff0\"",
+        "sql": "CREATE INDEX \"delivery_zones_companyId_city_name_idx_8c744ff0\" ON \"public\".\"delivery_zones\" (\"companyId\", \"city\", \"name\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"delivery_zones_companyId_city_name_idx_8c744ff0\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_zones_companyId_city_name_idx_8c744ff0\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.delivery_zones.delivery_zones_companyId_idx_33acc5ed",
+    "label": "Create index \"delivery_zones_companyId_idx_33acc5ed\" on \"delivery_zones\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "delivery_zones_companyId_idx_33acc5ed",
+        "table": "delivery_zones"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"delivery_zones_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_zones_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"delivery_zones_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"delivery_zones_companyId_idx_33acc5ed\" ON \"public\".\"delivery_zones\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"delivery_zones_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_zones_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_access_events.merchant_access_events_companyId_idx_33acc5ed",
+    "label": "Create index \"merchant_access_events_companyId_idx_33acc5ed\" on \"merchant_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_access_events_companyId_idx_33acc5ed",
+        "table": "merchant_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_access_events_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_access_events_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_access_events_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"merchant_access_events_companyId_idx_33acc5ed\" ON \"public\".\"merchant_access_events\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_access_events_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_access_events_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_access_events.merchant_access_events_merchantId_companyId_idx_dee0f13b",
+    "label": "Create index \"merchant_access_events_merchantId_companyId_idx_dee0f13b\" on \"merchant_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_access_events_merchantId_companyId_idx_dee0f13b",
+        "table": "merchant_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_access_events_merchantId_companyId_idx_dee0f13b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_access_events_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_access_events_merchantId_companyId_idx_dee0f13b\"",
+        "sql": "CREATE INDEX \"merchant_access_events_merchantId_companyId_idx_dee0f13b\" ON \"public\".\"merchant_access_events\" (\"merchantId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_access_events_merchantId_companyId_idx_dee0f13b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_access_events_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_access_events.p1_merchantaccessevent_1_9089d594",
+    "label": "Create index \"p1_merchantaccessevent_1_9089d594\" on \"merchant_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "p1_merchantaccessevent_1_9089d594",
+        "table": "merchant_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"p1_merchantaccessevent_1_9089d594\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_merchantaccessevent_1_9089d594\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"p1_merchantaccessevent_1_9089d594\"",
+        "sql": "CREATE INDEX \"p1_merchantaccessevent_1_9089d594\" ON \"public\".\"merchant_access_events\" (\"companyId\", \"merchantId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"p1_merchantaccessevent_1_9089d594\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_merchantaccessevent_1_9089d594\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_imports.merchant_imports_companyId_idx_33acc5ed",
+    "label": "Create index \"merchant_imports_companyId_idx_33acc5ed\" on \"merchant_imports\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_imports_companyId_idx_33acc5ed",
+        "table": "merchant_imports"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_imports_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_imports_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_imports_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"merchant_imports_companyId_idx_33acc5ed\" ON \"public\".\"merchant_imports\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_imports_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_imports_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_imports.merchant_imports_merchantId_companyId_idx_dee0f13b",
+    "label": "Create index \"merchant_imports_merchantId_companyId_idx_dee0f13b\" on \"merchant_imports\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_imports_merchantId_companyId_idx_dee0f13b",
+        "table": "merchant_imports"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_imports_merchantId_companyId_idx_dee0f13b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_imports_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_imports_merchantId_companyId_idx_dee0f13b\"",
+        "sql": "CREATE INDEX \"merchant_imports_merchantId_companyId_idx_dee0f13b\" ON \"public\".\"merchant_imports\" (\"merchantId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_imports_merchantId_companyId_idx_dee0f13b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_imports_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_imports.p1_merchantimport_1_9089d594",
+    "label": "Create index \"p1_merchantimport_1_9089d594\" on \"merchant_imports\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "p1_merchantimport_1_9089d594",
+        "table": "merchant_imports"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"p1_merchantimport_1_9089d594\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_merchantimport_1_9089d594\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"p1_merchantimport_1_9089d594\"",
+        "sql": "CREATE INDEX \"p1_merchantimport_1_9089d594\" ON \"public\".\"merchant_imports\" (\"companyId\", \"merchantId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"p1_merchantimport_1_9089d594\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_merchantimport_1_9089d594\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_invitations.merchant_invitations_companyId_idx_33acc5ed",
+    "label": "Create index \"merchant_invitations_companyId_idx_33acc5ed\" on \"merchant_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_invitations_companyId_idx_33acc5ed",
+        "table": "merchant_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_invitations_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_invitations_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_invitations_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"merchant_invitations_companyId_idx_33acc5ed\" ON \"public\".\"merchant_invitations\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_invitations_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_invitations_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_invitations.merchant_invitations_merchantId_companyId_idx_dee0f13b",
+    "label": "Create index \"merchant_invitations_merchantId_companyId_idx_dee0f13b\" on \"merchant_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_invitations_merchantId_companyId_idx_dee0f13b",
+        "table": "merchant_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_invitations_merchantId_companyId_idx_dee0f13b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_invitations_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_invitations_merchantId_companyId_idx_dee0f13b\"",
+        "sql": "CREATE INDEX \"merchant_invitations_merchantId_companyId_idx_dee0f13b\" ON \"public\".\"merchant_invitations\" (\"merchantId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_invitations_merchantId_companyId_idx_dee0f13b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_invitations_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_invitations.p1_merchantinvitation_1_9089d594",
+    "label": "Create index \"p1_merchantinvitation_1_9089d594\" on \"merchant_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "p1_merchantinvitation_1_9089d594",
+        "table": "merchant_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"p1_merchantinvitation_1_9089d594\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_merchantinvitation_1_9089d594\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"p1_merchantinvitation_1_9089d594\"",
+        "sql": "CREATE INDEX \"p1_merchantinvitation_1_9089d594\" ON \"public\".\"merchant_invitations\" (\"companyId\", \"merchantId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"p1_merchantinvitation_1_9089d594\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_merchantinvitation_1_9089d594\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_memberships.merchant_memberships_companyId_idx_33acc5ed",
+    "label": "Create index \"merchant_memberships_companyId_idx_33acc5ed\" on \"merchant_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_memberships_companyId_idx_33acc5ed",
+        "table": "merchant_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_memberships_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_memberships_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_memberships_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"merchant_memberships_companyId_idx_33acc5ed\" ON \"public\".\"merchant_memberships\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_memberships_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_memberships_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_memberships.merchant_memberships_companyId_merchantId_status_idx_61054a4a",
+    "label": "Create index \"merchant_memberships_companyId_merchantId_status_idx_61054a4a\" on \"merchant_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_memberships_companyId_merchantId_status_idx_61054a4a",
+        "table": "merchant_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_memberships_companyId_merchantId_status_idx_61054a4a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_memberships_companyId_merchantId_status_idx_61054a4a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_memberships_companyId_merchantId_status_idx_61054a4a\"",
+        "sql": "CREATE INDEX \"merchant_memberships_companyId_merchantId_status_idx_61054a4a\" ON \"public\".\"merchant_memberships\" (\"companyId\", \"merchantId\", \"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_memberships_companyId_merchantId_status_idx_61054a4a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_memberships_companyId_merchantId_status_idx_61054a4a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_memberships.merchant_memberships_merchantId_companyId_idx_dee0f13b",
+    "label": "Create index \"merchant_memberships_merchantId_companyId_idx_dee0f13b\" on \"merchant_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_memberships_merchantId_companyId_idx_dee0f13b",
+        "table": "merchant_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_memberships_merchantId_companyId_idx_dee0f13b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_memberships_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_memberships_merchantId_companyId_idx_dee0f13b\"",
+        "sql": "CREATE INDEX \"merchant_memberships_merchantId_companyId_idx_dee0f13b\" ON \"public\".\"merchant_memberships\" (\"merchantId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_memberships_merchantId_companyId_idx_dee0f13b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_memberships_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_memberships.merchant_memberships_one_owner_57fef624",
+    "label": "Create index \"merchant_memberships_one_owner_57fef624\" on \"merchant_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_memberships_one_owner_57fef624",
+        "table": "merchant_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_memberships_one_owner_57fef624\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_memberships_one_owner_57fef624\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_memberships_one_owner_57fef624\"",
+        "sql": "CREATE UNIQUE INDEX \"merchant_memberships_one_owner_57fef624\" ON \"public\".\"merchant_memberships\" (\"merchantId\") WHERE (\"role\" = 'OWNER' AND \"status\" = 'ACTIVE')",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_memberships_one_owner_57fef624\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_memberships_one_owner_57fef624\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_parcel_requests.merchant_parcel_requests_companyId_idx_33acc5ed",
+    "label": "Create index \"merchant_parcel_requests_companyId_idx_33acc5ed\" on \"merchant_parcel_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_parcel_requests_companyId_idx_33acc5ed",
+        "table": "merchant_parcel_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_parcel_requests_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_parcel_requests_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_parcel_requests_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"merchant_parcel_requests_companyId_idx_33acc5ed\" ON \"public\".\"merchant_parcel_requests\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_parcel_requests_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_parcel_requests_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_parcel_requests.merchant_parcel_requests_merchantId_companyId_idx_dee0f13b",
+    "label": "Create index \"merchant_parcel_requests_merchantId_companyId_idx_dee0f13b\" on \"merchant_parcel_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_parcel_requests_merchantId_companyId_idx_dee0f13b",
+        "table": "merchant_parcel_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_parcel_requests_merchantId_companyId_idx_dee0f13b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_parcel_requests_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_parcel_requests_merchantId_companyId_idx_dee0f13b\"",
+        "sql": "CREATE INDEX \"merchant_parcel_requests_merchantId_companyId_idx_dee0f13b\" ON \"public\".\"merchant_parcel_requests\" (\"merchantId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_parcel_requests_merchantId_companyId_idx_dee0f13b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_parcel_requests_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_parcel_requests.merchant_parcel_requests_shipmentId_companyId_merchant_f89479b3",
+    "label": "Create index \"merchant_parcel_requests_shipmentId_companyId_merchant_f89479b3\" on \"merchant_parcel_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_parcel_requests_shipmentId_companyId_merchant_f89479b3",
+        "table": "merchant_parcel_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_parcel_requests_shipmentId_companyId_merchant_f89479b3\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_parcel_requests_shipmentId_companyId_merchant_f89479b3\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_parcel_requests_shipmentId_companyId_merchant_f89479b3\"",
+        "sql": "CREATE INDEX \"merchant_parcel_requests_shipmentId_companyId_merchant_f89479b3\" ON \"public\".\"merchant_parcel_requests\" (\"shipmentId\", \"companyId\", \"merchantId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_parcel_requests_shipmentId_companyId_merchant_f89479b3\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_parcel_requests_shipmentId_companyId_merchant_f89479b3\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_parcel_requests.one_pending_parcel_request_a8d8c568",
+    "label": "Create index \"one_pending_parcel_request_a8d8c568\" on \"merchant_parcel_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "one_pending_parcel_request_a8d8c568",
+        "table": "merchant_parcel_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"one_pending_parcel_request_a8d8c568\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"one_pending_parcel_request_a8d8c568\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"one_pending_parcel_request_a8d8c568\"",
+        "sql": "CREATE UNIQUE INDEX \"one_pending_parcel_request_a8d8c568\" ON \"public\".\"merchant_parcel_requests\" (\"shipmentId\") WHERE (\"status\" = 'REQUESTED')",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"one_pending_parcel_request_a8d8c568\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"one_pending_parcel_request_a8d8c568\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_parcel_requests.p1_parcel_requests_merchant_36786426",
+    "label": "Create index \"p1_parcel_requests_merchant_36786426\" on \"merchant_parcel_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "p1_parcel_requests_merchant_36786426",
+        "table": "merchant_parcel_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"p1_parcel_requests_merchant_36786426\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_parcel_requests_merchant_36786426\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"p1_parcel_requests_merchant_36786426\"",
+        "sql": "CREATE INDEX \"p1_parcel_requests_merchant_36786426\" ON \"public\".\"merchant_parcel_requests\" (\"companyId\", \"merchantId\", \"shipmentId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"p1_parcel_requests_merchant_36786426\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_parcel_requests_merchant_36786426\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_parcel_requests.p1_parcel_requests_queue_2c40de03",
+    "label": "Create index \"p1_parcel_requests_queue_2c40de03\" on \"merchant_parcel_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "p1_parcel_requests_queue_2c40de03",
+        "table": "merchant_parcel_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"p1_parcel_requests_queue_2c40de03\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_parcel_requests_queue_2c40de03\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"p1_parcel_requests_queue_2c40de03\"",
+        "sql": "CREATE INDEX \"p1_parcel_requests_queue_2c40de03\" ON \"public\".\"merchant_parcel_requests\" (\"companyId\", \"status\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"p1_parcel_requests_queue_2c40de03\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_parcel_requests_queue_2c40de03\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_plans.merchant_plans_companyId_idx_33acc5ed",
+    "label": "Create index \"merchant_plans_companyId_idx_33acc5ed\" on \"merchant_plans\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_plans_companyId_idx_33acc5ed",
+        "table": "merchant_plans"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_plans_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_plans_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_plans_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"merchant_plans_companyId_idx_33acc5ed\" ON \"public\".\"merchant_plans\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_plans_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_plans_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_plans.merchant_plans_companyId_name_idx_4b7916d1",
+    "label": "Create index \"merchant_plans_companyId_name_idx_4b7916d1\" on \"merchant_plans\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_plans_companyId_name_idx_4b7916d1",
+        "table": "merchant_plans"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_plans_companyId_name_idx_4b7916d1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_plans_companyId_name_idx_4b7916d1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_plans_companyId_name_idx_4b7916d1\"",
+        "sql": "CREATE INDEX \"merchant_plans_companyId_name_idx_4b7916d1\" ON \"public\".\"merchant_plans\" (\"companyId\", \"name\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_plans_companyId_name_idx_4b7916d1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_plans_companyId_name_idx_4b7916d1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_settlement_requests.merchant_settlement_requests_companyId_idx_33acc5ed",
+    "label": "Create index \"merchant_settlement_requests_companyId_idx_33acc5ed\" on \"merchant_settlement_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_settlement_requests_companyId_idx_33acc5ed",
+        "table": "merchant_settlement_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_settlement_requests_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_settlement_requests_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_settlement_requests_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"merchant_settlement_requests_companyId_idx_33acc5ed\" ON \"public\".\"merchant_settlement_requests\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_settlement_requests_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_settlement_requests_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_settlement_requests.merchant_settlement_requests_merchantId_companyId_idx_dee0f13b",
+    "label": "Create index \"merchant_settlement_requests_merchantId_companyId_idx_dee0f13b\" on \"merchant_settlement_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_settlement_requests_merchantId_companyId_idx_dee0f13b",
+        "table": "merchant_settlement_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_settlement_requests_merchantId_companyId_idx_dee0f13b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_settlement_requests_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_settlement_requests_merchantId_companyId_idx_dee0f13b\"",
+        "sql": "CREATE INDEX \"merchant_settlement_requests_merchantId_companyId_idx_dee0f13b\" ON \"public\".\"merchant_settlement_requests\" (\"merchantId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_settlement_requests_merchantId_companyId_idx_dee0f13b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_settlement_requests_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_settlement_requests.p1_merchantsettlementrequest_1_9089d594",
+    "label": "Create index \"p1_merchantsettlementrequest_1_9089d594\" on \"merchant_settlement_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "p1_merchantsettlementrequest_1_9089d594",
+        "table": "merchant_settlement_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"p1_merchantsettlementrequest_1_9089d594\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_merchantsettlementrequest_1_9089d594\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"p1_merchantsettlementrequest_1_9089d594\"",
+        "sql": "CREATE INDEX \"p1_merchantsettlementrequest_1_9089d594\" ON \"public\".\"merchant_settlement_requests\" (\"companyId\", \"merchantId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"p1_merchantsettlementrequest_1_9089d594\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_merchantsettlementrequest_1_9089d594\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_settlement_requests.p1_merchantsettlementrequest_2_ee13c67b",
+    "label": "Create index \"p1_merchantsettlementrequest_2_ee13c67b\" on \"merchant_settlement_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "p1_merchantsettlementrequest_2_ee13c67b",
+        "table": "merchant_settlement_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"p1_merchantsettlementrequest_2_ee13c67b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_merchantsettlementrequest_2_ee13c67b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"p1_merchantsettlementrequest_2_ee13c67b\"",
+        "sql": "CREATE INDEX \"p1_merchantsettlementrequest_2_ee13c67b\" ON \"public\".\"merchant_settlement_requests\" (\"merchantId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"p1_merchantsettlementrequest_2_ee13c67b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_merchantsettlementrequest_2_ee13c67b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchants.merchants_planId_companyId_idx_dce66228",
+    "label": "Create index \"merchants_planId_companyId_idx_dce66228\" on \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchants_planId_companyId_idx_dce66228",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchants_planId_companyId_idx_dce66228\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchants_planId_companyId_idx_dce66228\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchants_planId_companyId_idx_dce66228\"",
+        "sql": "CREATE INDEX \"merchants_planId_companyId_idx_dce66228\" ON \"public\".\"merchants\" (\"planId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchants_planId_companyId_idx_dce66228\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchants_planId_companyId_idx_dce66228\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.pickup_parcels.one_active_pickup_per_parcel_fa735083",
+    "label": "Create index \"one_active_pickup_per_parcel_fa735083\" on \"pickup_parcels\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "one_active_pickup_per_parcel_fa735083",
+        "table": "pickup_parcels"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"one_active_pickup_per_parcel_fa735083\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"one_active_pickup_per_parcel_fa735083\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"one_active_pickup_per_parcel_fa735083\"",
+        "sql": "CREATE UNIQUE INDEX \"one_active_pickup_per_parcel_fa735083\" ON \"public\".\"pickup_parcels\" (\"shipmentId\") WHERE (\"active\" = true)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"one_active_pickup_per_parcel_fa735083\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"one_active_pickup_per_parcel_fa735083\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.pickup_parcels.pickup_parcels_pickupId_companyId_merchantId_idx_374eddd7",
+    "label": "Create index \"pickup_parcels_pickupId_companyId_merchantId_idx_374eddd7\" on \"pickup_parcels\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "pickup_parcels_pickupId_companyId_merchantId_idx_374eddd7",
+        "table": "pickup_parcels"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"pickup_parcels_pickupId_companyId_merchantId_idx_374eddd7\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_parcels_pickupId_companyId_merchantId_idx_374eddd7\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"pickup_parcels_pickupId_companyId_merchantId_idx_374eddd7\"",
+        "sql": "CREATE INDEX \"pickup_parcels_pickupId_companyId_merchantId_idx_374eddd7\" ON \"public\".\"pickup_parcels\" (\"pickupId\", \"companyId\", \"merchantId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"pickup_parcels_pickupId_companyId_merchantId_idx_374eddd7\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_parcels_pickupId_companyId_merchantId_idx_374eddd7\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.pickup_parcels.pickup_parcels_shipmentId_companyId_merchantId_idx_f89479b3",
+    "label": "Create index \"pickup_parcels_shipmentId_companyId_merchantId_idx_f89479b3\" on \"pickup_parcels\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "pickup_parcels_shipmentId_companyId_merchantId_idx_f89479b3",
+        "table": "pickup_parcels"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"pickup_parcels_shipmentId_companyId_merchantId_idx_f89479b3\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_parcels_shipmentId_companyId_merchantId_idx_f89479b3\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"pickup_parcels_shipmentId_companyId_merchantId_idx_f89479b3\"",
+        "sql": "CREATE INDEX \"pickup_parcels_shipmentId_companyId_merchantId_idx_f89479b3\" ON \"public\".\"pickup_parcels\" (\"shipmentId\", \"companyId\", \"merchantId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"pickup_parcels_shipmentId_companyId_merchantId_idx_f89479b3\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_parcels_shipmentId_companyId_merchantId_idx_f89479b3\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.pickup_requests.p1_pickuprequest_1_2c40de03",
+    "label": "Create index \"p1_pickuprequest_1_2c40de03\" on \"pickup_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "p1_pickuprequest_1_2c40de03",
+        "table": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"p1_pickuprequest_1_2c40de03\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_pickuprequest_1_2c40de03\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"p1_pickuprequest_1_2c40de03\"",
+        "sql": "CREATE INDEX \"p1_pickuprequest_1_2c40de03\" ON \"public\".\"pickup_requests\" (\"companyId\", \"status\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"p1_pickuprequest_1_2c40de03\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_pickuprequest_1_2c40de03\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.pickup_requests.p1_pickuprequest_2_9089d594",
+    "label": "Create index \"p1_pickuprequest_2_9089d594\" on \"pickup_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "p1_pickuprequest_2_9089d594",
+        "table": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"p1_pickuprequest_2_9089d594\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_pickuprequest_2_9089d594\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"p1_pickuprequest_2_9089d594\"",
+        "sql": "CREATE INDEX \"p1_pickuprequest_2_9089d594\" ON \"public\".\"pickup_requests\" (\"companyId\", \"merchantId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"p1_pickuprequest_2_9089d594\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"p1_pickuprequest_2_9089d594\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.pickup_requests.pickup_requests_companyId_idx_33acc5ed",
+    "label": "Create index \"pickup_requests_companyId_idx_33acc5ed\" on \"pickup_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "pickup_requests_companyId_idx_33acc5ed",
+        "table": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"pickup_requests_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_requests_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"pickup_requests_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"pickup_requests_companyId_idx_33acc5ed\" ON \"public\".\"pickup_requests\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"pickup_requests_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_requests_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.pickup_requests.pickup_requests_merchantId_companyId_idx_dee0f13b",
+    "label": "Create index \"pickup_requests_merchantId_companyId_idx_dee0f13b\" on \"pickup_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "pickup_requests_merchantId_companyId_idx_dee0f13b",
+        "table": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"pickup_requests_merchantId_companyId_idx_dee0f13b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_requests_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"pickup_requests_merchantId_companyId_idx_dee0f13b\"",
+        "sql": "CREATE INDEX \"pickup_requests_merchantId_companyId_idx_dee0f13b\" ON \"public\".\"pickup_requests\" (\"merchantId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"pickup_requests_merchantId_companyId_idx_dee0f13b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_requests_merchantId_companyId_idx_dee0f13b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.pickup_requests.pickup_requests_warehouseId_companyId_idx_51e6a2af",
+    "label": "Create index \"pickup_requests_warehouseId_companyId_idx_51e6a2af\" on \"pickup_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "pickup_requests_warehouseId_companyId_idx_51e6a2af",
+        "table": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"pickup_requests_warehouseId_companyId_idx_51e6a2af\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_requests_warehouseId_companyId_idx_51e6a2af\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"pickup_requests_warehouseId_companyId_idx_51e6a2af\"",
+        "sql": "CREATE INDEX \"pickup_requests_warehouseId_companyId_idx_51e6a2af\" ON \"public\".\"pickup_requests\" (\"warehouseId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"pickup_requests_warehouseId_companyId_idx_51e6a2af\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_requests_warehouseId_companyId_idx_51e6a2af\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.pickup_requests.pickup_requests_workerId_companyId_idx_95d2064a",
+    "label": "Create index \"pickup_requests_workerId_companyId_idx_95d2064a\" on \"pickup_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "pickup_requests_workerId_companyId_idx_95d2064a",
+        "table": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"pickup_requests_workerId_companyId_idx_95d2064a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_requests_workerId_companyId_idx_95d2064a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"pickup_requests_workerId_companyId_idx_95d2064a\"",
+        "sql": "CREATE INDEX \"pickup_requests_workerId_companyId_idx_95d2064a\" ON \"public\".\"pickup_requests\" (\"workerId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"pickup_requests_workerId_companyId_idx_95d2064a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"pickup_requests_workerId_companyId_idx_95d2064a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.plan_zone_tariffs.plan_zone_tariffs_companyId_idx_33acc5ed",
+    "label": "Create index \"plan_zone_tariffs_companyId_idx_33acc5ed\" on \"plan_zone_tariffs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "plan_zone_tariffs_companyId_idx_33acc5ed",
+        "table": "plan_zone_tariffs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"plan_zone_tariffs_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"plan_zone_tariffs_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"plan_zone_tariffs_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"plan_zone_tariffs_companyId_idx_33acc5ed\" ON \"public\".\"plan_zone_tariffs\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"plan_zone_tariffs_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"plan_zone_tariffs_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.plan_zone_tariffs.plan_zone_tariffs_companyId_zoneId_idx_40e49cac",
+    "label": "Create index \"plan_zone_tariffs_companyId_zoneId_idx_40e49cac\" on \"plan_zone_tariffs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "plan_zone_tariffs_companyId_zoneId_idx_40e49cac",
+        "table": "plan_zone_tariffs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"plan_zone_tariffs_companyId_zoneId_idx_40e49cac\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"plan_zone_tariffs_companyId_zoneId_idx_40e49cac\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"plan_zone_tariffs_companyId_zoneId_idx_40e49cac\"",
+        "sql": "CREATE INDEX \"plan_zone_tariffs_companyId_zoneId_idx_40e49cac\" ON \"public\".\"plan_zone_tariffs\" (\"companyId\", \"zoneId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"plan_zone_tariffs_companyId_zoneId_idx_40e49cac\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"plan_zone_tariffs_companyId_zoneId_idx_40e49cac\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.plan_zone_tariffs.plan_zone_tariffs_planId_companyId_idx_dce66228",
+    "label": "Create index \"plan_zone_tariffs_planId_companyId_idx_dce66228\" on \"plan_zone_tariffs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "plan_zone_tariffs_planId_companyId_idx_dce66228",
+        "table": "plan_zone_tariffs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"plan_zone_tariffs_planId_companyId_idx_dce66228\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"plan_zone_tariffs_planId_companyId_idx_dce66228\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"plan_zone_tariffs_planId_companyId_idx_dce66228\"",
+        "sql": "CREATE INDEX \"plan_zone_tariffs_planId_companyId_idx_dce66228\" ON \"public\".\"plan_zone_tariffs\" (\"planId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"plan_zone_tariffs_planId_companyId_idx_dce66228\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"plan_zone_tariffs_planId_companyId_idx_dce66228\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.plan_zone_tariffs.plan_zone_tariffs_zoneId_companyId_idx_6b7b0a4d",
+    "label": "Create index \"plan_zone_tariffs_zoneId_companyId_idx_6b7b0a4d\" on \"plan_zone_tariffs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "plan_zone_tariffs_zoneId_companyId_idx_6b7b0a4d",
+        "table": "plan_zone_tariffs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"plan_zone_tariffs_zoneId_companyId_idx_6b7b0a4d\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"plan_zone_tariffs_zoneId_companyId_idx_6b7b0a4d\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"plan_zone_tariffs_zoneId_companyId_idx_6b7b0a4d\"",
+        "sql": "CREATE INDEX \"plan_zone_tariffs_zoneId_companyId_idx_6b7b0a4d\" ON \"public\".\"plan_zone_tariffs\" (\"zoneId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"plan_zone_tariffs_zoneId_companyId_idx_6b7b0a4d\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"plan_zone_tariffs_zoneId_companyId_idx_6b7b0a4d\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.shipments.shipments_deliveryZoneId_companyId_idx_5545125a",
+    "label": "Create index \"shipments_deliveryZoneId_companyId_idx_5545125a\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "shipments_deliveryZoneId_companyId_idx_5545125a",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"shipments_deliveryZoneId_companyId_idx_5545125a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_deliveryZoneId_companyId_idx_5545125a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"shipments_deliveryZoneId_companyId_idx_5545125a\"",
+        "sql": "CREATE INDEX \"shipments_deliveryZoneId_companyId_idx_5545125a\" ON \"public\".\"shipments\" (\"deliveryZoneId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"shipments_deliveryZoneId_companyId_idx_5545125a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_deliveryZoneId_companyId_idx_5545125a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.shipments.shipments_pricingPlanId_companyId_idx_de4a3792",
+    "label": "Create index \"shipments_pricingPlanId_companyId_idx_de4a3792\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "shipments_pricingPlanId_companyId_idx_de4a3792",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"shipments_pricingPlanId_companyId_idx_de4a3792\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_pricingPlanId_companyId_idx_de4a3792\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"shipments_pricingPlanId_companyId_idx_de4a3792\"",
+        "sql": "CREATE INDEX \"shipments_pricingPlanId_companyId_idx_de4a3792\" ON \"public\".\"shipments\" (\"pricingPlanId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"shipments_pricingPlanId_companyId_idx_de4a3792\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_pricingPlanId_companyId_idx_de4a3792\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.delivery_zones.delivery_zones_companyId_fkey",
+    "label": "Add foreign key \"delivery_zones_companyId_fkey\" on \"delivery_zones\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "delivery_zones_companyId_fkey",
+        "table": "delivery_zones"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"delivery_zones_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "delivery_zones_companyId_fkey",
+          "public",
+          "\"public\".\"delivery_zones\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"delivery_zones_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"delivery_zones\"\nADD CONSTRAINT \"delivery_zones_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"delivery_zones_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "delivery_zones_companyId_fkey",
+          "public",
+          "\"public\".\"delivery_zones\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_access_events.merchant_access_events_companyId_fkey",
+    "label": "Add foreign key \"merchant_access_events_companyId_fkey\" on \"merchant_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_access_events_companyId_fkey",
+        "table": "merchant_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_access_events_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_access_events_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_access_events\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_access_events_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_access_events\"\nADD CONSTRAINT \"merchant_access_events_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_access_events_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_access_events_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_access_events\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_access_events.merchant_access_events_merchantId_companyId_fkey",
+    "label": "Add foreign key \"merchant_access_events_merchantId_companyId_fkey\" on \"merchant_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_access_events_merchantId_companyId_fkey",
+        "table": "merchant_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_access_events_merchantId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_access_events_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_access_events\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_access_events_merchantId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_access_events\"\nADD CONSTRAINT \"merchant_access_events_merchantId_companyId_fkey\"\nFOREIGN KEY (\"merchantId\", \"companyId\")\nREFERENCES \"public\".\"merchants\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_access_events_merchantId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_access_events_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_access_events\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_imports.merchant_imports_companyId_fkey",
+    "label": "Add foreign key \"merchant_imports_companyId_fkey\" on \"merchant_imports\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_imports_companyId_fkey",
+        "table": "merchant_imports"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_imports_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_imports_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_imports\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_imports_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_imports\"\nADD CONSTRAINT \"merchant_imports_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_imports_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_imports_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_imports\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_imports.merchant_imports_merchantId_companyId_fkey",
+    "label": "Add foreign key \"merchant_imports_merchantId_companyId_fkey\" on \"merchant_imports\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_imports_merchantId_companyId_fkey",
+        "table": "merchant_imports"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_imports_merchantId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_imports_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_imports\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_imports_merchantId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_imports\"\nADD CONSTRAINT \"merchant_imports_merchantId_companyId_fkey\"\nFOREIGN KEY (\"merchantId\", \"companyId\")\nREFERENCES \"public\".\"merchants\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_imports_merchantId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_imports_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_imports\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_invitations.merchant_invitations_companyId_fkey",
+    "label": "Add foreign key \"merchant_invitations_companyId_fkey\" on \"merchant_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_invitations_companyId_fkey",
+        "table": "merchant_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_invitations_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_invitations_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_invitations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_invitations_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_invitations\"\nADD CONSTRAINT \"merchant_invitations_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_invitations_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_invitations_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_invitations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_invitations.merchant_invitations_merchantId_companyId_fkey",
+    "label": "Add foreign key \"merchant_invitations_merchantId_companyId_fkey\" on \"merchant_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_invitations_merchantId_companyId_fkey",
+        "table": "merchant_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_invitations_merchantId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_invitations_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_invitations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_invitations_merchantId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_invitations\"\nADD CONSTRAINT \"merchant_invitations_merchantId_companyId_fkey\"\nFOREIGN KEY (\"merchantId\", \"companyId\")\nREFERENCES \"public\".\"merchants\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_invitations_merchantId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_invitations_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_invitations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_memberships.merchant_memberships_userId_companyId_fkey",
+    "label": "Add foreign key \"merchant_memberships_userId_companyId_fkey\" on \"merchant_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_memberships_userId_companyId_fkey",
+        "table": "merchant_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_memberships_userId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_memberships_userId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_memberships_userId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_memberships\"\nADD CONSTRAINT \"merchant_memberships_userId_companyId_fkey\"\nFOREIGN KEY (\"userId\", \"companyId\")\nREFERENCES \"public\".\"users\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_memberships_userId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_memberships_userId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_memberships.merchant_memberships_companyId_fkey",
+    "label": "Add foreign key \"merchant_memberships_companyId_fkey\" on \"merchant_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_memberships_companyId_fkey",
+        "table": "merchant_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_memberships_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_memberships_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_memberships_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_memberships\"\nADD CONSTRAINT \"merchant_memberships_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_memberships_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_memberships_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_memberships.merchant_memberships_merchantId_companyId_fkey",
+    "label": "Add foreign key \"merchant_memberships_merchantId_companyId_fkey\" on \"merchant_memberships\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_memberships_merchantId_companyId_fkey",
+        "table": "merchant_memberships"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_memberships_merchantId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_memberships_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_memberships_merchantId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_memberships\"\nADD CONSTRAINT \"merchant_memberships_merchantId_companyId_fkey\"\nFOREIGN KEY (\"merchantId\", \"companyId\")\nREFERENCES \"public\".\"merchants\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_memberships_merchantId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_memberships_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_memberships\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_parcel_requests.merchant_parcel_requests_companyId_fkey",
+    "label": "Add foreign key \"merchant_parcel_requests_companyId_fkey\" on \"merchant_parcel_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_parcel_requests_companyId_fkey",
+        "table": "merchant_parcel_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_parcel_requests_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_parcel_requests_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_parcel_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_parcel_requests_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_parcel_requests\"\nADD CONSTRAINT \"merchant_parcel_requests_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_parcel_requests_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_parcel_requests_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_parcel_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_parcel_requests.merchant_parcel_requests_merchantId_companyId_fkey",
+    "label": "Add foreign key \"merchant_parcel_requests_merchantId_companyId_fkey\" on \"merchant_parcel_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_parcel_requests_merchantId_companyId_fkey",
+        "table": "merchant_parcel_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_parcel_requests_merchantId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_parcel_requests_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_parcel_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_parcel_requests_merchantId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_parcel_requests\"\nADD CONSTRAINT \"merchant_parcel_requests_merchantId_companyId_fkey\"\nFOREIGN KEY (\"merchantId\", \"companyId\")\nREFERENCES \"public\".\"merchants\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_parcel_requests_merchantId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_parcel_requests_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_parcel_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_parcel_requests.merchant_parcel_requests_shipmentId_companyId_merchantId_fkey",
+    "label": "Add foreign key \"merchant_parcel_requests_shipmentId_companyId_merchantId_fkey\" on \"merchant_parcel_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_parcel_requests_shipmentId_companyId_merchantId_fkey",
+        "table": "merchant_parcel_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_parcel_requests_shipmentId_companyId_merchantId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_parcel_requests_shipmentId_companyId_merchantId_fkey",
+          "public",
+          "\"public\".\"merchant_parcel_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_parcel_requests_shipmentId_companyId_merchantId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_parcel_requests\"\nADD CONSTRAINT \"merchant_parcel_requests_shipmentId_companyId_merchantId_fkey\"\nFOREIGN KEY (\"shipmentId\", \"companyId\", \"merchantId\")\nREFERENCES \"public\".\"shipments\" (\"id\", \"companyId\", \"merchantId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_parcel_requests_shipmentId_companyId_merchantId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_parcel_requests_shipmentId_companyId_merchantId_fkey",
+          "public",
+          "\"public\".\"merchant_parcel_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_plans.merchant_plans_companyId_fkey",
+    "label": "Add foreign key \"merchant_plans_companyId_fkey\" on \"merchant_plans\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_plans_companyId_fkey",
+        "table": "merchant_plans"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_plans_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_plans_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_plans\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_plans_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_plans\"\nADD CONSTRAINT \"merchant_plans_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_plans_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_plans_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_plans\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_settlement_requests.merchant_settlement_requests_companyId_fkey",
+    "label": "Add foreign key \"merchant_settlement_requests_companyId_fkey\" on \"merchant_settlement_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_settlement_requests_companyId_fkey",
+        "table": "merchant_settlement_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_settlement_requests_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_settlement_requests_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_settlement_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_settlement_requests_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_settlement_requests\"\nADD CONSTRAINT \"merchant_settlement_requests_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_settlement_requests_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_settlement_requests_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_settlement_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_settlement_requests.merchant_settlement_requests_merchantId_companyId_fkey",
+    "label": "Add foreign key \"merchant_settlement_requests_merchantId_companyId_fkey\" on \"merchant_settlement_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_settlement_requests_merchantId_companyId_fkey",
+        "table": "merchant_settlement_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_settlement_requests_merchantId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_settlement_requests_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_settlement_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_settlement_requests_merchantId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_settlement_requests\"\nADD CONSTRAINT \"merchant_settlement_requests_merchantId_companyId_fkey\"\nFOREIGN KEY (\"merchantId\", \"companyId\")\nREFERENCES \"public\".\"merchants\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_settlement_requests_merchantId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_settlement_requests_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"merchant_settlement_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchants.merchants_planId_companyId_fkey",
+    "label": "Add foreign key \"merchants_planId_companyId_fkey\" on \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchants_planId_companyId_fkey",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchants_planId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchants_planId_companyId_fkey",
+          "public",
+          "\"public\".\"merchants\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchants_planId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchants\"\nADD CONSTRAINT \"merchants_planId_companyId_fkey\"\nFOREIGN KEY (\"planId\", \"companyId\")\nREFERENCES \"public\".\"merchant_plans\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchants_planId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchants_planId_companyId_fkey",
+          "public",
+          "\"public\".\"merchants\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pickup_parcels.pickup_parcels_pickupId_companyId_merchantId_fkey",
+    "label": "Add foreign key \"pickup_parcels_pickupId_companyId_merchantId_fkey\" on \"pickup_parcels\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pickup_parcels_pickupId_companyId_merchantId_fkey",
+        "table": "pickup_parcels"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pickup_parcels_pickupId_companyId_merchantId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_parcels_pickupId_companyId_merchantId_fkey",
+          "public",
+          "\"public\".\"pickup_parcels\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pickup_parcels_pickupId_companyId_merchantId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pickup_parcels\"\nADD CONSTRAINT \"pickup_parcels_pickupId_companyId_merchantId_fkey\"\nFOREIGN KEY (\"pickupId\", \"companyId\", \"merchantId\")\nREFERENCES \"public\".\"pickup_requests\" (\"id\", \"companyId\", \"merchantId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pickup_parcels_pickupId_companyId_merchantId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_parcels_pickupId_companyId_merchantId_fkey",
+          "public",
+          "\"public\".\"pickup_parcels\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pickup_parcels.pickup_parcels_shipmentId_companyId_merchantId_fkey",
+    "label": "Add foreign key \"pickup_parcels_shipmentId_companyId_merchantId_fkey\" on \"pickup_parcels\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pickup_parcels_shipmentId_companyId_merchantId_fkey",
+        "table": "pickup_parcels"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pickup_parcels_shipmentId_companyId_merchantId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_parcels_shipmentId_companyId_merchantId_fkey",
+          "public",
+          "\"public\".\"pickup_parcels\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pickup_parcels_shipmentId_companyId_merchantId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pickup_parcels\"\nADD CONSTRAINT \"pickup_parcels_shipmentId_companyId_merchantId_fkey\"\nFOREIGN KEY (\"shipmentId\", \"companyId\", \"merchantId\")\nREFERENCES \"public\".\"shipments\" (\"id\", \"companyId\", \"merchantId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pickup_parcels_shipmentId_companyId_merchantId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_parcels_shipmentId_companyId_merchantId_fkey",
+          "public",
+          "\"public\".\"pickup_parcels\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pickup_requests.pickup_requests_companyId_fkey",
+    "label": "Add foreign key \"pickup_requests_companyId_fkey\" on \"pickup_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pickup_requests_companyId_fkey",
+        "table": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pickup_requests_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_requests_companyId_fkey",
+          "public",
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pickup_requests_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pickup_requests\"\nADD CONSTRAINT \"pickup_requests_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pickup_requests_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_requests_companyId_fkey",
+          "public",
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pickup_requests.pickup_requests_merchantId_companyId_fkey",
+    "label": "Add foreign key \"pickup_requests_merchantId_companyId_fkey\" on \"pickup_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pickup_requests_merchantId_companyId_fkey",
+        "table": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pickup_requests_merchantId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_requests_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pickup_requests_merchantId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pickup_requests\"\nADD CONSTRAINT \"pickup_requests_merchantId_companyId_fkey\"\nFOREIGN KEY (\"merchantId\", \"companyId\")\nREFERENCES \"public\".\"merchants\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pickup_requests_merchantId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_requests_merchantId_companyId_fkey",
+          "public",
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pickup_requests.pickup_requests_workerId_companyId_fkey",
+    "label": "Add foreign key \"pickup_requests_workerId_companyId_fkey\" on \"pickup_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pickup_requests_workerId_companyId_fkey",
+        "table": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pickup_requests_workerId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_requests_workerId_companyId_fkey",
+          "public",
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pickup_requests_workerId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pickup_requests\"\nADD CONSTRAINT \"pickup_requests_workerId_companyId_fkey\"\nFOREIGN KEY (\"workerId\", \"companyId\")\nREFERENCES \"public\".\"workers\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pickup_requests_workerId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_requests_workerId_companyId_fkey",
+          "public",
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.pickup_requests.pickup_requests_warehouseId_companyId_fkey",
+    "label": "Add foreign key \"pickup_requests_warehouseId_companyId_fkey\" on \"pickup_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "pickup_requests_warehouseId_companyId_fkey",
+        "table": "pickup_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"pickup_requests_warehouseId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_requests_warehouseId_companyId_fkey",
+          "public",
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"pickup_requests_warehouseId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"pickup_requests\"\nADD CONSTRAINT \"pickup_requests_warehouseId_companyId_fkey\"\nFOREIGN KEY (\"warehouseId\", \"companyId\")\nREFERENCES \"public\".\"warehouses\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"pickup_requests_warehouseId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "pickup_requests_warehouseId_companyId_fkey",
+          "public",
+          "\"public\".\"pickup_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.plan_zone_tariffs.plan_zone_tariffs_companyId_fkey",
+    "label": "Add foreign key \"plan_zone_tariffs_companyId_fkey\" on \"plan_zone_tariffs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "plan_zone_tariffs_companyId_fkey",
+        "table": "plan_zone_tariffs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"plan_zone_tariffs_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "plan_zone_tariffs_companyId_fkey",
+          "public",
+          "\"public\".\"plan_zone_tariffs\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"plan_zone_tariffs_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"plan_zone_tariffs\"\nADD CONSTRAINT \"plan_zone_tariffs_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"plan_zone_tariffs_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "plan_zone_tariffs_companyId_fkey",
+          "public",
+          "\"public\".\"plan_zone_tariffs\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.plan_zone_tariffs.plan_zone_tariffs_planId_companyId_fkey",
+    "label": "Add foreign key \"plan_zone_tariffs_planId_companyId_fkey\" on \"plan_zone_tariffs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "plan_zone_tariffs_planId_companyId_fkey",
+        "table": "plan_zone_tariffs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"plan_zone_tariffs_planId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "plan_zone_tariffs_planId_companyId_fkey",
+          "public",
+          "\"public\".\"plan_zone_tariffs\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"plan_zone_tariffs_planId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"plan_zone_tariffs\"\nADD CONSTRAINT \"plan_zone_tariffs_planId_companyId_fkey\"\nFOREIGN KEY (\"planId\", \"companyId\")\nREFERENCES \"public\".\"merchant_plans\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"plan_zone_tariffs_planId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "plan_zone_tariffs_planId_companyId_fkey",
+          "public",
+          "\"public\".\"plan_zone_tariffs\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.plan_zone_tariffs.plan_zone_tariffs_zoneId_companyId_fkey",
+    "label": "Add foreign key \"plan_zone_tariffs_zoneId_companyId_fkey\" on \"plan_zone_tariffs\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "plan_zone_tariffs_zoneId_companyId_fkey",
+        "table": "plan_zone_tariffs"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"plan_zone_tariffs_zoneId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "plan_zone_tariffs_zoneId_companyId_fkey",
+          "public",
+          "\"public\".\"plan_zone_tariffs\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"plan_zone_tariffs_zoneId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"plan_zone_tariffs\"\nADD CONSTRAINT \"plan_zone_tariffs_zoneId_companyId_fkey\"\nFOREIGN KEY (\"zoneId\", \"companyId\")\nREFERENCES \"public\".\"delivery_zones\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"plan_zone_tariffs_zoneId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "plan_zone_tariffs_zoneId_companyId_fkey",
+          "public",
+          "\"public\".\"plan_zone_tariffs\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.shipments.shipments_deliveryZoneId_companyId_fkey",
+    "label": "Add foreign key \"shipments_deliveryZoneId_companyId_fkey\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "shipments_deliveryZoneId_companyId_fkey",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"shipments_deliveryZoneId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_deliveryZoneId_companyId_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"shipments_deliveryZoneId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\"\nADD CONSTRAINT \"shipments_deliveryZoneId_companyId_fkey\"\nFOREIGN KEY (\"deliveryZoneId\", \"companyId\")\nREFERENCES \"public\".\"delivery_zones\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"shipments_deliveryZoneId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_deliveryZoneId_companyId_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.shipments.shipments_pricingPlanId_companyId_fkey",
+    "label": "Add foreign key \"shipments_pricingPlanId_companyId_fkey\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "shipments_pricingPlanId_companyId_fkey",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"shipments_pricingPlanId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_pricingPlanId_companyId_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"shipments_pricingPlanId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\"\nADD CONSTRAINT \"shipments_pricingPlanId_companyId_fkey\"\nFOREIGN KEY (\"pricingPlanId\", \"companyId\")\nREFERENCES \"public\".\"merchant_plans\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"shipments_pricingPlanId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_pricingPlanId_companyId_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  }
+]

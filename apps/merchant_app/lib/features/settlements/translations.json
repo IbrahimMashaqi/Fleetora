@@ -1,0 +1,18 @@
+{
+  "settlements": {"en":"Settlement requests","ar":"طلبات التسوية"},
+  "settlementExplanation": {"en":"Requests are reviewed by your delivery company. A request does not confirm payment or move money.","ar":"تراجع شركة التوصيل الطلبات. الطلب لا يؤكد الدفع ولا يحرك الأموال."},
+  "requestSettlement": {"en":"Request settlement","ar":"طلب تسوية"},
+  "settlementConfirmation": {"en":"Send this settlement request to your delivery company for review? This does not confirm payment.","ar":"هل تريد إرسال طلب التسوية لشركة التوصيل للمراجعة؟ هذا لا يؤكد الدفع."},
+  "settlementHistory": {"en":"Request history","ar":"سجل الطلبات"},
+  "refreshSettlements": {"en":"Refresh requests","ar":"تحديث الطلبات"},
+  "settlementRecorded": {"en":"Settlement request recorded","ar":"تم تسجيل طلب التسوية"},
+  "newSettlementRequest": {"en":"Create another request","ar":"إنشاء طلب آخر"},
+  "noSettlementCurrency": {"en":"No balance currencies are available for a settlement request yet.","ar":"لا توجد عملات أرصدة متاحة لطلب التسوية بعد."},
+  "settlementCurrency": {"en":"Currency","ar":"العملة"},
+  "settlementNotes": {"en":"Notes (optional)","ar":"ملاحظات (اختياري)"},
+  "settlementRetryHelp": {"en":"The result is uncertain. Retry this same request to check or complete it safely. Its currency and notes are preserved.","ar":"نتيجة الطلب غير مؤكدة. أعد محاولة الطلب نفسه للتحقق منه أو إكماله بأمان. تم الاحتفاظ بالعملة والملاحظات."},
+  "sendSettlementRequest": {"en":"Send settlement request","ar":"إرسال طلب التسوية"},
+  "retrySettlementRequest": {"en":"Retry the same request","ar":"إعادة محاولة الطلب نفسه"},
+  "status_REQUESTED": {"en":"Requested","ar":"تم الطلب"},
+  "status_REVIEWED": {"en":"Reviewed","ar":"تمت المراجعة"}
+}

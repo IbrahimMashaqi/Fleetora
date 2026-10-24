@@ -1,0 +1,10 @@
+{
+  "profile": {"en":"Account","ar":"الحساب"},
+  "deliveryCompany": {"en":"Delivery company","ar":"شركة التوصيل"},
+  "accountRole": {"en":"Account role","ar":"نوع الحساب"},
+  "merchantOwner": {"en":"Merchant owner","ar":"مالك التاجر"},
+  "merchantEmployee": {"en":"Merchant employee","ar":"موظف التاجر"},
+  "contactPhone": {"en":"Contact phone","ar":"هاتف التواصل"},
+  "defaultPickupLocation": {"en":"Default pickup location","ar":"موقع الاستلام الأساسي"},
+  "alternatePickupHelp": {"en":"Use an alternate location on a pickup request when needed.","ar":"يمكنك استخدام موقع بديل في طلب الاستلام عند الحاجة."}
+}

@@ -1,3 +1,5 @@
+import { VehiclesModule } from './modules/vehicles/vehicles.module.js';
+import { FleetModule } from './modules/fleet/fleet.module.js';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './modules/prisma/prisma.module.js';
@@ -5,6 +7,7 @@ import { MailModule } from './modules/mail/mail.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { DriversModule } from './modules/drivers/drivers.module.js';
 import { MerchantsModule } from './modules/merchants/merchants.module.js';
+import { MerchantPortalModule } from './modules/merchant-portal/merchant-portal.module.js';
 
 @Module({
   imports: [
@@ -17,6 +20,9 @@ import { MerchantsModule } from './modules/merchants/merchants.module.js';
     AuthModule,
     MerchantsModule,
     DriversModule,
+    VehiclesModule,
+    FleetModule,
+    MerchantPortalModule,
   ],
 })
 export class AppModule {}

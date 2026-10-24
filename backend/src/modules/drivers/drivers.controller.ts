@@ -1,4 +1,9 @@
+import { AssignmentDto } from '../vehicles/vehicles.dto.js';
 import {
+  Body,
+  Headers,
+  ForbiddenException,
+  Put,
   Controller,
   Get,
   Header,
@@ -28,6 +33,18 @@ export class DriversController {
   @Header('Cache-Control', 'private, no-store')
   list(@GetCurrentUser() actor: TokenPayload, @Query() query: ListDriversDto) {
     return this.drivers.list(actor, query);
+  }
+
+  @Put(':id/vehicle')
+  async assign(
+    @GetCurrentUser() actor: TokenPayload,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() input: AssignmentDto,
+    @Headers('x-fleetora-company-context') expected: string | undefined,
+  ) {
+    if (!expected || expected !== actor.orgId)
+      throw new ForbiddenException('Session context changed');
+    return this.drivers.assign(actor, id, input);
   }
 
   @Get(':id')
