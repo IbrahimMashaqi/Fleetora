@@ -5,7 +5,7 @@
 .canvas :global(.maplibregl-ctrl-group) { border: 1px solid #d5d8d5; border-radius: 8px; background: #fff; color: #182d3f; box-shadow: 0 4px 12px rgb(15 23 42 / .08); }
 .canvas :global(.maplibregl-ctrl-group button) { width: 44px; height: 44px; }
 .canvas :global(.maplibregl-ctrl-group button):focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
-.canvas :global(.maplibregl-ctrl-attrib) { font: 10px/18px sans-serif; direction: ltr; background: rgb(255 255 255 / .9); color: #263745; }
+.canvas :global(.maplibregl-ctrl.maplibregl-ctrl-attrib) { margin: 0 12px 12px; max-width: calc(100% - 24px); border-radius: 4px; font: 10px/18px sans-serif; direction: ltr; background: rgb(255 255 255 / .9); color: #263745; }
 .canvas :global(.maplibregl-ctrl-attrib a) { color: #263745; }
 .headquarters { display: grid; place-items: center; width: 44px; height: 44px; border: 3px solid var(--surface); border-radius: 12px; color: var(--primary-foreground); background: var(--brand-navy); box-shadow: 0 0 0 5px rgb(15 159 149 / .13), 0 4px 12px rgb(15 23 42 / .14); cursor: pointer; }
 .headquarters:focus-visible { outline: 3px solid var(--primary); outline-offset: 5px; }

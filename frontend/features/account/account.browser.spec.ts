@@ -176,10 +176,11 @@ test("does not replay an uncertain password change or expose upstream details", 
 test("navigates between Overview and Account without duplicating the shell", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/app");
-  await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "Account & security", exact: true }).click();
+  const sidebar = page.getByRole("complementary", { name: "Workspace sidebar" });
+  await sidebar.getByRole("link", { name: "Account & security", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Account & security", exact: true })).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Primary navigation" });
-  await expect(nav.getByRole("link", { name: "Account & security", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(sidebar.getByRole("link", { name: "Account & security", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(nav.getByRole("link", { name: "Overview", exact: true })).not.toHaveAttribute("aria-current");
   await expect(page.getByRole("complementary", { name: "Workspace sidebar" })).toHaveCount(1);
   await nav.getByRole("link", { name: "Overview", exact: true }).click();

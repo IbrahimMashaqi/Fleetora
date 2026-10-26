@@ -19,7 +19,7 @@ export function DriverPanel({ drivers, now, freshnessSeconds, selectedId, loadin
   const query = useDeferredValue(search.trim().toLocaleLowerCase(locale));
   const visible = useMemo(() => drivers.filter(driver => {
     const online = isDriverOnline(driver, now, freshnessSeconds);
-    return (filter === "all" || (filter === "online" ? online : !online)) && `${driver.name} ${driver.phone} ${driver.vehicle?.plateNumber ?? ""}`.toLocaleLowerCase(locale).includes(query);
+    return (filter === "all" || (filter === "online" ? online : driver.tracking.location !== null && !online)) && `${driver.name} ${driver.phone} ${driver.vehicle?.plateNumber ?? ""}`.toLocaleLowerCase(locale).includes(query);
   }), [drivers, now, freshnessSeconds, filter, query, locale]);
   return <aside className={styles.panel} aria-label={t("Driver list")}>
     <div className="shrink-0 border-b p-4">

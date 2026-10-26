@@ -1,15 +1,17 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { operationsArabic, operationsEnglish } from "@/features/operations/operations-copy";
+import { overviewArabic, overviewEnglish } from "@/features/dashboard/overview-copy";
 
 export type Locale = "en" | "ar";
 
 const english = {
   ...operationsEnglish,
+  ...overviewEnglish,
   "Overview": "Overview",
   "Live Tracking": "Live Tracking",
   "Merchants": "Merchants",
@@ -25,6 +27,12 @@ const english = {
   "Signed in as": "Signed in as",
   "Company": "Company",
   "Workspace": "Workspace",
+  "Returns & finance": "Returns & finance",
+  "Company resources": "Company resources",
+  "Operations dashboard": "Operations dashboard",
+  "See your fleet at a glance": "See your fleet at a glance",
+  "No location yet": "No location yet",
+  "Change language": "Change language",
   "Platform administration": "Platform administration",
   "Skip to content": "Skip to content",
   "Open navigation": "Open navigation",
@@ -468,6 +476,13 @@ const english = {
 export type TranslationKey = keyof typeof english;
 
 const arabic: Record<TranslationKey, string> = {
+  ...overviewArabic,
+  "Returns & finance": "المرتجعات والمالية",
+  "Company resources": "موارد الشركة",
+  "Operations dashboard": "لوحة العمليات",
+  "See your fleet at a glance": "نظرة سريعة على أسطولك",
+  "No location yet": "لا يوجد موقع بعد",
+  "Change language": "تغيير اللغة",
   "Pickup requests": "طلبات الاستلام",
   "Merchant requests": "طلبات التجار",
   "Delivery pricing": "تسعير التوصيل",
@@ -981,20 +996,45 @@ export function useLocale() {
 
 export function LanguageSwitcher() {
   const { locale, setLocale, t } = useLocale();
+  const tooltipId = useId();
+  const tooltipRef = useRef<HTMLSpanElement>(null);
+  const menuOpen = useRef(false);
+  const [tooltipDismissed, setTooltipDismissed] = useState(false);
+
+  useEffect(() => {
+    const dismissTooltip = (event: KeyboardEvent) => {
+      const tooltip = tooltipRef.current;
+      if (event.key === "Escape" && tooltip && !tooltip.hidden && getComputedStyle(tooltip).visibility === "visible") {
+        setTooltipDismissed(true);
+      }
+    };
+    document.addEventListener("keydown", dismissTooltip);
+    return () => document.removeEventListener("keydown", dismissTooltip);
+  }, []);
 
   return (
-    <DropdownMenu dir={locale === "ar" ? "rtl" : "ltr"}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={t("Language")} className="size-10 shrink-0 text-foreground hover:bg-secondary hover:text-foreground [&_svg]:size-5">
-          <Globe aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" aria-label={t("Language")}>
-        <DropdownMenuRadioGroup value={locale} onValueChange={value => { if (value === "ar" || value === "en") setLocale(value); }}>
-          <DropdownMenuRadioItem value="en" lang="en" aria-label={t("Switch language to English")}>English</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="ar" lang="ar" aria-label={t("Switch language to Arabic")}>العربية</DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div
+      className="group/language relative flex shrink-0"
+      onPointerLeave={event => {
+        if (!menuOpen.current && !event.currentTarget.contains(document.activeElement)) setTooltipDismissed(false);
+      }}
+    >
+      <DropdownMenu dir={locale === "ar" ? "rtl" : "ltr"} onOpenChange={open => { menuOpen.current = open; if (open) setTooltipDismissed(true); }}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label={t("Language")} aria-describedby={tooltipId} title={t("Language")} onBlur={() => { if (!menuOpen.current) setTooltipDismissed(false); }} className="size-10 shrink-0 text-foreground hover:bg-primary-subtle hover:text-primary-hover [&_svg]:size-5">
+            <Globe aria-hidden="true" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" aria-label={t("Language")}>
+          <DropdownMenuRadioGroup value={locale} onValueChange={value => { if (value === "ar" || value === "en") setLocale(value); }}>
+            <DropdownMenuRadioItem value="en" lang="en" aria-label={t("Switch language to English")}>English</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="ar" lang="ar" aria-label={t("Switch language to Arabic")}>العربية</DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <span ref={tooltipRef} id={tooltipId} role="tooltip" hidden={tooltipDismissed} className="invisible absolute end-0 top-full z-50 w-max pt-2 opacity-0 group-hover/language:visible group-hover/language:opacity-100 group-focus-within/language:visible group-focus-within/language:opacity-100">
+        <span className="block rounded-md border bg-surface px-3 py-2 text-xs font-medium text-foreground shadow-sm">{t("Change language")}</span>
+      </span>
+    </div>
   );
 }

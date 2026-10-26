@@ -14,6 +14,7 @@ let failTiles: boolean;
 let snapshotStatus: number;
 let pendingSnapshot: Promise<void> | undefined;
 let snapshotRequests: number;
+let activeLocationDriverId: string | null;
 let publicMapResources: { path: string; status: number }[];
 const mapLoadTimeout = process.env.FLEETORA_VERIFY_PUBLIC_MAP_TILES === "1" ? 30_000 : 5_000;
 
@@ -28,7 +29,13 @@ test.beforeAll(async () => {
       if (pendingSnapshot) await pendingSnapshot;
       if (snapshotStatus !== 200) { response.writeHead(snapshotStatus).end(JSON.stringify({ success: false })); return; }
       if (denied) { response.writeHead(403).end(); return; }
-      return respond({ companyId: user.orgId, serverTime: new Date().toISOString(), freshnessSeconds: 45, headquarters, drivers });
+      const serverTime = new Date().toISOString();
+      const activeDriver = drivers.find(item => item.id === activeLocationDriverId);
+      if (activeDriver?.tracking.location) {
+        // Only the mixed-state fixture simulates a new active sample per snapshot.
+        activeDriver.tracking.location = { ...activeDriver.tracking.location, capturedAt: serverTime, receivedAt: serverTime };
+      }
+      return respond({ companyId: user.orgId, serverTime, freshnessSeconds: 45, headquarters, drivers });
     }
     if (request.url === "/companies/me/headquarters" && request.method === "PATCH") {
       const chunks: Buffer[] = [];
@@ -46,7 +53,7 @@ test.beforeAll(async () => {
 });
 test.beforeEach(async ({ context, page }) => {
   headquarters = null; drivers = [driver("1", "أحمد حسن"), driver("2", "سارة علي")]; saves = 0; denied = false; failTiles = false;
-  snapshotStatus = 200; pendingSnapshot = undefined; snapshotRequests = 0;
+  snapshotStatus = 200; pendingSnapshot = undefined; snapshotRequests = 0; activeLocationDriverId = null;
   await context.addCookies([{ name: "fleetora_access", value: "fleet-ui-fixture", url: "http://localhost:3100", httpOnly: true }]);
   await context.addCookies([{ name: "fleetora_locale", value: "ar", url: "http://localhost:3100" }]);
   publicMapResources = [];
@@ -97,6 +104,7 @@ for (const locale of ["ar", "en"] as const) {
       testInfo.setTimeout(90_000);
       await context.addCookies([{ name: "fleetora_locale", value: locale, url: "http://localhost:3100" }]);
       await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 });
+      await page.emulateMedia({ reducedMotion: "reduce" });
       const errors: string[] = [];
       page.on("pageerror", error => errors.push(error.message));
       headquarters = { latitude: 31.9038, longitude: 35.2034, address: "Isolated map QA headquarters", revision: 1, updatedAt: new Date().toISOString() };
@@ -117,6 +125,17 @@ for (const locale of ["ar", "en"] as const) {
       await expect(zoom).toHaveCSS("width", "44px");
       await expect(zoom.locator("..")).toHaveCSS("background-color", "rgb(255, 255, 255)");
       const panel = page.getByRole("complementary", { name: t("Driver list") });
+      const attributionBox = await page.locator(".maplibregl-ctrl-attrib").boundingBox();
+      const mapBounds = await page.getByTestId("fleet-map").boundingBox();
+      if (!attributionBox || !mapBounds) throw new Error("Missing map attribution geometry");
+      expect(attributionBox.x).toBeGreaterThanOrEqual(mapBounds.x + 8);
+      expect(attributionBox.x + attributionBox.width).toBeLessThanOrEqual(mapBounds.x + mapBounds.width - 8);
+      expect(mapBounds.y + mapBounds.height - attributionBox.y - attributionBox.height).toBeGreaterThanOrEqual(8);
+      if (mobile) {
+        const panelBounds = await panel.boundingBox();
+        if (!panelBounds) throw new Error("Missing mobile driver panel geometry");
+        expect(panelBounds.y + panelBounds.height).toBeLessThanOrEqual(attributionBox.y);
+      }
       if (!mobile) {
         await expect(panel).toHaveCSS("width", "320px");
         const panelBox = await panel.boundingBox(), mapBox = await page.getByTestId("fleet-map").boundingBox(), zoomBox = await zoom.boundingBox();
@@ -129,6 +148,15 @@ for (const locale of ["ar", "en"] as const) {
       await zoom.focus();
       await expect(zoom).toBeFocused();
       await page.keyboard.press("Enter");
+      const canvas = page.getByTestId("fleet-map").locator("canvas");
+      await canvas.focus();
+      await expect(canvas).toBeFocused();
+      const beforePan = await marker.evaluate(element => element.getBoundingClientRect().x);
+      await page.keyboard.press("ArrowRight");
+      await expect.poll(async () => Math.abs(await marker.evaluate(element => element.getBoundingClientRect().x) - beforePan)).toBeGreaterThan(10);
+      const beforeZoom = await marker.evaluate(element => element.getBoundingClientRect().x);
+      await page.keyboard.press("Equal");
+      await expect.poll(async () => Math.abs(await marker.evaluate(element => element.getBoundingClientRect().x) - beforeZoom)).toBeGreaterThan(10);
       await page.getByRole("button", { name: /أحمد حسن/ }).click();
       await expect(page.getByText("31.90420, 35.20400", { exact: true })).toBeVisible();
       if (process.env.FLEETORA_VERIFY_PUBLIC_MAP_TILES === "1") {
@@ -146,6 +174,79 @@ for (const locale of ["ar", "en"] as const) {
 }
 
 for (const locale of ["en", "ar"] as const) {
+  test(`tracking state filters exclude drivers without location in ${locale}`, async ({ page, context }) => {
+    await context.addCookies([{ name: "fleetora_locale", value: locale, url: "http://localhost:3100" }]);
+    const now = new Date().toISOString();
+    const stale = new Date(Date.now() - 120_000).toISOString();
+    drivers = [driver("1", "أحمد حسن"), driver("2", "سارة علي"), driver("3", "بدون موقع")];
+    activeLocationDriverId = "1";
+    drivers[0].tracking = { revision: 1, sharing: true, sharingStartedAt: now, location: { latitude: 31.9, longitude: 35.2, capturedAt: now, receivedAt: now, accuracy: 5, heading: null, speed: 0 } };
+    drivers[1].tracking = { revision: 1, sharing: true, sharingStartedAt: stale, location: { latitude: 31.91, longitude: 35.21, capturedAt: stale, receivedAt: stale, accuracy: 5, heading: null, speed: 0 } };
+    const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
+    await page.goto("/app");
+    const preview = page.getByRole("region", { name: t("Live Tracking"), exact: true });
+    await expect.soft(preview.locator("dd")).toHaveText(Array(3).fill(Number(1).toLocaleString(locale)));
+    await preview.getByRole("link", { name: t("Open full map"), exact: true }).click();
+    const panel = page.getByRole("complementary", { name: t("Driver list"), exact: true });
+    await expect(panel.locator("ul > li > button")).toHaveCount(3);
+    await panel.getByRole("button", { name: t("Online"), exact: true }).click();
+    await expect(panel.locator("ul > li > button")).toHaveCount(1);
+    await expect(panel.getByRole("button", { name: /أحمد حسن/ })).toBeVisible();
+    await panel.getByRole("button", { name: t("Offline"), exact: true }).click();
+    await expect(panel.locator("ul > li > button")).toHaveCount(1);
+    await expect(panel.getByRole("button", { name: /سارة علي/ })).toBeVisible();
+    await expect(panel.getByRole("button", { name: /بدون موقع/ })).toHaveCount(0);
+    await panel.getByRole("button", { name: t("All"), exact: true }).click();
+    await expect(panel.locator("ul > li > button")).toHaveCount(3);
+    await expect(panel.getByRole("button", { name: /بدون موقع/ })).toContainText(t("Has not shared a location"));
+    expect(saves).toBe(0);
+  });
+
+  for (const mobile of [false, true]) {
+    test(`overview map overlay stays readable and passes map gestures in ${locale} on ${mobile ? "mobile" : "desktop"}`, async ({ page, context }) => {
+      await context.addCookies([{ name: "fleetora_locale", value: locale, url: "http://localhost:3100" }]);
+      await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1440, height: 1000 });
+      headquarters = { latitude: 31.77, longitude: 35.21, address: "Isolated test headquarters", revision: 1, updatedAt: new Date().toISOString() };
+      const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
+      await page.goto("/app");
+      const preview = page.getByRole("region", { name: t("Live Tracking"), exact: true });
+      const note = preview.getByText(t("Driver locations will appear here once location sharing is enabled in the driver app."), { exact: true });
+      await expect(note).toBeVisible({ timeout: mapLoadTimeout });
+      await note.scrollIntoViewIfNeeded();
+      await expect.soft(note).toHaveCSS("background-color", "rgb(255, 255, 255)");
+      await expect(note).toHaveCSS("pointer-events", "none");
+      expect.soft(await note.evaluate(element => {
+        const region = element.closest("section");
+        return region !== null && getComputedStyle(element).color === getComputedStyle(region).color;
+      })).toBe(true);
+
+      const map = preview.getByTestId("fleet-map");
+      const attribution = map.locator(".maplibregl-ctrl-attrib");
+      await expect(attribution).toContainText("OpenFreeMap");
+      await expect(attribution).toContainText("OpenStreetMap");
+      const mapBox = await map.boundingBox(), noteBox = await note.boundingBox(), attributionBox = await attribution.boundingBox();
+      if (!mapBox || !noteBox || !attributionBox) throw new Error("Missing overview map geometry");
+      expect(noteBox.x).toBeGreaterThanOrEqual(mapBox.x + 8);
+      expect(noteBox.x + noteBox.width).toBeLessThanOrEqual(mapBox.x + mapBox.width - 8);
+      expect(noteBox.y + noteBox.height).toBeLessThan(attributionBox.y);
+      expect.soft(mapBox.y + mapBox.height - attributionBox.y - attributionBox.height).toBeGreaterThanOrEqual(8);
+      expect(attributionBox.x).toBeGreaterThanOrEqual(mapBox.x + 8);
+      expect(attributionBox.x + attributionBox.width).toBeLessThanOrEqual(mapBox.x + mapBox.width - 8);
+
+      const pointer = { x: noteBox.x + noteBox.width / 2, y: noteBox.y + noteBox.height / 2 };
+      expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.tagName, pointer)).toBe("CANVAS");
+      const marker = preview.locator(".maplibregl-marker");
+      const originalX = await marker.evaluate(element => element.getBoundingClientRect().x);
+      await page.mouse.move(pointer.x, pointer.y);
+      await page.mouse.down();
+      await page.mouse.move(pointer.x + 48, pointer.y + 20, { steps: 8 });
+      await page.mouse.up();
+      await expect.poll(async () => Math.abs(await marker.evaluate(element => element.getBoundingClientRect().x) - originalX)).toBeGreaterThan(10);
+      await expect(page).toHaveURL(/\/app$/);
+      expect(saves).toBe(0);
+    });
+  }
+
   test(`overview no-GPS counts, saved headquarters and forward arrow in ${locale}`, async ({ page, context }, testInfo) => {
     testInfo.setTimeout(90_000);
     await context.addCookies([{ name: "fleetora_locale", value: locale, url: "http://localhost:3100" }]);
@@ -157,7 +258,10 @@ for (const locale of ["en", "ar"] as const) {
     await page.goto("/app");
     await firstAction;
     const preview = page.getByRole("region", { name: t("Live Tracking"), exact: true });
-    await expect(preview.locator("dd")).toHaveText([Number(0).toLocaleString(locale), Number(2).toLocaleString(locale), t("No updates yet")]);
+    await expect(preview.locator("dt")).toHaveText([t("Connected drivers"), t("Offline drivers"), t("No location yet")]);
+    await expect(preview.locator("dd")).toHaveText([Number(0).toLocaleString(locale), Number(0).toLocaleString(locale), Number(2).toLocaleString(locale)]);
+    await expect(preview.getByText(t("See your fleet at a glance"), { exact: true })).toBeVisible();
+    await expect(preview.getByText(`${t("Last update")}: ${t("No updates yet")}`, { exact: true })).toBeVisible();
     await expect(preview.getByText(t("Driver locations will appear here once location sharing is enabled in the driver app."), { exact: true })).toBeVisible({ timeout: mapLoadTimeout });
     await expect(preview.getByRole("link", { name: t("Set your company headquarters"), exact: true })).toHaveCount(0);
     const marker = preview.getByRole("button", { name: translate(locale, "Headquarters for {company}", { company: user.company.name }), exact: true });
@@ -189,12 +293,13 @@ for (const locale of ["en", "ar"] as const) {
       const preview = page.getByRole("region", { name: t("Live Tracking"), exact: true });
       await expect(preview.getByRole("alert")).toContainText(t("Fleet tracking is temporarily unavailable. Please try again."));
       await expect(preview.locator("dd")).toHaveText(["—", "—", "—"]);
-      await expect(preview.getByText(t("No updates yet"), { exact: true })).toHaveCount(0);
+      await expect(preview.getByText(`${t("Last update")}: ${t("No updates yet")}`, { exact: true })).toHaveCount(0);
       await expect(preview.getByRole("link", { name: t("Set your company headquarters"), exact: true })).toHaveCount(0);
       snapshotStatus = 200; drivers = [];
       const previousRequests = snapshotRequests;
       await preview.getByRole("button", { name: t("Retry"), exact: true }).click();
-      await expect(preview.locator("dd")).toHaveText([Number(0).toLocaleString(locale), Number(0).toLocaleString(locale), t("No updates yet")]);
+      await expect(preview.locator("dd")).toHaveText(Array(3).fill(Number(0).toLocaleString(locale)));
+      await expect(preview.getByText(`${t("Last update")}: ${t("No updates yet")}`, { exact: true })).toBeVisible();
       await expect(preview.getByRole("link", { name: t("Set your company headquarters"), exact: true })).toBeVisible();
       expect(snapshotRequests).toBeGreaterThan(previousRequests);
       expect(saves).toBe(0);
@@ -212,7 +317,8 @@ test("overview keeps counts unknown while the snapshot is loading", async ({ pag
     await expect(preview.getByText("جارٍ تحميل بيانات الأسطول...", { exact: true })).toBeVisible();
     await expect(preview.locator("dd")).toHaveText(["—", "—", "—"]);
     release();
-    await expect(preview.locator("dd")).toHaveText([Number(0).toLocaleString("ar"), Number(2).toLocaleString("ar"), "لا يوجد بعد"]);
+    await expect(preview.locator("dd")).toHaveText([Number(0).toLocaleString("ar"), Number(0).toLocaleString("ar"), Number(2).toLocaleString("ar")]);
+    await expect(preview.getByText("آخر تحديث: لا يوجد بعد", { exact: true })).toBeVisible();
     await expect(preview.getByText("جارٍ تحميل بيانات الأسطول...", { exact: true })).toHaveCount(0);
   } finally { release(); }
 });
@@ -246,6 +352,10 @@ test("real no-GPS drivers, filters, selection and disconnected transport stay tr
   await page.getByRole("button", { name: "متصل", exact: true }).click();
   await expect(page.getByText("لا يوجد سائقون يطابقون البحث والتصفية.")).toBeVisible();
   await page.getByRole("button", { name: "غير متصل", exact: true }).click();
+  await expect(page.getByText("لا يوجد سائقون يطابقون البحث والتصفية.")).toBeVisible();
+  await expect(page.getByText("لم يشارك موقعه", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "الكل", exact: true }).click();
+  await expect(page.getByText("لم يشارك موقعه", { exact: true })).toHaveCount(2);
   await page.getByRole("textbox", { name: /ابحث عن سائق/ }).fill("P-2");
   await expect(page.getByRole("button", { name: /سارة علي/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /أحمد حسن/ })).toHaveCount(0);
@@ -271,7 +381,7 @@ test("real no-GPS drivers, filters, selection and disconnected transport stay tr
   await expect(page.getByText("لم تتم إضافة سائقين بعد", { exact: true })).toHaveCount(0);
   await page.goto("/app");
   await expect(page.getByRole("heading", { name: "التتبع المباشر", exact: true })).toBeVisible();
-  await expect(page.getByText("لا يوجد بعد", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("آخر تحديث: لا يوجد بعد", { exact: true })).toHaveCount(0);
 });
 
 test("headquarters save, cancel, validation and reload use the company fixture", async ({ page }) => {
@@ -302,7 +412,7 @@ test("headquarters save, cancel, validation and reload use the company fixture",
   await page.goto("/app");
   await expect(page.getByRole("heading", { name: "التتبع المباشر", exact: true })).toBeVisible();
   await expect(page.getByText("لم يتم تحديد مقر الشركة بعد")).toHaveCount(0);
-  await expect(page.getByText("لا يوجد بعد", { exact: true })).toBeVisible();
+  await expect(page.getByText("آخر تحديث: لا يوجد بعد", { exact: true })).toBeVisible();
 });
 
 test("uses the current browser location as an unsaved headquarters draft", async ({

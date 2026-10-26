@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 import { useLocale } from "@/lib/i18n";
 import type { Driver } from "../drivers.types";
 import { DriverStatusBadge } from "./driver-status";
@@ -27,7 +28,7 @@ export function DriverCard({
         <div className="flex flex-1 items-start gap-3 p-5">
           <span
             aria-hidden="true"
-            className="grid size-11 shrink-0 place-items-center rounded-full border border-primary-soft bg-primary-subtle text-sm font-semibold uppercase text-accent-foreground"
+            className="grid size-10 shrink-0 place-items-center rounded-full border border-border bg-surface-secondary text-sm font-semibold uppercase text-foreground"
           >
             {initials}
           </span>
@@ -46,7 +47,7 @@ export function DriverCard({
             </div>
           </div>
         </div>
-        <div className="border-y border-border bg-muted px-5 py-4">
+        <div className="border-y border-border bg-surface-secondary/60 px-5 py-4">
           <DriverVehicleSummary vehicle={driver.vehicle} />
         </div>
         <div className="px-3 py-2">
@@ -58,20 +59,7 @@ export function DriverCard({
             onClick={onSelect}
           >
             {t("View details")}
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              className="size-4 rtl:-scale-x-100"
-            >
-              <path
-                d="M4 10h12m-5-5 5 5-5 5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <ArrowRight aria-hidden="true" className="rtl:-scale-x-100" />
           </Button>
         </div>
       </article>
@@ -97,7 +85,7 @@ export function DriverCardSkeletons({
             className="overflow-hidden rounded-lg border border-border bg-surface motion-safe:animate-pulse"
           >
             <div className="flex gap-3 p-5">
-              <div className="size-11 rounded-full bg-muted" />
+              <div className="size-10 shrink-0 rounded-full bg-muted" />
               <div className="flex-1 space-y-3">
                 <div className="h-5 w-3/4 rounded bg-muted" />
                 <div className="h-4 w-full rounded bg-muted" />

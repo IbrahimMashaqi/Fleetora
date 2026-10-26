@@ -75,18 +75,19 @@ function Dashboard({
             <div className="space-y-6">
               <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                 {Object.entries(metrics).map(([key, metric]) => (
-                  <div key={key} className="rounded-lg border bg-surface p-4">
+                  <div key={key} className="relative rounded-lg border bg-surface p-4 transition-colors hover:border-primary/50 focus-within:border-primary focus-within:outline-2 focus-within:outline-primary motion-reduce:transition-none">
                     <dt className="text-xs leading-5 text-muted-foreground">
                       {t(metric.label)}
                     </dt>
-                    <dd className="mt-3 text-2xl font-semibold tabular-nums">
+                    <dd className="mt-3 text-2xl font-semibold leading-8 tabular-nums">
                       <Link
+                        aria-label={`${t(metric.label)}: ${data.counts[key]?.toLocaleString(locale) ?? "—"}`}
                         href={
                           key === "pendingReturns"
                             ? "/app/returns"
                             : `/app/parcels${metric.status ? `?status=${metric.status}` : ""}`
                         }
-                        className="focus-visible:outline-2 focus-visible:outline-primary"
+                        className="after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none"
                       >
                         {data.counts[key]?.toLocaleString(locale) ?? "—"}
                       </Link>
@@ -94,6 +95,40 @@ function Dashboard({
                   </div>
                 ))}
               </dl>
+              <Panel title="Needs attention">
+                <DataTable
+                  items={data.attention}
+                  columns={[
+                    {
+                      label: "Tracking number",
+                      render: (row) => (
+                        <Link
+                          href={`/app/parcels/${row.id}`}
+                          className="text-primary-hover underline"
+                        >
+                          <bdi dir="ltr">
+                            {valueText(row, "trackingNumber")}
+                          </bdi>
+                        </Link>
+                      ),
+                    },
+                    {
+                      label: "Recipient",
+                      render: (row) => valueText(row, "recipientName"),
+                    },
+                    {
+                      label: "Status",
+                      render: (row) => (
+                        <StatusBadge value={valueText(row, "status")} />
+                      ),
+                    },
+                    {
+                      label: "Scheduled delivery",
+                      render: (row) => <DateTime value={row.scheduledAt} />,
+                    },
+                  ]}
+                />
+              </Panel>
               <Panel title="Balances by currency">
                 <DataTable
                   items={data.money.map((row) => ({
@@ -189,40 +224,6 @@ function Dashboard({
                   )}
                 </Panel>
               </div>
-              <Panel title="Needs attention">
-                <DataTable
-                  items={data.attention}
-                  columns={[
-                    {
-                      label: "Tracking number",
-                      render: (row) => (
-                        <Link
-                          href={`/app/parcels/${row.id}`}
-                          className="text-primary-hover underline"
-                        >
-                          <bdi dir="ltr">
-                            {valueText(row, "trackingNumber")}
-                          </bdi>
-                        </Link>
-                      ),
-                    },
-                    {
-                      label: "Recipient",
-                      render: (row) => valueText(row, "recipientName"),
-                    },
-                    {
-                      label: "Status",
-                      render: (row) => (
-                        <StatusBadge value={valueText(row, "status")} />
-                      ),
-                    },
-                    {
-                      label: "Scheduled delivery",
-                      render: (row) => <DateTime value={row.scheduledAt} />,
-                    },
-                  ]}
-                />
-              </Panel>
               <Panel title="Pending returns">
                 <DataTable
                   items={data.pendingReturns}

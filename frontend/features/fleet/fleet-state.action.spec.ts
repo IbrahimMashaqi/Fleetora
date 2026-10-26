@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { FleetReconciler, isDriverOnline, parseHeadquartersEvent, parseSnapshot, parseTrackingEvent, validHeadquartersInput } from "./fleet-state";
+import { countDriverLocationStates, FleetReconciler, isDriverOnline, parseHeadquartersEvent, parseSnapshot, parseTrackingEvent, validHeadquartersInput } from "./fleet-state";
 import type { FleetDriver, FleetSnapshot, Headquarters } from "./fleet.types";
 
 const now = Date.parse("2026-10-17T10:00:00.000Z");
@@ -31,6 +31,34 @@ test("requires actual sharing, a new-session point, and both fresh timestamps", 
   for (const field of ["capturedAt", "receivedAt"] as const) {
     expect(isDriverOnline({ ...driver, tracking: { ...driver.tracking, location: { ...location, [field]: new Date(now - 61_000).toISOString() } } }, now, 60)).toBe(false);
   }
+});
+
+test("keeps drivers without an accepted location separate from offline drivers", () => {
+  const registered: FleetDriver = { ...driver, id: "registered", tracking: { revision: 0, sharing: false, sharingStartedAt: null, location: null } };
+  const waitingForFirstPoint: FleetDriver = { ...driver, id: "waiting", tracking: { ...driver.tracking, location: null } };
+  const stoppedWithoutPoint: FleetDriver = { ...waitingForFirstPoint, id: "stopped-without-point", tracking: { ...waitingForFirstPoint.tracking, sharing: false } };
+
+  expect(countDriverLocationStates([registered, waitingForFirstPoint, stoppedWithoutPoint], now, 60)).toEqual({ online: 0, offline: 0, noLocation: 3 });
+});
+
+test("counts only retained stale or stopped locations as offline", () => {
+  const stopped: FleetDriver = { ...driver, id: "stopped", tracking: { ...driver.tracking, sharing: false } };
+  const stale: FleetDriver = { ...driver, id: "stale", tracking: { ...driver.tracking, sharingStartedAt: new Date(now - 120_000).toISOString(), location: { ...location, capturedAt: new Date(now - 61_000).toISOString() } } };
+  const previousSession: FleetDriver = { ...driver, id: "previous-session", tracking: { ...driver.tracking, sharingStartedAt: new Date(now).toISOString() } };
+  const noLocation: FleetDriver = { ...driver, id: "no-location", tracking: { revision: 0, sharing: false, sharingStartedAt: null, location: null } };
+
+  expect(countDriverLocationStates([driver, stopped, stale, previousSession, noLocation], now, 60)).toEqual({ online: 1, offline: 3, noLocation: 1 });
+  expect(countDriverLocationStates([], now, 60)).toEqual({ online: 0, offline: 0, noLocation: 0 });
+});
+
+test("location-state counts preserve both clock boundaries and the snapshot freshness window", () => {
+  const started = new Date(now - 120_000).toISOString();
+  const capturedAtBoundary: FleetDriver = { ...driver, tracking: { ...driver.tracking, sharingStartedAt: started, location: { ...location, capturedAt: new Date(now - 45_000).toISOString() } } };
+  const receivedAtBoundary: FleetDriver = { ...driver, tracking: { ...driver.tracking, sharingStartedAt: started, location: { ...location, receivedAt: new Date(now - 45_000).toISOString() } } };
+
+  expect(countDriverLocationStates([capturedAtBoundary, receivedAtBoundary], now, 45)).toEqual({ online: 2, offline: 0, noLocation: 0 });
+  expect(countDriverLocationStates([capturedAtBoundary, receivedAtBoundary], now + 1, 45)).toEqual({ online: 0, offline: 2, noLocation: 0 });
+  expect(countDriverLocationStates([capturedAtBoundary, receivedAtBoundary], now + 1, 60)).toEqual({ online: 2, offline: 0, noLocation: 0 });
 });
 test("buffers events during the initial snapshot and retains newer revisions", () => {
   const state = new FleetReconciler("company-a");

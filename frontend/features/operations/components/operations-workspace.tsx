@@ -33,7 +33,7 @@ function WorkspaceContent({
   const scope = useOperationScope();
   const config = useOperations(scope, { resource: "config" });
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl">
+    <div className="mx-auto w-full min-w-0 max-w-7xl">
       <ReadState result={config.result} retry={config.retry}>
         {(data) =>
           data.kind === "config" ? (
@@ -57,16 +57,16 @@ export function PageIntro({
 }) {
   const { t } = useLocale();
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight">{t(title)}</h2>
+    <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b pb-6">
+      <div className="min-w-0">
+        <h2 className="text-2xl font-semibold leading-8 tracking-tight">{t(title)}</h2>
         {description && (
           <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
             {t(description)}
           </p>
         )}
       </div>
-      {children && <div className="flex flex-wrap gap-2">{children}</div>}
+      {children && <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">{children}</div>}
     </div>
   );
 }

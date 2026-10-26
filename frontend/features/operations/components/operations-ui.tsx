@@ -83,18 +83,21 @@ export function StateLabel({ value }: { value: string }) {
   return <>{states[value] ? t(states[value]) : t("Not recorded")}</>;
 }
 export function StatusBadge({ value }: { value: string }) {
-  const colors =
-    value === "DELIVERED" || value === "PAID"
-      ? "bg-success-subtle text-foreground"
+  const appearance =
+    ["DELIVERED", "PAID", "RETURNED_TO_MERCHANT"].includes(value)
+      ? { badge: "border-success-border bg-success-background", dot: "bg-success" }
       : /FAILED|CANCELLED/.test(value)
-        ? "bg-danger-subtle text-foreground"
-        : /RETURN|DRAFT/.test(value)
-          ? "bg-warning-subtle text-foreground"
-          : "bg-secondary text-foreground";
+        ? { badge: "border-danger-border bg-danger-background", dot: "bg-destructive" }
+        : /RETURN|DRAFT|CREATED|HOLD|RESCHEDULED/.test(value)
+          ? { badge: "border-warning-border bg-warning-background", dot: "bg-warning" }
+          : ["RECEIVED_FROM_MERCHANT", "AT_WAREHOUSE", "ASSIGNED", "OUT_FOR_DELIVERY", "PICKED_UP", "READY_FOR_DISPATCH", "FINALIZED"].includes(value)
+            ? { badge: "border-in-progress-border bg-in-progress-background", dot: "bg-in-progress" }
+            : { badge: "border-border bg-secondary", dot: "bg-muted-foreground" };
   return (
     <span
-      className={`inline-flex rounded-md px-2 py-1 text-xs font-medium ${colors}`}
+      className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium leading-4 text-foreground ${appearance.badge}`}
     >
+      <span aria-hidden="true" className={`size-1.5 shrink-0 rounded-full ${appearance.dot}`} />
       <StateLabel value={value} />
     </span>
   );
@@ -145,12 +148,21 @@ export function ReadState({
 }) {
   const { t } = useLocale();
   return !result ? (
-    <p
+    <div
       role="status"
-      className="rounded-lg border bg-surface p-6 text-sm text-muted-foreground"
+      className="rounded-lg border bg-surface p-5 text-sm text-muted-foreground sm:p-6"
     >
-      {t("Loading operations...")}
-    </p>
+      <p>{t("Loading operations...")}</p>
+      <div aria-hidden="true" className="mt-5 divide-y divide-border motion-safe:animate-pulse">
+        {[0, 1, 2].map((row) => (
+          <div key={row} className="grid grid-cols-3 gap-4 py-4">
+            <span className="h-3 w-3/4 rounded-sm bg-border" />
+            <span className="h-3 w-full rounded-sm bg-muted" />
+            <span className="h-3 w-2/3 rounded-sm bg-muted" />
+          </div>
+        ))}
+      </div>
+    </div>
   ) : result.status !== "ready" ? (
     <ErrorState status={result.status} retry={retry} />
   ) : (
@@ -168,7 +180,7 @@ export function Money({
 }) {
   const { locale } = useLocale();
   return (
-    <bdi dir="ltr">
+    <bdi dir="ltr" className="whitespace-nowrap tabular-nums">
       {displayMoney(
         valueText(row, field),
         currency ?? valueText(row, "currency"),
@@ -182,7 +194,7 @@ export function DateTime({ value }: { value: unknown }) {
   if (typeof value !== "string" || !Number.isFinite(Date.parse(value)))
     return <>—</>;
   return (
-    <time dateTime={value}>
+    <time dateTime={value} className="tabular-nums">
       {new Intl.DateTimeFormat(locale, {
         dateStyle: "medium",
         timeStyle: "short",
@@ -201,7 +213,7 @@ export function Pager({
   return (
     <nav
       aria-label={t("Pagination")}
-      className="mt-5 flex items-center justify-between gap-3"
+      className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-surface px-4 py-3"
     >
       <Button
         variant="outline"
@@ -210,7 +222,7 @@ export function Pager({
       >
         {t("Previous page")}
       </Button>
-      <span className="text-xs text-muted-foreground">
+      <span className="text-xs tabular-nums text-muted-foreground">
         {t("Page")} {data.page.toLocaleString(locale)}
       </span>
       <Button
@@ -249,19 +261,20 @@ export function DataTable({
       role="region"
       aria-label={columns.map((column) => t(column.label)).join(", ")}
     >
-      <table className="w-full text-start text-sm">
-        <thead className="border-b bg-secondary">
+      <table className="w-full text-start text-sm tabular-nums">
+        <thead className="border-b bg-secondary text-xs leading-5 text-muted-foreground">
           <tr>
             {columns.map((column) => (
               <th
-                className="px-4 py-3 text-start font-medium whitespace-nowrap"
+                scope="col"
+                className="px-4 py-3 text-start font-semibold whitespace-nowrap"
                 key={column.label}
               >
                 {t(column.label)}
               </th>
             ))}
             {actions && (
-              <th className="px-4 py-3">
+              <th scope="col" className="px-4 py-3">
                 <span className="sr-only">{t("View details")}</span>
               </th>
             )}
@@ -269,10 +282,10 @@ export function DataTable({
         </thead>
         <tbody className="divide-y divide-border">
           {items.map((row) => (
-            <tr key={row.id} className="align-top">
+            <tr key={row.id} className="align-middle transition-colors hover:bg-muted/70 focus-within:bg-primary-subtle motion-reduce:transition-none">
               {columns.map((column) => (
                 <td
-                  className="max-w-xs px-4 py-4 break-words"
+                  className="max-w-xs px-4 py-4 leading-6 break-words"
                   key={column.label}
                 >
                   {column.render(row)}
@@ -319,8 +332,8 @@ export function Panel({
   const { t } = useLocale();
   return (
     <section className="rounded-lg border bg-surface p-5 sm:p-6">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-semibold">{t(title)}</h3>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+        <h3 className="text-base font-semibold leading-6">{t(title)}</h3>
         {action}
       </div>
       {children}
@@ -364,7 +377,7 @@ export type Field = {
 };
 type ScalarValue = string | number | boolean | null;
 const controlStyle =
-  "min-h-10 w-full rounded-md border border-input bg-surface px-3 py-2 text-start text-sm focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50";
+  "min-h-10 w-full rounded-md border border-[var(--control-border)] bg-surface px-3 py-2 text-start text-sm focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50";
 export function EntityPicker({ scope, field }: { scope: Scope; field: Field }) {
   const { t } = useLocale();
   const [search, setSearch] = useState("");
@@ -592,82 +605,88 @@ export function OperationDialog({
       onCancel={(event) => {
         if (pending) event.preventDefault();
       }}
-      className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-lg border bg-surface p-5 text-foreground shadow-lg backdrop:bg-sidebar-navy/55 sm:p-7"
+      className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl overflow-hidden rounded-xl border bg-surface p-0 text-foreground shadow-lg backdrop:bg-sidebar-navy/55"
     >
-      <h2 id={titleId} className="text-lg font-semibold">
-        {t(title)}
-      </h2>
-      {description && (
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          {t(description)}
-        </p>
-      )}
-      {financial && (
-        <p className="mt-3 rounded-md border border-warning/30 bg-warning-subtle p-3 text-sm">
-          {t("This action creates a permanent financial audit record.")}
-        </p>
-      )}
-      {children}
-      <form
-        className="mt-6"
-        onChange={(event) => {
-          const target = event.target;
-          if (target instanceof HTMLSelectElement && target.name === "reason")
-            setReason(target.value);
-          if (target instanceof HTMLSelectElement && target.name === "outcome")
-            setOutcome(target.value);
-          if (target instanceof HTMLSelectElement && target.name === "status")
-            setTargetStatus(target.value);
-        }}
-        onSubmit={(event) => {
-          event.preventDefault();
-          void submit(event.currentTarget);
-        }}
-      >
-        <fieldset
-          disabled={pending || result?.status === "uncertain"}
-          className="grid min-w-0 gap-5 sm:grid-cols-2"
-        >
-          {fields.map((field) => (
-            <div className={field.span ? "sm:col-span-2" : ""} key={field.name}>
-              <FormField
-                field={{
-                  ...field,
-                  required:
-                    field.required ||
-                    (field.name === "note" &&
-                      (reason === "OTHER" ||
-                        targetStatus === "FAILED_DELIVERY" ||
-                        targetStatus === "CANCELLED")) ||
-                    (field.name === "reason" && outcome === "FAILED"),
-                }}
-                scope={scope}
-              />
-            </div>
-          ))}
-        </fieldset>
-        {result && result.status !== "ready" && (
-          <div className="mt-5">
-            <ErrorState status={result.status} />
-          </div>
-        )}
-        <div className="mt-6 flex flex-wrap justify-end gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={pending}
-            onClick={() => dialog.current?.close()}
-          >
-            {t("Cancel")}
-          </Button>
-          <Button
-            type="submit"
-            disabled={pending || result?.status === "uncertain"}
-          >
-            {t(pending ? "Saving..." : confirmLabel)}
-          </Button>
+      <div className="flex max-h-[90dvh] min-w-0 flex-col">
+        <div className="shrink-0 border-b px-5 py-5 sm:px-6">
+          <h2 id={titleId} className="text-lg font-semibold leading-7">
+            {t(title)}
+          </h2>
         </div>
-      </form>
+        <form
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          onChange={(event) => {
+            const target = event.target;
+            if (target instanceof HTMLSelectElement && target.name === "reason")
+              setReason(target.value);
+            if (target instanceof HTMLSelectElement && target.name === "outcome")
+              setOutcome(target.value);
+            if (target instanceof HTMLSelectElement && target.name === "status")
+              setTargetStatus(target.value);
+          }}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submit(event.currentTarget);
+          }}
+        >
+          <div className="min-h-0 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6 sm:py-6">
+            {description && (
+              <p className="mb-5 text-sm leading-6 text-muted-foreground">
+                {t(description)}
+              </p>
+            )}
+            {financial && (
+              <p className="mb-5 rounded-md border border-warning-border bg-warning-background p-3 text-sm leading-6">
+                {t("This action creates a permanent financial audit record.")}
+              </p>
+            )}
+            {children}
+            <fieldset
+              disabled={pending || result?.status === "uncertain"}
+              className="grid min-w-0 gap-5 sm:grid-cols-2"
+            >
+              {fields.map((field) => (
+                <div className={field.span ? "sm:col-span-2" : ""} key={field.name}>
+                  <FormField
+                    field={{
+                      ...field,
+                      required:
+                        field.required ||
+                        (field.name === "note" &&
+                          (reason === "OTHER" ||
+                            targetStatus === "FAILED_DELIVERY" ||
+                            targetStatus === "CANCELLED")) ||
+                        (field.name === "reason" && outcome === "FAILED"),
+                    }}
+                    scope={scope}
+                  />
+                </div>
+              ))}
+            </fieldset>
+            {result && result.status !== "ready" && (
+              <div className="mt-5">
+                <ErrorState status={result.status} />
+              </div>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-wrap justify-end gap-3 border-t bg-surface px-5 py-4 sm:px-6">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pending}
+              onClick={() => dialog.current?.close()}
+            >
+              {t("Cancel")}
+            </Button>
+            <Button
+              type="submit"
+              disabled={pending || result?.status === "uncertain"}
+            >
+              {t(pending ? "Saving..." : confirmLabel)}
+            </Button>
+          </div>
+        </form>
+      </div>
     </dialog>
   );
 }

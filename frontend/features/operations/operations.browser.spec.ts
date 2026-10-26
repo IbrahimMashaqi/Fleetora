@@ -746,6 +746,37 @@ for (const locale of ["en", "ar"] as const)
       await expect(dialog).toHaveCount(0);
     });
 
+for (const locale of ["en", "ar"] as const) {
+  test(`long parcel forms keep actions reachable and validate before writing in ${locale}`, async ({ page, context }) => {
+    await context.addCookies([{ name: "fleetora_locale", value: locale, url: "http://localhost:3100" }]);
+    await page.setViewportSize({ width: 320, height: 568 });
+    const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
+    await page.goto("/app/parcels");
+    const trigger = page.getByRole("button", { name: t("Create parcel"), exact: true });
+    await trigger.click();
+    const dialog = page.getByRole("dialog", { name: t("Create parcel"), exact: true });
+    const save = dialog.getByRole("button", { name: t("Save"), exact: true });
+    const title = dialog.getByRole("heading", { name: t("Create parcel"), exact: true });
+    const actionBounds = await save.boundingBox();
+    const titleBounds = await title.boundingBox();
+    if (!actionBounds || !titleBounds) throw new Error("Parcel dialog controls are not rendered");
+    expect(actionBounds.y).toBeGreaterThan(titleBounds.y + titleBounds.height);
+    expect(actionBounds.y + actionBounds.height).toBeLessThanOrEqual(568);
+    await dialog.getByRole("textbox", { name: new RegExp(`^${t("Internal notes")}`) }).scrollIntoViewIfNeeded();
+    const scrolledActions = await save.boundingBox();
+    const scrolledTitle = await title.boundingBox();
+    if (!scrolledActions || !scrolledTitle) throw new Error("Parcel dialog controls disappeared during scroll");
+    expect(scrolledActions.y).toBeCloseTo(actionBounds.y, 0);
+    expect(scrolledTitle.y).toBeCloseTo(titleBounds.y, 0);
+    await save.click();
+    await expect(dialog.getByLabel(t("Merchants"), { exact: true })).toBeFocused();
+    expect(writes).toHaveLength(0);
+    await dialog.getByRole("button", { name: t("Cancel"), exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+}
+
 test("merchant balances refresh after an audited adjustment", async ({
   page,
 }) => {

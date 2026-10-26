@@ -2,6 +2,15 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  ArrowRight,
+  Check,
+  CircleAlert,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,18 +68,18 @@ function VehicleCatalog({
   const [deleted, setDeleted] = useState(false);
   const data = result?.status === "list" ? result.data : null;
   return (
-    <div className="mx-auto w-full max-w-5xl min-w-0">
+    <div className="mx-auto w-full min-w-0 max-w-6xl">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-2xl font-semibold tracking-tight">{t("Vehicles")}</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {t("Your company fleet, ready for the road.")}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             disabled={!result}
             onClick={() => {
               setSaved(false);
@@ -78,6 +87,7 @@ function VehicleCatalog({
               retry();
             }}
           >
+            <RefreshCw aria-hidden="true" />
             {t("Refresh")}
           </Button>
           <Button
@@ -87,6 +97,7 @@ function VehicleCatalog({
               setEditor(null);
             }}
           >
+            <Plus aria-hidden="true" />
             {t("Register vehicle")}
           </Button>
         </div>
@@ -94,22 +105,24 @@ function VehicleCatalog({
       {saved && (
         <p
           role="status"
-          className="mt-5 rounded-md border border-success/25 bg-success-subtle p-3 text-sm"
+          className="mt-5 flex items-start gap-2 rounded-md border border-success-border bg-success-background p-3 text-sm"
         >
+          <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           {t("Vehicle saved.")}
         </p>
       )}
       {deleted && (
         <p
           role="status"
-          className="mt-5 rounded-md border border-success/25 bg-success-subtle p-3 text-sm"
+          className="mt-5 flex items-start gap-2 rounded-md border border-success-border bg-success-background p-3 text-sm"
         >
+          <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           {t("Vehicle deleted successfully.")}
         </p>
       )}
       <form
         role="search"
-        className="my-6 flex flex-wrap items-end gap-3"
+        className="my-6 flex min-w-0 flex-wrap items-end gap-3 rounded-lg border border-border bg-surface p-4"
         onSubmit={(event) => {
           event.preventDefault();
           router.push(
@@ -121,18 +134,27 @@ function VehicleCatalog({
           );
         }}
       >
-        <div className="min-w-0 flex-1 basis-56 space-y-2">
+        <div className="min-w-0 flex-1 basis-56 space-y-2 sm:max-w-lg">
           <Label htmlFor="vehicle-search">{t("Search vehicles")}</Label>
-          <Input
-            id="vehicle-search"
-            name="search"
-            type="search"
-            maxLength={100}
-            defaultValue={query.search}
-            placeholder={t("Manufacturer, model or plate")}
-          />
+          <div className="relative">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute start-3 top-3 size-4 text-muted-foreground"
+            />
+            <Input
+              id="vehicle-search"
+              name="search"
+              type="search"
+              maxLength={100}
+              defaultValue={query.search}
+              placeholder={t("Manufacturer, model or plate")}
+              className="bg-surface ps-9"
+            />
+          </div>
         </div>
-        <Button type="submit">{t("Search")}</Button>
+        <Button type="submit" variant="outline">
+          {t("Search")}
+        </Button>
         {query.search && (
           <Button asChild variant="ghost">
             <Link href="/app/vehicles">{t("Clear search")}</Link>
@@ -146,7 +168,8 @@ function VehicleCatalog({
           role="alert"
           className="rounded-lg border border-border bg-surface p-6"
         >
-          <p className="text-sm">
+          <p className="flex items-start gap-3 text-sm leading-6">
+            <CircleAlert aria-hidden="true" className="mt-1 size-4 shrink-0 text-danger-foreground" />
             {result.status === "saved" || result.status === "list"
               ? t("Refresh to view vehicles.")
               : t(fleetMessages[result.status])}
@@ -160,8 +183,11 @@ function VehicleCatalog({
       ) : (
         <>
           {data.items.length === 0 ? (
-            <section className="rounded-lg border border-dashed border-border-strong bg-surface px-6 py-12 text-center">
-              <h3 className="font-semibold">
+            <section
+              className="rounded-lg border border-border bg-surface px-6 py-12 text-center"
+              aria-labelledby="vehicle-empty-title"
+            >
+              <h3 id="vehicle-empty-title" className="text-base font-semibold">
                 {query.search
                   ? t("No vehicles match your search.")
                   : query.page > 1
@@ -191,59 +217,61 @@ function VehicleCatalog({
               {data.items.map((vehicle) => (
                 <li
                   key={vehicle.id}
-                  className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-surface"
+                  className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-surface transition-colors hover:border-border-strong focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 motion-reduce:transition-none"
                 >
                   <div className="flex gap-3 p-5">
                     <VehicleBrandLogo
                       manufacturer={vehicle.manufacturer}
                       type={vehicle.type}
                     />
-                    <div className="min-w-0">
-                      <h3 className="font-semibold [overflow-wrap:anywhere]">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-base font-semibold leading-6 [overflow-wrap:anywhere]">
                         {[vehicle.manufacturer, vehicle.model]
                           .filter(Boolean)
                           .join(" ") || t(vehicleTypeTranslationKey(vehicle.type))}
                       </h3>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <p className="mt-1 text-sm leading-5 text-muted-foreground">
                         {t(vehicleTypeTranslationKey(vehicle.type))}
                       </p>
-                      <p className="mt-2 font-mono text-sm [overflow-wrap:anywhere]">
+                      <p className="mt-3 font-mono text-sm font-medium tabular-nums [overflow-wrap:anywhere]">
                         <bdi>
                           {vehicle.plateNumber.trim() || t("Plate not recorded")}
                         </bdi>
                       </p>
                     </div>
                   </div>
-                  <div className="flex-1 border-y border-border bg-muted px-5 py-3 text-sm">
-                    <span className="text-xs text-muted-foreground">
+                  <div className="flex-1 border-y border-border bg-surface-secondary/60 px-5 py-4 text-sm">
+                    <span className="text-xs font-medium text-muted-foreground">
                       {t("Assigned driver")}
                     </span>
                     <p className="mt-1 font-medium [overflow-wrap:anywhere]">
                       {vehicle.assignedDriver?.name ?? t("Unassigned")}
                     </p>
                   </div>
-                  <div className="p-3">
+                  <div className="flex items-center gap-2 px-3 py-2">
                     <Button
                       type="button"
                       variant="ghost"
-                      className="w-full justify-between text-accent-foreground"
+                      className="min-h-10 min-w-0 flex-1 justify-between text-accent-foreground"
                       aria-label={t("Edit {name}", { name: vehicle.plateNumber })}
                       onClick={() => setEditor(vehicle)}
                     >
-                      {t("Edit vehicle")}<span aria-hidden="true">→</span>
+                      {t("Edit vehicle")}
+                      <ArrowRight aria-hidden="true" className="rtl:-scale-x-100" />
                     </Button>
                     <Button
                       type="button"
                       variant="ghost"
-                      className="mt-1 w-full text-danger-foreground"
+                      className="min-h-10 w-10 shrink-0 border-s border-border px-0 text-danger-foreground hover:bg-danger-background hover:text-danger-foreground"
                       aria-label={t("Delete vehicle {plate}", { plate: vehicle.plateNumber })}
+                      title={t("Delete vehicle")}
                       onClick={() => {
                         setSaved(false);
                         setDeleted(false);
                         setDeleting(vehicle);
                       }}
                     >
-                      {t("Delete vehicle")}
+                      <Trash2 aria-hidden="true" />
                     </Button>
                   </div>
                 </li>
@@ -252,7 +280,7 @@ function VehicleCatalog({
           )}
           <nav
             aria-label={t("Vehicle pagination")}
-            className="mt-5 flex items-center justify-between gap-3"
+            className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"
           >
             <p className="text-sm text-muted-foreground">{t("Page {page}", { page: data.page.toLocaleString(locale) })}</p>
             <div className="flex gap-2">

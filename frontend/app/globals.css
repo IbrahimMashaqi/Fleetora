@@ -85,6 +85,10 @@
   --color-in-progress-border: var(--in-progress-border);
   --color-warning-background: var(--warning-background);
   --color-warning-border: var(--warning-border);
+  --color-success-subtle: var(--success-background);
+  --color-danger-subtle: var(--danger-background);
+  --color-warning-subtle: var(--warning-background);
+  --color-warning-foreground: var(--foreground);
   --color-ring: var(--ring);
   --color-action-background: var(--action-background);
   --font-sans: var(--font-inter);

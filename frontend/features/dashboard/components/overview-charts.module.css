@@ -1,0 +1,10 @@
+.chart :global(.recharts-surface):focus-visible,
+.chart :global(.recharts-wrapper):focus-visible {
+  border-radius: var(--radius);
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.chart :global(.recharts-tooltip-wrapper) {
+  z-index: 1;
+}

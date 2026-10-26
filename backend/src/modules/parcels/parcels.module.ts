@@ -12,6 +12,8 @@ import {
   SettlementsController,
 } from './parcel-finance.controller.js';
 import { ParcelDashboardController } from './parcel-dashboard.controller.js';
+import { OverviewController } from './overview.controller.js';
+import { OverviewRepository } from './overview.repository.js';
 @Module({
   controllers: [
     ParcelsController,
@@ -20,6 +22,7 @@ import { ParcelDashboardController } from './parcel-dashboard.controller.js';
     FinancialController,
     SettlementsController,
     ParcelDashboardController,
+    OverviewController,
   ],
   providers: [
     ParcelStore,
@@ -27,6 +30,7 @@ import { ParcelDashboardController } from './parcel-dashboard.controller.js';
     ParcelOperationsRepository,
     ParcelFinanceRepository,
     ParcelDashboardRepository,
+    OverviewRepository,
   ],
   exports: [ParcelOperationsRepository, ParcelFinanceRepository],
 })

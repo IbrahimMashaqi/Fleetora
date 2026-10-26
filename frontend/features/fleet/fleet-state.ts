@@ -97,6 +97,17 @@ export function isDriverOnline(driver: FleetDriver, now: number, freshnessSecond
     now - captured <= window && now - received <= window && captured <= now + 10_000 && received <= now + 10_000;
 }
 
+/** Consent without an accepted sample does not make a driver offline. */
+export function countDriverLocationStates(drivers: FleetDriver[], now: number, freshnessSeconds: number) {
+  const counts = { online: 0, offline: 0, noLocation: 0 };
+  for (const driver of drivers) {
+    if (!driver.tracking.location) counts.noLocation += 1;
+    else if (isDriverOnline(driver, now, freshnessSeconds)) counts.online += 1;
+    else counts.offline += 1;
+  }
+  return counts;
+}
+
 /** Revision merging also buffers events received before the first REST snapshot. */
 export class FleetReconciler {
   private tracking = new Map<string, FleetTracking>();

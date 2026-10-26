@@ -547,7 +547,7 @@ export function DirectoryFilters({
   return (
     <form
       role="search"
-      className="mb-6 grid min-w-0 gap-4 rounded-lg border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-3"
+      className="mb-6 min-w-0 overflow-hidden rounded-lg border bg-surface"
       onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
@@ -558,178 +558,180 @@ export function DirectoryFilters({
         router.push(filterLocation(path, { ...next, page: "1" }));
       }}
     >
-      <div className="space-y-2">
-        <Label htmlFor="operation-search">
-          {t(resource === "parcels" ? "Search parcels" : "Search")}
-        </Label>
-        <Input
-          id="operation-search"
-          name="search"
-          type="search"
-          maxLength={100}
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={
-            resource === "parcels"
-              ? t("Tracking, recipient, phone or order reference")
-              : undefined
-          }
-        />
-      </div>
-      {resource !== "merchants" && (
-        <EntityPicker
-          scope={scope}
-          field={{
-            name: "merchantId",
-            label: "Merchants",
-            lookup: "merchants",
-            value: query.merchantId,
-          }}
-        />
-      )}
-      {(resource === "parcels" ||
-        resource === "collections" ||
-        resource === "dashboard") && (
-        <EntityPicker
-          scope={scope}
-          field={{
-            name: "workerId",
-            label: "Drivers",
-            lookup: "drivers",
-            value: query.workerId,
-          }}
-        />
-      )}
-      {(resource === "parcels" ||
-        resource === "returns" ||
-        resource === "settlements" ||
-        resource === "dashboard") && (
-        <div className="space-y-2">
-          <Label htmlFor="filter-status">{t("Status")}</Label>
-          <select
-            id="filter-status"
-            name="status"
-            defaultValue={query.status ?? ""}
-            className="min-h-10 w-full rounded-md border border-input bg-surface px-3 text-sm"
-          >
-            <option value="">{t("All statuses")}</option>
-            {(resource === "settlements"
-              ? ["DRAFT", "FINALIZED", "PAID", "CANCELLED"]
-              : resource === "returns"
-                ? [
-                    "RETURN_IN_PROGRESS",
-                    "RETURNED_TO_WAREHOUSE",
-                    "RETURNED_TO_MERCHANT",
-                  ]
-                : [
-                    "CREATED",
-                    "RECEIVED_FROM_MERCHANT",
-                    "AT_WAREHOUSE",
-                    "ASSIGNED",
-                    "OUT_FOR_DELIVERY",
-                    "DELIVERED",
-                    "FAILED_DELIVERY",
-                    "RETURN_IN_PROGRESS",
-                    "RETURNED_TO_WAREHOUSE",
-                    "RETURNED_TO_MERCHANT",
-                    "CANCELLED",
-                  ]
-            ).map((status) => (
-              <option value={status} key={status}>
-                <StateLabel value={status} />
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      {(resource === "parcels" || resource === "dashboard") && (
-        <div className="space-y-2">
-          <Label htmlFor="filter-city">{t("City / region")}</Label>
+      <div className="grid min-w-0 gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="operation-search">
+            {t(resource === "parcels" ? "Search parcels" : "Search")}
+          </Label>
           <Input
-            id="filter-city"
-            name="city"
-            defaultValue={query.city}
+            id="operation-search"
+            name="search"
+            type="search"
             maxLength={100}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={
+              resource === "parcels"
+                ? t("Tracking, recipient, phone or order reference")
+                : undefined
+            }
           />
         </div>
-      )}
-      {resource === "returns" && (
-        <div className="space-y-2">
-          <Label htmlFor="filter-reason">{t("Return reason")}</Label>
-          <select
-            id="filter-reason"
-            name="reason"
-            defaultValue={query.reason ?? ""}
-            className="min-h-10 w-full rounded-md border border-input bg-surface px-3 text-sm"
-          >
-            <option value="">{t("All statuses")}</option>
-            {returnReasonOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                <StateLabel value={option.value} />
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      {resource === "merchants" && (
-        <div className="space-y-2">
-          <Label htmlFor="filter-active">{t("Status")}</Label>
-          <select
-            id="filter-active"
-            name="active"
-            defaultValue={query.active ?? ""}
-            className="min-h-10 w-full rounded-md border border-input bg-surface px-3 text-sm"
-          >
-            <option value="">{t("All merchants")}</option>
-            <option value="true">{t("Active merchant")}</option>
-            <option value="false">{t("Inactive")}</option>
-          </select>
-        </div>
-      )}
-      {resource !== "merchants" &&
-        ["from", "to"].map((name) => (
-          <div className="space-y-2" key={name}>
-            <Label htmlFor={`filter-${name}`}>
-              {t(name === "from" ? "From date" : "To date")}
-            </Label>
+        {(resource === "parcels" ||
+          resource === "returns" ||
+          resource === "settlements" ||
+          resource === "dashboard") && (
+          <div className="space-y-2">
+            <Label htmlFor="filter-status">{t("Status")}</Label>
+            <select
+              id="filter-status"
+              name="status"
+              defaultValue={query.status ?? ""}
+              className="min-h-10 w-full rounded-md border border-[var(--control-border)] bg-surface px-3 text-sm focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <option value="">{t("All statuses")}</option>
+              {(resource === "settlements"
+                ? ["DRAFT", "FINALIZED", "PAID", "CANCELLED"]
+                : resource === "returns"
+                  ? [
+                      "RETURN_IN_PROGRESS",
+                      "RETURNED_TO_WAREHOUSE",
+                      "RETURNED_TO_MERCHANT",
+                    ]
+                  : [
+                      "CREATED",
+                      "RECEIVED_FROM_MERCHANT",
+                      "AT_WAREHOUSE",
+                      "ASSIGNED",
+                      "OUT_FOR_DELIVERY",
+                      "DELIVERED",
+                      "FAILED_DELIVERY",
+                      "RETURN_IN_PROGRESS",
+                      "RETURNED_TO_WAREHOUSE",
+                      "RETURNED_TO_MERCHANT",
+                      "CANCELLED",
+                    ]
+              ).map((status) => (
+                <option value={status} key={status}>
+                  <StateLabel value={status} />
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {resource !== "merchants" && (
+          <EntityPicker
+            scope={scope}
+            field={{
+              name: "merchantId",
+              label: "Merchants",
+              lookup: "merchants",
+              value: query.merchantId,
+            }}
+          />
+        )}
+        {(resource === "parcels" ||
+          resource === "collections" ||
+          resource === "dashboard") && (
+          <EntityPicker
+            scope={scope}
+            field={{
+              name: "workerId",
+              label: "Drivers",
+              lookup: "drivers",
+              value: query.workerId,
+            }}
+          />
+        )}
+        {(resource === "parcels" || resource === "dashboard") && (
+          <div className="space-y-2">
+            <Label htmlFor="filter-city">{t("City / region")}</Label>
             <Input
-              id={`filter-${name}`}
-              name={name}
-              type="date"
-              defaultValue={query[name]}
+              id="filter-city"
+              name="city"
+              defaultValue={query.city}
+              maxLength={100}
             />
           </div>
-        ))}
-      {resource === "parcels" && (
-        <div className="space-y-2">
-          <Label htmlFor="filter-direction">{t("Sort by")}</Label>
-          <select
-            id="filter-direction"
-            name="direction"
-            defaultValue={query.direction ?? "desc"}
-            className="min-h-10 w-full rounded-md border border-input bg-surface px-3 text-sm"
-          >
-            <option value="desc">{t("Newest first")}</option>
-            <option value="asc">{t("Oldest first")}</option>
-          </select>
-        </div>
-      )}
-      {resource === "collections" && (
-        <div className="space-y-2">
-          <Label htmlFor="filter-remitted">{t("Status")}</Label>
-          <select
-            id="filter-remitted"
-            name="remitted"
-            defaultValue={query.remitted ?? ""}
-            className="min-h-10 w-full rounded-md border border-input bg-surface px-3 text-sm"
-          >
-            <option value="">{t("All statuses")}</option>
-            <option value="false">{t("Unremitted")}</option>
-            <option value="true">{t("Remitted to company")}</option>
-          </select>
-        </div>
-      )}
-      <div className="flex flex-wrap items-end gap-2">
+        )}
+        {resource === "returns" && (
+          <div className="space-y-2">
+            <Label htmlFor="filter-reason">{t("Return reason")}</Label>
+            <select
+              id="filter-reason"
+              name="reason"
+              defaultValue={query.reason ?? ""}
+              className="min-h-10 w-full rounded-md border border-[var(--control-border)] bg-surface px-3 text-sm focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <option value="">{t("All statuses")}</option>
+              {returnReasonOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  <StateLabel value={option.value} />
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {resource === "merchants" && (
+          <div className="space-y-2">
+            <Label htmlFor="filter-active">{t("Status")}</Label>
+            <select
+              id="filter-active"
+              name="active"
+              defaultValue={query.active ?? ""}
+              className="min-h-10 w-full rounded-md border border-[var(--control-border)] bg-surface px-3 text-sm focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <option value="">{t("All merchants")}</option>
+              <option value="true">{t("Active merchant")}</option>
+              <option value="false">{t("Inactive")}</option>
+            </select>
+          </div>
+        )}
+        {resource !== "merchants" &&
+          ["from", "to"].map((name) => (
+            <div className="space-y-2" key={name}>
+              <Label htmlFor={`filter-${name}`}>
+                {t(name === "from" ? "From date" : "To date")}
+              </Label>
+              <Input
+                id={`filter-${name}`}
+                name={name}
+                type="date"
+                defaultValue={query[name]}
+              />
+            </div>
+          ))}
+        {resource === "parcels" && (
+          <div className="space-y-2">
+            <Label htmlFor="filter-direction">{t("Sort by")}</Label>
+            <select
+              id="filter-direction"
+              name="direction"
+              defaultValue={query.direction ?? "desc"}
+              className="min-h-10 w-full rounded-md border border-[var(--control-border)] bg-surface px-3 text-sm focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <option value="desc">{t("Newest first")}</option>
+              <option value="asc">{t("Oldest first")}</option>
+            </select>
+          </div>
+        )}
+        {resource === "collections" && (
+          <div className="space-y-2">
+            <Label htmlFor="filter-remitted">{t("Status")}</Label>
+            <select
+              id="filter-remitted"
+              name="remitted"
+              defaultValue={query.remitted ?? ""}
+              className="min-h-10 w-full rounded-md border border-[var(--control-border)] bg-surface px-3 text-sm focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <option value="">{t("All statuses")}</option>
+              <option value="false">{t("Unremitted")}</option>
+              <option value="true">{t("Remitted to company")}</option>
+            </select>
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 border-t bg-muted/50 px-4 py-3 sm:px-5">
         <Button type="submit">{t("Apply filters")}</Button>
         <Button asChild variant="ghost">
           <Link href={path}>{t("Reset filters")}</Link>
