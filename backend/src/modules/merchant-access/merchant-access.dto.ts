@@ -16,15 +16,14 @@ import {
   MinLength,
 } from 'class-validator';
 import { PasswordByteLimit } from '../auth/dto/password-byte-limit.js';
+import { normalizeEmailInput } from '../../common/utils/email.js';
 import {
   MERCHANT_PERMISSIONS,
   type MerchantPermission,
 } from './merchant-access.types.js';
 
 export class MerchantInvitationDto {
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @Transform(normalizeEmailInput)
   @IsEmail()
   @MaxLength(254)
   email!: string;

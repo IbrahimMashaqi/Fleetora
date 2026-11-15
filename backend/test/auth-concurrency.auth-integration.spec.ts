@@ -1,4 +1,4 @@
-import { HttpException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, HttpException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
@@ -366,9 +366,89 @@ describe('authentication PostgreSQL concurrency and tenant boundaries', () => {
     expect(mail.sendVerificationEmail).toHaveBeenCalledTimes(1);
   });
 
+  describe('password change (M1) in PostgreSQL', () => {
+    it('replaces the password and every refresh session in one compare-and-swap', async () => {
+      const results = await Promise.allSettled([
+        service.updatePassword(userId, 'ExistingPassword1', 'FirstChange3'),
+        service.updatePassword(userId, 'ExistingPassword1', 'SecondChange4'),
+      ]);
+      const won = results.filter((result) => result.status === 'fulfilled');
+      const lost = results.filter((result) => result.status === 'rejected');
+      expect(won).toHaveLength(1);
+      expect(lost).toHaveLength(1);
+      if (lost[0].status !== 'rejected' || won[0].status !== 'fulfilled') throw new Error('unreachable');
+      expect(lost[0].reason).toBeInstanceOf(ConflictException);
+      const stored = await repository.findUserById(userId);
+      const winner = won[0].value;
+      expect(stored?.refreshToken).toBe(createRefreshTokenVerifier(winner.refreshToken));
+      await expect(service.refreshTokens(userId, priorRefreshToken)).rejects.toBeDefined();
+      await expect(service.refreshTokens(userId, winner.refreshToken)).resolves.toMatchObject({ accessToken: expect.any(String) });
+    });
+  });
+
+  describe('case-insensitive email identity (M2) in PostgreSQL', () => {
+    it('rejects a case-variant duplicate identity at the database', async () => {
+      await expect(prisma.User.create({
+        email: 'AUTH-Integration@Fleetora.Test', fullName: 'Variant', password: 'h',
+        role: 'COMPANY_ADMIN', companyId: otherCompanyId, isActive: true, isEmailVerified: true,
+      })).rejects.toBeDefined();
+      const owners = await prisma.User.where({ companyId: otherCompanyId }).all();
+      expect(owners).toHaveLength(0);
+    });
+
+    it('finds a legacy mixed-case account by any variant without rewriting it', async () => {
+      const legacy = await prisma.User.create({
+        email: 'Legacy.Mixed@Fleetora.Test', fullName: 'Legacy', password: await bcrypt.hash('LegacyPassword1', 4),
+        role: 'COMPANY_ADMIN', companyId: otherCompanyId, isActive: true, isEmailVerified: true,
+      });
+      for (const variant of ['legacy.mixed@fleetora.test', 'LEGACY.MIXED@FLEETORA.TEST']) {
+        expect((await repository.findUserByEmail(variant))?.id).toBe(legacy.id);
+      }
+      await expect(service.signin({ email: ' legacy.MIXED@fleetora.test', password: 'LegacyPassword1' }))
+        .resolves.toMatchObject({ user: { id: legacy.id } });
+      expect((await repository.findUserById(legacy.id))?.email).toBe('Legacy.Mixed@Fleetora.Test');
+    });
+
+    it('stores signups canonically and authenticates every case variant', async () => {
+      const created = await service.signup({ name: 'Phase2 Canonical', email: '  Phase2.Canonical@Fleetora.TEST ', password: 'NewPassword1' });
+      expect(created.email).toBe('phase2.canonical@fleetora.test');
+      await prisma.User.where({ id: created.userId }).update({ isEmailVerified: true });
+      await expect(service.signin({ email: 'PHASE2.canonical@fleetora.test', password: 'NewPassword1' }))
+        .resolves.toMatchObject({ user: { id: created.userId, email: 'phase2.canonical@fleetora.test' } });
+    });
+
+    it('admits exactly one of two concurrent case-variant signups', async () => {
+      const before = await companyCount();
+      const results = await Promise.allSettled([
+        repository.createUserWithDefaultCompany('Phase2 Race', 'phase2-race@fleetora.test', 'fixture-hash'),
+        repository.createUserWithDefaultCompany('Phase2 Race', 'PHASE2-Race@Fleetora.test', 'fixture-hash'),
+      ]);
+      expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+      const rejected = results.find((result) => result.status === 'rejected');
+      if (!rejected || rejected.status !== 'rejected') throw new Error('Expected one rejected signup');
+      expect(rejected.reason).toBeInstanceOf(ConflictException);
+      expect(await companyCount()).toBe(before + 1);
+    });
+
+    it('cannot claim another company admin identity with a case variant', async () => {
+      const before = await companyCount();
+      await expect(service.signup({ name: 'Phase2 Claim', email: 'Auth-Integration@FLEETORA.test', password: 'NewPassword1' }))
+        .rejects.toBeInstanceOf(ConflictException);
+      expect(await companyCount()).toBe(before);
+      expect(await repository.findUserById(userId)).toMatchObject({ email, companyId, role: 'COMPANY_ADMIN' });
+    });
+
+    it('sends recovery for a case variant only to the stored account address', async () => {
+      const mail = module.get(MailService);
+      await service.sendForgotPasswordEmail('AUTH-INTEGRATION@fleetora.test');
+      expect(mail.sendResetPasswordEmail).toHaveBeenCalledTimes(1);
+      expect(mail.sendResetPasswordEmail).toHaveBeenCalledWith(email, 'Auth Integration User', expect.any(String));
+    });
+  });
+
   async function cleanup(): Promise<void> {
     databaseGuard.assertVerified();
-    for (const name of ['Phase6B Rollback', 'Phase6B Duplicate', 'Phase6B Existing', 'Phase6B Mail Failure']) {
+    for (const name of ['Phase6B Rollback', 'Phase6B Duplicate', 'Phase6B Existing', 'Phase6B Mail Failure', 'Phase2 Canonical', 'Phase2 Race', 'Phase2 Claim']) {
       await prisma?.Company.where({ name: `${name}'s Company` }).delete();
     }
     await prisma?.User.where({ id: userId }).delete();

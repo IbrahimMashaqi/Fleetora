@@ -1,0 +1,63 @@
+[
+  {
+    "id": "guard.users.email_case_collisions",
+    "label": "Require no case-insensitive email collisions in \"users\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure no two users share an email that differs only by letter case (resolve manually before migrating)",
+        "sql": "SELECT NOT EXISTS (SELECT 1 FROM \"public\".\"users\" WHERE \"email\" IS NOT NULL GROUP BY lower(\"email\") HAVING count(*) > 1) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [],
+    "postcheck": []
+  },
+  {
+    "id": "index.users.users_email_lower_f84d49fd",
+    "label": "Create index \"users_email_lower_f84d49fd\" on \"users\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "users_email_lower_f84d49fd",
+        "table": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"users_email_lower_f84d49fd\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users_email_lower_f84d49fd\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"users_email_lower_f84d49fd\"",
+        "sql": "CREATE UNIQUE INDEX \"users_email_lower_f84d49fd\" ON \"public\".\"users\" (lower(email))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"users_email_lower_f84d49fd\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users_email_lower_f84d49fd\""
+        ]
+      }
+    ]
+  }
+]
