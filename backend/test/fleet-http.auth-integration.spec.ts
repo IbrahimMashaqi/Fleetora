@@ -82,7 +82,7 @@ describe('fleet REST with actual JWT strategy and disposable PostgreSQL', () => 
     bearer =
       'Bearer ' +
       new JwtService({ secret }).sign(
-        { sub: userId, role: 'PLATFORM_ADMIN', orgId: foreignId },
+        { sub: userId, role: 'PLATFORM_ADMIN', orgId: foreignId, typ: 'access' },
         { expiresIn: '5m' },
       );
   }, 30000);

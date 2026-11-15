@@ -3,28 +3,39 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { TokenPayload } from './token.payload.js';
 import { randomUUID } from 'node:crypto';
+import { JWT_ALGORITHM, readTokenSecrets, type TokenType } from './token-secrets.js';
 
 @Injectable()
 export class TokenService {
+  private readonly secrets: { access: string; refresh: string };
+
   constructor(
     private jwtService: JwtService,
-    private configService: ConfigService,
-  ) {}
+    configService: ConfigService,
+  ) {
+    this.secrets = readTokenSecrets(configService);
+  }
+
+  // Only the identity claims are copied; the issued type is never caller-controlled.
+  private claims(payload: TokenPayload, typ: TokenType) {
+    const { sub, email, role, orgId } = payload;
+    return { sub, email, role, orgId, typ };
+  }
 
   async generateAccessToken(payload: TokenPayload): Promise<string> {
-    const accessToken = await this.jwtService.signAsync(payload, {
-      secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
+    return this.jwtService.signAsync(this.claims(payload, 'access'), {
+      secret: this.secrets.access,
+      algorithm: JWT_ALGORITHM,
       expiresIn: '10m',
     });
-    return accessToken;
   }
 
   async generateRefreshToken(payload: TokenPayload): Promise<string> {
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
+    return this.jwtService.signAsync(this.claims(payload, 'refresh'), {
+      secret: this.secrets.refresh,
+      algorithm: JWT_ALGORITHM,
       expiresIn: '7d',
       jwtid: randomUUID(),
     });
-    return refreshToken;
   }
 }

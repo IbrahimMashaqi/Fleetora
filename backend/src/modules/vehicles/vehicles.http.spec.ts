@@ -128,7 +128,7 @@ describe('vehicle HTTP boundary with isolated persistence', () => {
   });
   function auth() {
     return jwt.sign(
-      { sub: 'admin', role: 'COMPANY_ADMIN', orgId: company },
+      { sub: 'admin', role: 'COMPANY_ADMIN', orgId: company, typ: 'access' },
       { expiresIn: '5m' },
     );
   }

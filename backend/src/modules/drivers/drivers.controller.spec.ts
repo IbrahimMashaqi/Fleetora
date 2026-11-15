@@ -160,6 +160,7 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
         email: actor.email,
         role: actor.role,
         orgId: actor.companyId ?? '',
+        typ: 'access',
         ...claims,
       },
       { expiresIn: '5m' },

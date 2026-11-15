@@ -52,7 +52,7 @@ describe('Overview HTTP authentication with isolated persistence', () => {
   afterAll(async () => { await app?.close(); });
   function get(path = '/dashboard/overview') {
     return request(app.getHttpServer()).get(path).auth(jwt.sign({
-      sub: 'admin', role: 'COMPANY_ADMIN', orgId: 'forged-company',
+      sub: 'admin', role: 'COMPANY_ADMIN', orgId: 'forged-company', typ: 'access',
     }, { expiresIn: '5m' }), { type: 'bearer' });
   }
   it('uses persisted company context and prevents private dashboard caching', async () => {
