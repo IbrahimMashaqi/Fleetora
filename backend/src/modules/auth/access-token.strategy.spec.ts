@@ -15,6 +15,8 @@ import { AccessTokenStrategy } from './strategies/access-token.strategy.js';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy.js';
 import type { TokenPayload } from './token/token.payload.js';
 import { RECOVERY_RATE_LIMITER } from './recovery-rate-limiter.js';
+import { SIGNIN_RATE_LIMITER } from './signin-rate-limiter.js';
+import { ClientSourceService } from './client-source.js';
 
 const accessSecret = 'test-access-secret';
 const refreshSecret = 'test-refresh-secret';
@@ -59,6 +61,8 @@ describe('AccessTokenStrategy account status enforcement', () => {
             }),
           },
         },
+        { provide: SIGNIN_RATE_LIMITER, useValue: { consume: () => ({ allowed: true, retryAfterSeconds: 0 }), release: () => undefined } },
+        { provide: ClientSourceService, useValue: new ClientSourceService(new ConfigService({})) },
         { provide: ConfigService, useValue: { get: (key: string) => key === 'ACCESS_TOKEN_SECRET' ? accessSecret : refreshSecret } },
       ],
     }).compile();
@@ -81,7 +85,7 @@ describe('AccessTokenStrategy account status enforcement', () => {
   });
 
   async function signedAccessToken() {
-    return jwt.signAsync({ sub: user.id, email: user.email, role: user.role, orgId: user.companyId }, {
+    return jwt.signAsync({ sub: user.id, email: user.email, role: user.role, orgId: user.companyId, typ: 'access' }, {
       secret: accessSecret, expiresIn: '1h',
     });
   }
@@ -91,6 +95,28 @@ describe('AccessTokenStrategy account status enforcement', () => {
     await request(app.getHttpServer()).get('/auth/session').set('Authorization', `Bearer ${token}`).expect(200);
     expect(authRepository.findUserById).toHaveBeenCalledWith(user.id);
     expect(authService.getSessionUser).toHaveBeenCalledWith(user.id);
+  });
+
+  // Even if both secrets were ever misconfigured to the same value, the explicit
+  // type claim keeps a seven-day refresh token from acting as an access token.
+  it.each([
+    ['a refresh-typed token signed with the access secret', { typ: 'refresh' }],
+    ['a token without an explicit type', {}],
+    ['a token with an unknown type', { typ: 'admin' }],
+  ])('rejects %s before the protected controller runs', async (_name, claims) => {
+    const token = await jwt.signAsync({ sub: user.id, email: user.email, role: user.role, orgId: user.companyId, ...claims }, {
+      secret: accessSecret, expiresIn: '1h',
+    });
+    await request(app.getHttpServer()).get('/auth/session').set('Authorization', `Bearer ${token}`).expect(401);
+    expect(authService.getSessionUser).not.toHaveBeenCalled();
+  });
+
+  it('rejects an access-typed token signed with a non-HS256 algorithm', async () => {
+    const token = await jwt.signAsync({ sub: user.id, typ: 'access' }, {
+      secret: accessSecret, expiresIn: '1h', algorithm: 'HS512',
+    });
+    await request(app.getHttpServer()).get('/auth/session').set('Authorization', `Bearer ${token}`).expect(401);
+    expect(authService.getSessionUser).not.toHaveBeenCalled();
   });
 
   it('uses the current database role and company in the protected request context', async () => {

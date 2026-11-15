@@ -29,7 +29,13 @@ export default defineConfig({ ...base, webServer: undefined, outputDir: "./isola
   projects: [...(base.projects ?? []), { name: "harness", testDir: "./tests/harness", testMatch: "**/*.browser.spec.ts", use: base.projects?.find(project => project.name === "browser")?.use }],
 });\n`, { flag: 'wx' });
 
-const environment = { ...process.env, FLEETORA_API_URL: 'http://127.0.0.1:3101', NODE_ENV: 'development' };
+const environment = {
+  FLEETORA_CLIENT_SOURCE_SECRET: 'playwright-only-client-source-secret-0123456789',
+  FLEETORA_TRUSTED_CLIENT_IP_HEADER: 'x-playwright-client-ip',
+  ...process.env,
+  FLEETORA_API_URL: 'http://127.0.0.1:3101',
+  NODE_ENV: 'development',
+};
 let server;
 async function run() {
   await new Promise((resolve, reject) => {

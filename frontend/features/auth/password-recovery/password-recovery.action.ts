@@ -1,6 +1,7 @@
 "use server";
 
 import { getBackendEndpoint, requestBackend, readBackendBody } from "@/lib/api/backend.server";
+import { clientSourceFor } from "@/lib/api/client-source.server";
 import { newPasswordError } from "@/lib/auth/password-policy";
 
 import { redirect } from "next/navigation";
@@ -30,7 +31,8 @@ export async function forgotPasswordAction(
   try {
     const endpoint = getBackendEndpoint("auth/forgot-password");
     if (!endpoint) return { status: "error", message: initialRequestError, email };
-    const response = await requestBackend(endpoint, { method: "POST", body: { email } });
+    const clientSource = await clientSourceFor("POST", endpoint);
+    const response = await requestBackend(endpoint, { method: "POST", body: { email }, clientSource });
 
     if (response.ok && hasRecoveryAcknowledgement(await readBackendBody(response))) return { status: "success" };
     return { status: "error", message: initialRequestError, email };

@@ -12,7 +12,6 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import type { Request } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -35,6 +34,15 @@ import {
   RECOVERY_RATE_LIMITER,
   type RecoveryRateLimiter,
 } from './recovery-rate-limiter.js';
+import {
+  SIGNIN_RATE_LIMITER,
+  type SigninRateLimiter,
+} from './signin-rate-limiter.js';
+import {
+  ClientSourceService,
+  rateLimitSource,
+  type ClientSourceRequest,
+} from './client-source.js';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -43,6 +51,9 @@ export class AuthController {
     private authService: AuthService,
     @Inject(RECOVERY_RATE_LIMITER)
     private readonly recoveryRateLimiter: RecoveryRateLimiter,
+    @Inject(SIGNIN_RATE_LIMITER)
+    private readonly signinRateLimiter: SigninRateLimiter,
+    private readonly clientSource: ClientSourceService,
   ) {}
 
   @ApiOperation({ summary: 'Register a new user' })
@@ -90,8 +101,25 @@ export class AuthController {
   @Public()
   @Post('signin')
   @HttpCode(HttpStatus.OK)
-  async signin(@Body() signinDto: SigninDto) {
-    return this.authService.signin(signinDto);
+  async signin(
+    @Body() signinDto: SigninDto,
+    @Req() request: ClientSourceRequest,
+  ) {
+    // Reserved before any account lookup: identical for known and unknown accounts.
+    const source = rateLimitSource(this.clientSource.resolve(request));
+    const limit = this.signinRateLimiter.consume(source, signinDto.email);
+    if (!limit.allowed) {
+      throw new HttpException(
+        {
+          message: 'Too many sign-in attempts. Please try again later.',
+          retryAfterSeconds: limit.retryAfterSeconds,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    const result = await this.authService.signin(signinDto);
+    this.signinRateLimiter.release(source, signinDto.email);
+    return result;
   }
 
   @ApiOperation({ summary: 'Refresh access and refresh tokens' })
@@ -150,10 +178,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto,
-    @Req() request: Pick<Request, 'ip'>,
+    @Req() request: ClientSourceRequest,
   ) {
     const limit = this.recoveryRateLimiter.consume(
-      request.ip ?? 'unknown',
+      rateLimitSource(this.clientSource.resolve(request)),
       forgotPasswordDto.email,
     );
     if (!limit.allowed) {
