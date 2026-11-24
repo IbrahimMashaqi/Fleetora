@@ -42,9 +42,10 @@ export function digestRecoveryRateLimitKey(secret: string, value: string): strin
 /**
  * Bounded, HMAC-keyed counters. Raw sources and account identifiers are never retained.
  *
- * Account counters are the lockout that protects a victim, so an in-window account
- * counter is never evicted: when the bound is reached, pair and source counters are
- * evicted oldest first, and if only account counters remain the attempt is refused.
+ * A locked account counter (at its limit, inside its window) protects a victim, so it is
+ * never evicted. When the bound is reached, pair and source counters are evicted oldest
+ * first, then unlocked account counters oldest first; the attempt is refused only when
+ * everything left is locked or belongs to it, so a flood cannot block every sign-in.
  * Each map keeps creation order, which equals expiry order because the window is fixed.
  */
 export class InMemoryHmacRateLimiter {
@@ -158,14 +159,22 @@ export class InMemoryHmacRateLimiter {
     }
   }
 
-  /** Evicts the oldest pair/source counters (never this attempt's own); never an account counter. */
+  /**
+   * Evicts the oldest pair/source counters, then the oldest unlocked account counters.
+   * Never evicts this attempt's own counters or a locked account counter.
+   */
   private makeRoom(needed: number, limits: readonly Limit[]): boolean {
     const own = new Set(limits.map(({ key }) => key));
+    const fits = () => this.size + needed <= this.maxEntries;
     for (const key of this.others.keys()) {
-      if (this.size + needed <= this.maxEntries) break;
+      if (fits()) return true;
       if (!own.has(key)) this.others.delete(key);
     }
-    return this.size + needed <= this.maxEntries;
+    for (const [key, counter] of this.accounts) {
+      if (fits()) return true;
+      if (!own.has(key) && counter.count < this.accountMax) this.accounts.delete(key);
+    }
+    return fits();
   }
 
   private nextExpiry(now: number): number {

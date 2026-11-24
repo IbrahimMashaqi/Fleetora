@@ -96,11 +96,26 @@ describe('InMemorySigninRateLimiter', () => {
       if (!flooded.consume(source, `fake-${n}@example.com`).allowed) refused++;
     }
 
-    expect(refused).toBeGreaterThan(0);
+    // Unlocked fake accounts make room for each other, so the flood itself is never refused...
+    expect(refused).toBe(0);
+    // ...but the locked victim's counter is never evicted.
     expect(flooded.consume('ip:198.51.100.5', 'victim@example.com')).toEqual({
       allowed: false,
       retryAfterSeconds: 15 * 60,
     });
+  });
+
+  it('lets a new real account sign in after 20,500 one-attempt fake emails fill the store', () => {
+    const flooded = new InMemorySigninRateLimiter(new ConfigService({
+      ACCESS_TOKEN_SECRET: 'test-only-rate-limit-key',
+    }));
+    for (let n = 0; n < 20_500; n++) flooded.consume(null, `fake-${n}@example.com`);
+
+    expect(flooded.consume('ip:198.51.100.20', 'real-user@example.com')).toEqual({
+      allowed: true,
+      retryAfterSeconds: 0,
+    });
+    expect(flooded.consume(null, 'another-real-user@example.com').allowed).toBe(true);
   });
 
   it('keeps sign-in and recovery counters independent', () => {
