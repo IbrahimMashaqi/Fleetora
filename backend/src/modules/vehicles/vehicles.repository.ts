@@ -23,6 +23,49 @@ export function fleetCompany(actor: TokenPayload | undefined): string {
     throw new ForbiddenException('Company administrator access required');
   return actor.orgId;
 }
+type FleetTransaction = Parameters<
+  Parameters<PrismaService['db']['transaction']>[0]
+>[0];
+// All fleet writes lock company then actor in the same order. This serializes
+// duplicate checks/assignment changes and pins identity until commit. The
+// existing unique workers.vehicleId constraint also rejects external races.
+export async function lockedFleetWrite<T>(
+  prisma: PrismaService,
+  actor: TokenPayload,
+  operation: (tx: FleetTransaction, companyId: string) => Promise<T>,
+): Promise<T> {
+  const companyId = fleetCompany(actor);
+  return prisma.db.transaction(async (tx) => {
+    await tx.execute(
+      prisma.db.raw
+        .sql`SELECT "id" FROM "companies" WHERE "id"=${companyId} FOR UPDATE`
+        .affectedCount()
+        .build(),
+    );
+    await tx.execute(
+      prisma.db.raw
+        .sql`SELECT "id" FROM "users" WHERE "id"=${actor.sub} FOR UPDATE`
+        .affectedCount()
+        .build(),
+    );
+    const user = await tx.orm.public.User.where({ id: actor.sub })
+      .select('id', 'role', 'companyId', 'isActive', 'isEmailVerified')
+      .first();
+    const company = await tx.orm.public.Company.where({ id: companyId })
+      .select('id', 'suspended')
+      .first();
+    if (
+      !user?.isActive ||
+      !user.isEmailVerified ||
+      !company ||
+      company.suspended
+    )
+      throw new UnauthorizedException();
+    if (user.role !== 'COMPANY_ADMIN' || user.companyId !== companyId)
+      throw new ForbiddenException('Session context changed');
+    return operation(tx, companyId);
+  });
+}
 @Injectable()
 export class VehiclesRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
@@ -59,48 +102,12 @@ export class VehiclesRepository {
       )
       .first();
   }
-  // All fleet writes lock company then actor in the same order. This serializes
-  // duplicate checks/assignment changes and pins identity until commit. The
-  // existing unique workers.vehicleId constraint also rejects external races.
   private async write<T>(
     actor: TokenPayload,
-    operation: (
-      tx: Parameters<Parameters<PrismaService['db']['transaction']>[0]>[0],
-      companyId: string,
-    ) => Promise<T>,
+    operation: (tx: FleetTransaction, companyId: string) => Promise<T>,
   ): Promise<T> {
-    const companyId = fleetCompany(actor);
     try {
-      return await this.prisma.db.transaction(async (tx) => {
-        await tx.execute(
-          this.prisma.db.raw
-            .sql`SELECT "id" FROM "companies" WHERE "id"=${companyId} FOR UPDATE`
-            .affectedCount()
-            .build(),
-        );
-        await tx.execute(
-          this.prisma.db.raw
-            .sql`SELECT "id" FROM "users" WHERE "id"=${actor.sub} FOR UPDATE`
-            .affectedCount()
-            .build(),
-        );
-        const user = await tx.orm.public.User.where({ id: actor.sub })
-          .select('id', 'role', 'companyId', 'isActive', 'isEmailVerified')
-          .first();
-        const company = await tx.orm.public.Company.where({ id: companyId })
-          .select('id', 'suspended')
-          .first();
-        if (
-          !user?.isActive ||
-          !user.isEmailVerified ||
-          !company ||
-          company.suspended
-        )
-          throw new UnauthorizedException();
-        if (user.role !== 'COMPANY_ADMIN' || user.companyId !== companyId)
-          throw new ForbiddenException('Session context changed');
-        return operation(tx, companyId);
-      });
+      return await lockedFleetWrite(this.prisma, actor, operation);
     } catch (error: unknown) {
       if (
         error &&

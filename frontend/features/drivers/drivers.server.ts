@@ -11,7 +11,11 @@ import {
   setSessionTokens,
 } from "@/lib/auth/cookies.server";
 import { resolveSession } from "@/lib/auth/session.server";
-import { isDriverStatus } from "./drivers.types";
+import {
+  isDriverStatus,
+  isValidDriverInput,
+  normalizeDriverInput,
+} from "./drivers.types";
 import type {
   Driver,
   DriverQuery,
@@ -19,6 +23,8 @@ import type {
   DriverResult,
   DriverScope,
   DriverVehicle,
+  DriverWrite,
+  DriverWriteResult,
 } from "./drivers.types";
 
 type SessionCookies = Parameters<typeof setSessionTokens>[0] &
@@ -93,6 +99,44 @@ function isVehicleType(value: unknown): value is DriverVehicle["type"] {
   );
 }
 
+type AuthorizedSession =
+  | { status: "ready"; bearer: string; companyId: string }
+  | { status: "unauthenticated" | "forbidden" | "changed" | "unavailable" };
+
+async function authorizeDriverSession(
+  jar: SessionCookies,
+  expected: DriverScope,
+): Promise<AuthorizedSession> {
+  const access = jar.get(accessCookie)?.value;
+  const session = await resolveSession({
+    access,
+    refresh: jar.get(refreshCookie)?.value,
+  });
+  if (session.status === "unauthenticated") {
+    clearSessionCookies(jar);
+    return { status: "unauthenticated" };
+  }
+  if (session.status === "refresh-rejected") return { status: "changed" };
+  if (session.tokens) setSessionTokens(jar, session.tokens);
+  if (session.status !== "ready") return { status: "unavailable" };
+  if (
+    session.user.role !== "COMPANY_ADMIN" ||
+    !session.user.company ||
+    !session.user.orgId
+  )
+    return { status: "forbidden" };
+  // Submitted identity is only a stale-context veto. The JWT selects all scope.
+  if (
+    !expected ||
+    session.user.id !== expected.userId ||
+    session.user.orgId !== expected.companyId
+  )
+    return { status: "changed" };
+  const bearer = session.tokens?.accessToken ?? access;
+  if (!bearer) return { status: "unavailable" };
+  return { status: "ready", bearer, companyId: session.user.orgId };
+}
+
 export async function readDriversForSession(
   jar: SessionCookies,
   expected: DriverScope,
@@ -109,29 +153,9 @@ export async function readDriversForSession(
       : typeof request.id !== "string" || !uuid.test(request.id)
   )
     return { status: "invalid" };
-  const access = jar.get(accessCookie)?.value;
-  const session = await resolveSession({
-    access,
-    refresh: jar.get(refreshCookie)?.value,
-  });
-  if (session.status === "unauthenticated") {
-    clearSessionCookies(jar);
-    return { status: "unauthenticated" };
-  }
-  if (session.status === "refresh-rejected") return { status: "changed" };
-  if (session.tokens) setSessionTokens(jar, session.tokens);
-  if (session.status !== "ready") return { status: "unavailable" };
-  if (session.user.role !== "COMPANY_ADMIN" || !session.user.company)
-    return { status: "forbidden" };
-  // Submitted identity is only a stale-context veto. The JWT selects all scope.
-  if (
-    !expected ||
-    session.user.id !== expected.userId ||
-    session.user.orgId !== expected.companyId
-  )
-    return { status: "changed" };
-  const bearer = session.tokens?.accessToken ?? access;
-  if (!bearer) return { status: "unavailable" };
+  const authorized = await authorizeDriverSession(jar, expected);
+  if (authorized.status !== "ready") return authorized;
+  const { bearer, companyId } = authorized;
   try {
     const path =
       request.kind === "detail" ? `drivers/${request.id}` : "drivers";
@@ -159,7 +183,7 @@ export async function readDriversForSession(
     const data = body.data;
     if (!object(data) || typeof data.companyId !== "string" || !data.companyId)
       return { status: "unavailable" };
-    if (data.companyId !== session.user.orgId) return { status: "changed" };
+    if (data.companyId !== companyId) return { status: "changed" };
     if (request.kind === "detail") {
       const parsed = parseDriver(data.driver);
       return parsed && parsed.id === request.id
@@ -191,5 +215,92 @@ export async function readDriversForSession(
     };
   } catch {
     return { status: "unavailable" };
+  }
+}
+
+function validWrite(operation: DriverWrite): DriverWrite | null {
+  if (!object(operation)) return null;
+  if (operation.kind === "create" || operation.kind === "edit") {
+    if (
+      !object(operation.input) ||
+      typeof operation.input.name !== "string" ||
+      typeof operation.input.phone !== "string"
+    )
+      return null;
+    const input = normalizeDriverInput(operation.input);
+    if (!isValidDriverInput(input)) return null;
+    if (operation.kind === "create") return { kind: "create", input };
+    return typeof operation.id === "string" && uuid.test(operation.id)
+      ? { kind: "edit", id: operation.id, input }
+      : null;
+  }
+  if (
+    operation.kind === "suspension" &&
+    typeof operation.id === "string" &&
+    uuid.test(operation.id) &&
+    typeof operation.suspended === "boolean"
+  )
+    return {
+      kind: "suspension",
+      id: operation.id,
+      suspended: operation.suspended,
+    };
+  return null;
+}
+
+export async function writeDriverForSession(
+  jar: SessionCookies,
+  expected: DriverScope,
+  submitted: DriverWrite,
+): Promise<DriverWriteResult> {
+  const operation = validWrite(submitted);
+  if (!operation) return { status: "invalid" };
+  const authorized = await authorizeDriverSession(jar, expected);
+  if (authorized.status !== "ready") return authorized;
+  const { bearer, companyId } = authorized;
+  let dispatched = false;
+  try {
+    const endpoint = getBackendEndpoint(
+      operation.kind === "create"
+        ? "drivers"
+        : operation.kind === "edit"
+          ? `drivers/${operation.id}`
+          : `drivers/${operation.id}/suspension`,
+    );
+    if (!endpoint) return { status: "unavailable" };
+    dispatched = true;
+    const response = await requestBackend(endpoint, {
+      method:
+        operation.kind === "create"
+          ? "POST"
+          : operation.kind === "edit"
+            ? "PATCH"
+            : "PUT",
+      body:
+        operation.kind === "suspension"
+          ? { suspended: operation.suspended }
+          : { name: operation.input.name, phone: operation.input.phone },
+      bearer,
+      expectedCompany: companyId,
+    });
+    if (response.status === 401) {
+      clearSessionCookies(jar);
+      return { status: "unauthenticated" };
+    }
+    if (response.status === 403) return { status: "forbidden" };
+    if (response.status === 400) return { status: "invalid" };
+    if (response.status === 404 && operation.kind !== "create")
+      return { status: "not-found" };
+    if (!response.ok) return { status: "uncertain" };
+    const body = await readBackendBody(response);
+    if (!object(body) || body.success !== true || !object(body.data))
+      return { status: "uncertain" };
+    if (body.data.companyId !== companyId) return { status: "changed" };
+    const driver = parseDriver(body.data.driver);
+    if (!driver || (operation.kind !== "create" && driver.id !== operation.id))
+      return { status: "uncertain" };
+    return { status: "saved", data: driver };
+  } catch {
+    return { status: dispatched ? "uncertain" : "unavailable" };
   }
 }

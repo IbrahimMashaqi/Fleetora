@@ -27,6 +27,12 @@ let delay: number;
 let requests: URL[];
 let driverName: string;
 let fleet: Driver[] | null;
+let writes: {
+  method: string;
+  path: string;
+  context: string | string[] | undefined;
+  body: Record<string, unknown>;
+}[];
 
 test.beforeAll(async () => {
   server = createServer(async (request, response) => {
@@ -42,6 +48,57 @@ test.beforeAll(async () => {
       return;
     }
     const url = new URL(request.url ?? "/", "http://fixture.invalid");
+    if (url.pathname.startsWith("/drivers") && request.method !== "GET") {
+      let raw = "";
+      for await (const chunk of request) raw += chunk;
+      const body = JSON.parse(raw || "{}") as Record<string, unknown>;
+      writes.push({
+        method: request.method ?? "",
+        path: url.pathname,
+        context: request.headers["x-fleetora-company-context"],
+        body,
+      });
+      fleet ??= [];
+      const id = url.pathname.split("/")[2];
+      let record: Driver | undefined;
+      if (request.method === "POST" && url.pathname === "/drivers") {
+        record = {
+          id: "66666666-6666-4666-8666-666666666666",
+          name: String(body.name),
+          phone: String(body.phone),
+          status: "OFFLINE",
+          vehicle: null,
+        };
+        fleet.push(record);
+      } else {
+        const index = fleet.findIndex((item) => item.id === id);
+        if (index >= 0 && request.method === "PATCH")
+          fleet[index] = {
+            ...fleet[index],
+            name: String(body.name),
+            phone: String(body.phone),
+          };
+        if (index >= 0 && request.method === "PUT")
+          fleet[index] = {
+            ...fleet[index],
+            status: body.suspended ? "SUSPENDED" : "OFFLINE",
+          };
+        record = fleet[index];
+      }
+      if (!record) {
+        response.writeHead(404).end(JSON.stringify({ message: "missing" }));
+        return;
+      }
+      response
+        .writeHead(request.method === "POST" ? 201 : 200)
+        .end(
+          JSON.stringify({
+            success: true,
+            data: { companyId: user.orgId, driver: record },
+          }),
+        );
+      return;
+    }
     if (!url.pathname.startsWith("/drivers") || request.method !== "GET") {
       response.writeHead(500).end();
       return;
@@ -93,6 +150,7 @@ test.beforeEach(async ({ context }) => {
   requests = [];
   driverName = driver.name;
   fleet = null;
+  writes = [];
   await context.addCookies([
     {
       name: "fleetora_access",
@@ -142,9 +200,85 @@ test("shows driver rows and Company Admin navigation", async ({ page }) => {
   expect(requests.every((url) => !url.searchParams.has("companyId"))).toBe(
     true,
   );
-  await expect(page.getByRole("button", { name: /add driver/i })).toHaveCount(
-    0,
+  await expect(
+    page.getByRole("button", { name: "Add driver", exact: true }),
+  ).toBeVisible();
+});
+test("adds, edits, suspends, and reactivates a driver record", async ({
+  page,
+}) => {
+  fleet = [];
+  empty = false;
+  await directory(page);
+  await expect(page.getByText("No drivers yet.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Add driver" }).first().click();
+  const editor = page.getByRole("dialog", { name: "Add driver" });
+  await expect(editor.getByLabel("Full name")).toBeFocused();
+  await editor.getByLabel("Full name").fill("Lina Haddad");
+  await editor.getByLabel("Phone number").fill("call me");
+  await editor.getByRole("button", { name: "Add driver" }).click();
+  await expect(editor.getByRole("alert")).toContainText(
+    "Check the driver name and phone number",
   );
+  expect(writes).toEqual([]);
+  await editor.getByLabel("Phone number").fill(" +970 59 111 2222 ");
+  await editor.getByRole("button", { name: "Add driver" }).click();
+  const details = page.getByRole("dialog", { name: "Driver details" });
+  await expect(details.getByText("Lina Haddad", { exact: true })).toBeVisible();
+  await expect(details.getByText("Offline", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("main").getByText("Lina Haddad", { exact: true }),
+  ).toBeVisible();
+
+  await details.getByRole("button", { name: "Edit details" }).click();
+  const edit = page.getByRole("dialog", { name: "Edit driver" });
+  await expect(edit.getByLabel("Full name")).toHaveValue("Lina Haddad");
+  await edit.getByLabel("Full name").fill("Lina H. Haddad");
+  await edit.getByRole("button", { name: "Save changes" }).click();
+  await expect(edit).toHaveCount(0);
+  await expect(details).toBeVisible();
+  await expect(
+    details.getByText("Lina H. Haddad", { exact: true }),
+  ).toBeVisible();
+
+  await details.getByRole("button", { name: "Suspend driver" }).click();
+  await expect(
+    details.getByText(/Suspend Lina H\. Haddad\?/),
+  ).toBeVisible();
+  await details.getByRole("button", { name: "Keep active" }).click();
+  expect(writes.filter((write) => write.method === "PUT")).toEqual([]);
+  await details.getByRole("button", { name: "Suspend driver" }).click();
+  await details.getByRole("button", { name: "Confirm suspension" }).click();
+  await expect(details.getByText("Suspended", { exact: true })).toBeVisible();
+  await details.getByRole("button", { name: "Reactivate driver" }).click();
+  await expect(details.getByText("Offline", { exact: true })).toBeVisible();
+
+  expect(writes).toEqual([
+    {
+      method: "POST",
+      path: "/drivers",
+      context: "company-a",
+      body: { name: "Lina Haddad", phone: "+970 59 111 2222" },
+    },
+    {
+      method: "PATCH",
+      path: "/drivers/66666666-6666-4666-8666-666666666666",
+      context: "company-a",
+      body: { name: "Lina H. Haddad", phone: "+970 59 111 2222" },
+    },
+    {
+      method: "PUT",
+      path: "/drivers/66666666-6666-4666-8666-666666666666/suspension",
+      context: "company-a",
+      body: { suspended: true },
+    },
+    {
+      method: "PUT",
+      path: "/drivers/66666666-6666-4666-8666-666666666666/suspension",
+      context: "company-a",
+      body: { suspended: false },
+    },
+  ]);
 });
 test("supports backend search, URL pagination, and detail lookup", async ({
   page,

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { RefreshCw, Search } from "lucide-react";
+import { Plus, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import type { DriverQuery, DriverRequest, DriverScope } from "../drivers.types";
 import { useDriverRead } from "../use-driver-read";
 import { DriverDetails } from "./driver-details";
 import { DriverAccessDenied, DriverReadError } from "./driver-feedback";
+import { DriverEditor } from "./driver-editor";
 
 function location(search: string, page = 1) {
   const params = new URLSearchParams();
@@ -50,6 +51,7 @@ function DriverList({
   );
   const { result, retry } = useDriverRead(request, scope);
   const [selected, setSelected] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const data = result?.status === "list" ? result.data : null;
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl">
@@ -57,18 +59,24 @@ function DriverList({
         <div className="min-w-0">
           <h2 className="text-2xl font-semibold tracking-tight">{t("Drivers")}</h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            {t("Find and view the delivery drivers in your company.")}
+            {t("Find, add, and manage the delivery drivers in your company.")}
           </p>
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={!result}
-          onClick={retry}
-        >
-          <RefreshCw aria-hidden="true" />
-          {t("Refresh")}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={!result}
+            onClick={retry}
+          >
+            <RefreshCw aria-hidden="true" />
+            {t("Refresh")}
+          </Button>
+          <Button type="button" onClick={() => setCreating(true)}>
+            <Plus aria-hidden="true" />
+            {t("Add driver")}
+          </Button>
+        </div>
       </div>
       <form
         role="search"
@@ -128,8 +136,20 @@ function DriverList({
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 {query.search
                   ? t("Try a different name or phone.")
-                  : t("There are no drivers to display on this page.")}
+                  : query.page > 1
+                    ? t("There are no drivers to display on this page.")
+                    : t("Add your first driver to start assigning vehicles and parcels.")}
               </p>
+              {!query.search && query.page === 1 && (
+                <Button
+                  type="button"
+                  className="mt-4"
+                  onClick={() => setCreating(true)}
+                >
+                  <Plus aria-hidden="true" />
+                  {t("Add driver")}
+                </Button>
+              )}
               {query.page > 1 && (
                 <Button asChild variant="outline" className="mt-4">
                   <Link href={location(query.search)}>{t("Back to first page")}</Link>
@@ -199,6 +219,18 @@ function DriverList({
             </div>
           </nav>
         </>
+      )}
+      {creating && (
+        <DriverEditor
+          driver={null}
+          scope={scope}
+          onClose={() => setCreating(false)}
+          onSaved={(driver) => {
+            setCreating(false);
+            retry();
+            setSelected(driver.id);
+          }}
+        />
       )}
       {selected && (
         <DriverDetails

@@ -10,6 +10,7 @@ import {
 import type { TokenPayload } from '../auth/token/token.payload.js';
 import { DriversRepository } from './drivers.repository.js';
 import type { ListDriversDto } from './dto/list-drivers.dto.js';
+import type { DriverInputDto } from './dto/driver-input.dto.js';
 import type {
   Driver,
   DriverRow,
@@ -84,5 +85,34 @@ export class DriversService {
     const row = await this.repository.findOne(companyId, id);
     if (!row) throw new NotFoundException('Driver not found');
     return { companyId, driver: this.publicDriver(row, companyId) };
+  }
+
+  async create(
+    actor: TokenPayload,
+    input: DriverInputDto,
+  ): Promise<DriverDetails> {
+    this.companyId(actor);
+    const id = await this.repository.create(actor, input);
+    return this.details(actor, id);
+  }
+
+  async update(
+    actor: TokenPayload,
+    id: string,
+    input: DriverInputDto,
+  ): Promise<DriverDetails> {
+    this.companyId(actor);
+    await this.repository.update(actor, id, input);
+    return this.details(actor, id);
+  }
+
+  async setSuspended(
+    actor: TokenPayload,
+    id: string,
+    suspended: boolean,
+  ): Promise<DriverDetails> {
+    this.companyId(actor);
+    await this.repository.setSuspended(actor, id, suspended);
+    return this.details(actor, id);
   }
 }

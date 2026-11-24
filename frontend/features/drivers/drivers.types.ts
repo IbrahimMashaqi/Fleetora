@@ -49,3 +49,36 @@ export type DriverResult =
         | "not-found"
         | "unavailable";
     };
+export type DriverInput = { name: string; phone: string };
+export type DriverWrite =
+  | { kind: "create"; input: DriverInput }
+  | { kind: "edit"; id: string; input: DriverInput }
+  | { kind: "suspension"; id: string; suspended: boolean };
+export type DriverWriteResult =
+  | { status: "saved"; data: Driver }
+  | {
+      status:
+        | "unauthenticated"
+        | "forbidden"
+        | "changed"
+        | "invalid"
+        | "not-found"
+        | "unavailable"
+        | "uncertain";
+    };
+// Mirrors the backend DTO so obvious mistakes are caught before submission.
+export const driverPhonePattern = /^\+?[0-9][0-9 ()-]{5,38}[0-9]$/;
+export function normalizeDriverInput(input: DriverInput): DriverInput {
+  return {
+    name: input.name.trim().replace(/\s+/g, " "),
+    phone: input.phone.trim().replace(/\s+/g, " "),
+  };
+}
+export function isValidDriverInput(input: DriverInput): boolean {
+  return (
+    input.name.length >= 2 &&
+    input.name.length <= 150 &&
+    input.phone.length <= 40 &&
+    driverPhonePattern.test(input.phone)
+  );
+}
