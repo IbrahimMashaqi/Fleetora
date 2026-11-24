@@ -23,6 +23,10 @@ type Counter = {
   resetAt: number;
 };
 
+type CounterKind = 'pair' | 'account' | 'source';
+
+type Limit = { key: string; max: number; kind: CounterKind };
+
 type LimitDefaults = {
   windowMs: number;
   pairMax: number;
@@ -35,9 +39,17 @@ export function digestRecoveryRateLimitKey(secret: string, value: string): strin
   return createHmac('sha256', secret).update(value).digest('hex');
 }
 
-/** Bounded, HMAC-keyed counters. Raw sources and account identifiers are never retained. */
+/**
+ * Bounded, HMAC-keyed counters. Raw sources and account identifiers are never retained.
+ *
+ * Account counters are the lockout that protects a victim, so an in-window account
+ * counter is never evicted: when the bound is reached, pair and source counters are
+ * evicted oldest first, and if only account counters remain the attempt is refused.
+ * Each map keeps creation order, which equals expiry order because the window is fixed.
+ */
 export class InMemoryHmacRateLimiter {
-  private readonly counters = new Map<string, Counter>();
+  private readonly accounts = new Map<string, Counter>();
+  private readonly others = new Map<string, Counter>();
   private readonly secret: string;
   private readonly windowMs: number;
   private readonly pairMax: number;
@@ -73,43 +85,36 @@ export class InMemoryHmacRateLimiter {
 
     const limits = this.limits(source, accountIdentifier);
     const blocked = limits
-      .map(({ key, max }) => ({ counter: this.counters.get(key), max }))
+      .map(({ key, max, kind }) => ({ counter: this.live(kind, key, now), max }))
       .find(({ counter, max }) => counter !== undefined && counter.count >= max);
-    if (blocked?.counter) {
-      return {
-        allowed: false,
-        retryAfterSeconds: Math.max(
-          1,
-          Math.ceil((blocked.counter.resetAt - now) / 1000),
-        ),
-      };
-    }
+    if (blocked?.counter) return this.refusal(blocked.counter.resetAt, now);
 
-    for (const { key } of limits) {
-      const current = this.counters.get(key);
-      this.counters.delete(key);
-      this.counters.set(key, {
-        count: (current?.count ?? 0) + 1,
-        resetAt: current?.resetAt ?? now + this.windowMs,
-      });
+    const needed = limits.filter(({ key, kind }) => !this.live(kind, key, now)).length;
+    if (!this.makeRoom(needed, limits)) return this.refusal(this.nextExpiry(now), now);
+
+    for (const { key, kind } of limits) {
+      const counters = this.store(kind);
+      const current = counters.get(key);
+      if (current) current.count += 1;
+      else counters.set(key, { count: 1, resetAt: now + this.windowMs });
     }
-    this.enforceBound();
     return { allowed: true, retryAfterSeconds: 0 };
   }
 
   /** Returns one reservation to the pair and account counters; source counters are never refunded. */
   protected refund(source: string | null, accountIdentifier: string): void {
-    this.removeExpired(Date.now());
+    const now = Date.now();
+    this.removeExpired(now);
     for (const { key, kind } of this.limits(source, accountIdentifier)) {
       if (kind === 'source') continue;
-      const current = this.counters.get(key);
+      const current = this.live(kind, key, now);
       if (current && current.count > 0) current.count -= 1;
     }
   }
 
-  private limits(source: string | null, accountIdentifier: string) {
+  private limits(source: string | null, accountIdentifier: string): Limit[] {
     const accountKey = this.digest(`account:${accountIdentifier.trim().toLowerCase()}`);
-    const limits: { key: string; max: number; kind: 'pair' | 'account' | 'source' }[] = [
+    const limits: Limit[] = [
       { key: accountKey, max: this.accountMax, kind: 'account' },
     ];
     // Only an explicit null is unattributed; an empty string keeps the legacy shared key.
@@ -125,18 +130,56 @@ export class InMemoryHmacRateLimiter {
     return digestRecoveryRateLimitKey(this.secret, value);
   }
 
+  private store(kind: CounterKind): Map<string, Counter> {
+    return kind === 'account' ? this.accounts : this.others;
+  }
+
+  /** A counter inside its window; an expired one is removed even if the clock moved backwards. */
+  private live(kind: CounterKind, key: string, now: number): Counter | undefined {
+    const counters = this.store(kind);
+    const counter = counters.get(key);
+    if (counter && counter.resetAt <= now) {
+      counters.delete(key);
+      return undefined;
+    }
+    return counter;
+  }
+
+  private get size(): number {
+    return this.accounts.size + this.others.size;
+  }
+
   private removeExpired(now: number): void {
-    for (const [key, counter] of this.counters) {
-      if (counter.resetAt <= now) this.counters.delete(key);
+    for (const counters of [this.accounts, this.others]) {
+      for (const [key, counter] of counters) {
+        if (counter.resetAt > now) break;
+        counters.delete(key);
+      }
     }
   }
 
-  private enforceBound(): void {
-    while (this.counters.size > this.maxEntries) {
-      const oldestKey = this.counters.keys().next().value as string | undefined;
-      if (oldestKey === undefined) return;
-      this.counters.delete(oldestKey);
+  /** Evicts the oldest pair/source counters (never this attempt's own); never an account counter. */
+  private makeRoom(needed: number, limits: readonly Limit[]): boolean {
+    const own = new Set(limits.map(({ key }) => key));
+    for (const key of this.others.keys()) {
+      if (this.size + needed <= this.maxEntries) break;
+      if (!own.has(key)) this.others.delete(key);
     }
+    return this.size + needed <= this.maxEntries;
+  }
+
+  private nextExpiry(now: number): number {
+    const heads = [this.accounts, this.others]
+      .map((counters) => counters.values().next().value?.resetAt)
+      .filter((resetAt): resetAt is number => resetAt !== undefined);
+    return heads.length ? Math.min(...heads) : now + this.windowMs;
+  }
+
+  private refusal(resetAt: number, now: number): RecoveryRateLimitResult {
+    return {
+      allowed: false,
+      retryAfterSeconds: Math.max(1, Math.ceil((resetAt - now) / 1000)),
+    };
   }
 
   private positiveInteger(value: number | string | undefined, fallback: number): number {

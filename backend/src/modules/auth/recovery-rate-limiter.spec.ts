@@ -75,6 +75,27 @@ describe('InMemoryRecoveryRateLimiter', () => {
     expect(configured.consume('203.0.113.8', 'amina@example.com').allowed).toBe(true);
   });
 
+  it('evicts pair and source counters before in-window account counters, then refuses', () => {
+    const bounded = new InMemoryRecoveryRateLimiter(
+      new ConfigService({
+        ACCESS_TOKEN_SECRET: 'test-only-rate-limit-key',
+        RECOVERY_RATE_LIMIT_WINDOW_MS: 60_000,
+        RECOVERY_RATE_LIMIT_ACCOUNT_MAX: 1,
+        RECOVERY_RATE_LIMIT_MAX_ENTRIES: 4,
+      }),
+    );
+    expect(bounded.consume('203.0.113.1', 'victim@example.com').allowed).toBe(true);
+    // Room is made by evicting the victim's pair and source counters, never its account counter.
+    expect(bounded.consume(null, 'a@example.com').allowed).toBe(true);
+    expect(bounded.consume(null, 'b@example.com').allowed).toBe(true);
+    expect(bounded.consume(null, 'c@example.com').allowed).toBe(true);
+    // Only in-window account counters remain: new identities are refused instead of evicting one.
+    expect(bounded.consume(null, 'd@example.com')).toEqual({ allowed: false, retryAfterSeconds: 60 });
+    expect(bounded.consume('203.0.113.2', 'victim@example.com').allowed).toBe(false);
+    vi.advanceTimersByTime(60_001);
+    expect(bounded.consume(null, 'd@example.com').allowed).toBe(true);
+  });
+
   it('evicts expired or oldest counters instead of growing without a bound', () => {
     const bounded = new InMemoryRecoveryRateLimiter(
       new ConfigService({

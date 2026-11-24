@@ -80,6 +80,29 @@ describe('InMemorySigninRateLimiter', () => {
     expect(limiter.consume('ip:203.0.113.1', 'amina@example.com').allowed).toBe(true);
   });
 
+  it('keeps a locked account locked while 20,000+ fake emails flood the bounded store', () => {
+    const flooded = new InMemorySigninRateLimiter(new ConfigService({
+      ACCESS_TOKEN_SECRET: 'test-only-rate-limit-key',
+      SIGNIN_RATE_LIMIT_ACCOUNT_MAX: 3,
+    }));
+    for (const n of [1, 2, 3]) {
+      expect(flooded.consume(`ip:198.51.100.${n}`, 'victim@example.com').allowed).toBe(true);
+    }
+    expect(flooded.consume('ip:198.51.100.4', 'victim@example.com').allowed).toBe(false);
+
+    let refused = 0;
+    for (let n = 0; n < 20_500; n++) {
+      const source = n % 2 === 0 ? null : `ip:10.${(n >> 16) & 255}.${(n >> 8) & 255}.${n & 255}`;
+      if (!flooded.consume(source, `fake-${n}@example.com`).allowed) refused++;
+    }
+
+    expect(refused).toBeGreaterThan(0);
+    expect(flooded.consume('ip:198.51.100.5', 'victim@example.com')).toEqual({
+      allowed: false,
+      retryAfterSeconds: 15 * 60,
+    });
+  });
+
   it('keeps sign-in and recovery counters independent', () => {
     const recovery = new InMemoryRecoveryRateLimiter(config);
     attempts('ip:203.0.113.1', 'amina@example.com', 4);

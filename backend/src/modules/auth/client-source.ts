@@ -44,6 +44,10 @@ export class ClientSourceService {
 
   constructor(config: ConfigService) {
     const value = config.get<string>('FLEETORA_CLIENT_SOURCE_SECRET');
+    // Without the secret every web sign-in would share the BFF's address as one rate-limit source.
+    if (!value && config.get<string>('NODE_ENV') === 'production') {
+      throw new Error('FLEETORA_CLIENT_SOURCE_SECRET must be configured in production');
+    }
     if (value !== undefined && value !== '' && value.length < MIN_SECRET_LENGTH) {
       throw new Error(`FLEETORA_CLIENT_SOURCE_SECRET must be at least ${MIN_SECRET_LENGTH} characters`);
     }

@@ -101,6 +101,24 @@ describe('ClientSourceService', () => {
     });
   });
 
+  it.each([
+    ['missing', {}],
+    ['empty', { FLEETORA_CLIENT_SOURCE_SECRET: '' }],
+  ])('refuses to start in production when the shared secret is %s', (_name, values) => {
+    expect(() => new ClientSourceService(new ConfigService({ NODE_ENV: 'production', ...values })))
+      .toThrow(/FLEETORA_CLIENT_SOURCE_SECRET must be configured in production/);
+  });
+
+  it('starts in production with a configured shared secret', () => {
+    at();
+    const production = new ClientSourceService(new ConfigService({
+      NODE_ENV: 'production', FLEETORA_CLIENT_SOURCE_SECRET: secret,
+    }));
+    expect(production.resolve(request({ [CLIENT_SOURCE_HEADER]: assertion('198.51.100.7') }))).toEqual({
+      kind: 'verified-client', address: '198.51.100.7',
+    });
+  });
+
   it('refuses to start with a guessable shared secret', () => {
     expect(() => new ClientSourceService(new ConfigService({ FLEETORA_CLIENT_SOURCE_SECRET: 'short' })))
       .toThrow(/FLEETORA_CLIENT_SOURCE_SECRET/);
