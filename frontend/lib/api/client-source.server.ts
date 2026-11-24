@@ -38,14 +38,25 @@ export function signClientSource({ secret, method, path, address, timestamp }: {
   return `v1.${timestamp}.${Buffer.from(address, "utf8").toString("base64url")}.${signature}`;
 }
 
-/** Signed source assertion for one backend request, or undefined when not configured. */
-export async function clientSourceFor(method: "POST", endpoint: URL): Promise<string | undefined> {
-  const secret = clientSourceSecret();
-  if (!secret) return undefined;
+const productionSecretError =
+  `FLEETORA_CLIENT_SOURCE_SECRET must be configured (at least ${minimumSecretLength} characters) in production`;
+
+/**
+ * Signed source assertion for one backend request. Outside production it is undefined
+ * when not configured; in production a missing or weak secret fails the call, because
+ * the backend would otherwise count every web client as this server's single address.
+ */
+export async function clientSourceFor(method: "POST", endpoint: URL, env: Env = process.env): Promise<string | undefined> {
+  const secret = clientSourceSecret(env);
+  if (!secret) {
+    if (env.NODE_ENV !== "production") return undefined;
+    console.error(productionSecretError);
+    throw new Error(productionSecretError);
+  }
   let address = "";
   try {
     const incoming = await headers();
-    address = trustedClientAddress((name) => incoming.get(name));
+    address = trustedClientAddress((name) => incoming.get(name), env);
   } catch {
     return undefined;
   }

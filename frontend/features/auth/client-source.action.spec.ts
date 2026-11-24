@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import {
+  clientSourceFor,
   clientSourceSecret,
   signClientSource,
   trustedClientAddress,
@@ -43,6 +44,26 @@ test("rejects address lists, invalid values and malformed header names", () => {
     expect(trustedClientAddress(reader({ "x-edge-client-ip": value }), env)).toBe("");
   }
   expect(trustedClientAddress(reader({ "bad header": "203.0.113.9" }), { FLEETORA_TRUSTED_CLIENT_IP_HEADER: "bad header" })).toBe("");
+});
+
+test("fails auth backend calls in production when the shared secret is missing or too short", async () => {
+  const endpoint = new URL("http://127.0.0.1:3001/auth/signin");
+  for (const env of [
+    { NODE_ENV: "production" },
+    { NODE_ENV: "production", FLEETORA_CLIENT_SOURCE_SECRET: "" },
+    { NODE_ENV: "production", FLEETORA_CLIENT_SOURCE_SECRET: "short" },
+  ]) {
+    await expect(clientSourceFor("POST", endpoint, env)).rejects.toThrow(
+      "FLEETORA_CLIENT_SOURCE_SECRET must be configured (at least 32 characters) in production",
+    );
+  }
+});
+
+test("keeps sending no assertion outside production when the shared secret is not configured", async () => {
+  const endpoint = new URL("http://127.0.0.1:3001/auth/signin");
+  await expect(clientSourceFor("POST", endpoint, {})).resolves.toBeUndefined();
+  await expect(clientSourceFor("POST", endpoint, { NODE_ENV: "development", FLEETORA_CLIENT_SOURCE_SECRET: "short" }))
+    .resolves.toBeUndefined();
 });
 
 test("requires a strong shared secret before signing anything", () => {
