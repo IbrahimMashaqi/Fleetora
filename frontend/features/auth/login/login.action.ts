@@ -6,6 +6,7 @@ import type { LoginState } from "./login.types";
 import { getBackendEndpoint, requestBackend, readBackendBody } from "@/lib/api/backend.server";
 import { parseTokenPair } from "@/lib/auth/tokens.server";
 import { setSessionTokens } from "@/lib/auth/cookies.server";
+import { clientSourceFor } from "@/lib/api/client-source.server";
 
 
 
@@ -22,7 +23,8 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
   try {
     const endpoint = getBackendEndpoint("auth/signin");
     if (!endpoint) return { status: "error", message: "Sign in is temporarily unavailable. Please try again later.", values: { email } };
-    const response = await requestBackend(endpoint, { method: "POST", body: { email, password } });
+    const clientSource = await clientSourceFor("POST", endpoint);
+    const response = await requestBackend(endpoint, { method: "POST", body: { email, password }, clientSource });
     if (!response.ok) {
       if (response.status === 429) return { status: "error", message: "Too many sign-in attempts. Please try again later.", values: { email } };
       if (![400, 401, 403].includes(response.status)) return { status: "error", message: "Sign in is temporarily unavailable. Please try again later.", values: { email } };

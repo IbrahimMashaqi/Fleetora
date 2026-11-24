@@ -240,6 +240,7 @@ describe('parcel HTTP with persisted JWT identity and disposable PostgreSQL', ()
             sub: user.id,
             role: 'COMPANY_ADMIN',
             orgId: companies[index === 0 ? 1 : 0].id,
+            typ: 'access',
           },
           { expiresIn: '5m' },
         );

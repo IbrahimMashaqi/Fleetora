@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -16,12 +17,34 @@ import { TokenService } from './token/token.service.js';
 import { createRefreshTokenVerifier, isLegacyRefreshTokenVerifier, matchesRefreshTokenVerifier } from './token/refresh-token-verifier.js';
 import { MailService } from '../mail/mail.service.js';
 import { instantToMs } from '../../common/utils/temporal.js';
-import { randomBytes } from 'crypto';
+import { canonicalEmail } from '../../common/utils/email.js';
+import { randomBytes, randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import {
   createOneTimeTokenVerifier,
   matchesOneTimeTokenVerifier,
 } from './token/one-time-token.js';
+
+function recoveryFailureDetails(error: unknown) {
+  if (typeof error !== 'object' || error === null) return { errorCode: 'UNKNOWN' };
+  const code = 'code' in error ? error.code : undefined;
+  const command = 'command' in error ? error.command : undefined;
+  const responseCode = 'responseCode' in error ? error.responseCode : undefined;
+  const safeCodes = [
+    'EAUTH', 'ETIMEDOUT', 'ESOCKET', 'ECONNECTION', 'EDNS', 'EENVELOPE',
+    'EMESSAGE', 'ESTREAM', 'ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND',
+    'EAI_AGAIN', 'ENOENT', 'ETLS', 'EPROTOCOL', 'CERT_HAS_EXPIRED',
+    'DEPTH_ZERO_SELF_SIGNED_CERT', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+    '28P01', '42501', '42P01', 'CONTRACT.MARKER_READ_FAILED',
+  ];
+  const safeCommands = ['CONN', 'AUTH', 'AUTH LOGIN', 'AUTH PLAIN', 'AUTH XOAUTH2', 'EHLO', 'HELO', 'STARTTLS', 'MAIL FROM', 'RCPT TO', 'DATA'];
+  return {
+    errorCode: typeof code === 'string' && safeCodes.includes(code) ? code : 'UNKNOWN',
+    ...(typeof command === 'string' && safeCommands.includes(command) ? { smtpCommand: command } : {}),
+    ...(typeof responseCode === 'number' && Number.isInteger(responseCode) && responseCode >= 400 && responseCode <= 599
+      ? { smtpResponseCode: responseCode } : {}),
+  };
+}
 
 @Injectable()
 export class AuthService {
@@ -30,6 +53,7 @@ export class AuthService {
   private readonly VERIFICATION_CODE_EXPIRY_MINUTES: number;
   private readonly FRONTEND_URL: string;
   private readonly VERIFICATION_RESEND_COOLDOWN_MS = 60_000;
+  private unknownAccountHash?: Promise<string>;
 
   constructor(
     private readonly authRepository: AuthRepository,
@@ -107,9 +131,11 @@ export class AuthService {
     };
   }
   async signin(signinDto: SigninDto) {
-    const { email, password } = signinDto;
-    const user = await this.authRepository.findUserByEmail(email);
+    const { password } = signinDto;
+    const user = await this.authRepository.findUserByEmail(canonicalEmail(signinDto.email));
     if (!user) {
+      // Spend the same bcrypt work as a real account so response timing does not reveal existence.
+      await bcrypt.compare(password, await this.unknownAccountPasswordHash());
       throw new UnauthorizedException('Invalid credentials');
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -129,6 +155,14 @@ export class AuthService {
     }
 
     return this.buildAuthResponse(user);
+  }
+
+  private unknownAccountPasswordHash(): Promise<string> {
+    this.unknownAccountHash ??= bcrypt.hash(
+      randomBytes(32).toString('hex'),
+      this.PASSWORD_SALT_ROUNDS,
+    );
+    return this.unknownAccountHash;
   }
 
   async sendVerificationEmail(
@@ -166,7 +200,8 @@ export class AuthService {
     );
   }
   async signup(createUserDto: CreateUserDto) {
-    const { name, email, password } = createUserDto;
+    const { name, password } = createUserDto;
+    const email = canonicalEmail(createUserDto.email);
     const hashedPassword = await bcrypt.hash(
       password,
       this.PASSWORD_SALT_ROUNDS,
@@ -242,10 +277,8 @@ export class AuthService {
     }
     // The reservation commits before external email delivery; no network work holds the row lock.
     await this.deliverVerificationEmail(reserved.user, token);
-    return {
-      message: 'Verification code sent. Please check your email.',
-      email: reserved.user.email,
-    };
+    // The caller only holds a user ID; never echo the account's address back to it.
+    return { message: 'Verification code sent. Please check your email.' };
   }
 
   async refreshTokens(
@@ -353,11 +386,21 @@ export class AuthService {
     return { message: 'Logged out successfully' };
   }
 
+  /**
+   * Replaces the password and every refresh session in one conditional UPDATE, then
+   * returns a fresh pair for the caller's own session. Access tokens issued earlier
+   * remain valid until their ten-minute expiry; they are stateless by design.
+   */
   async updatePassword(
     id: string,
     oldPassword: string,
     newPassword: string,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{
+    success: boolean;
+    message: string;
+    accessToken: string;
+    refreshToken: string;
+  }> {
     const user = await this.authRepository.findUserById(id);
     if (!user) {
       throw new BadRequestException('User not found');
@@ -376,8 +419,31 @@ export class AuthService {
       newPassword,
       this.PASSWORD_SALT_ROUNDS,
     );
-    await this.authRepository.updatePassword(id, hashedPassword);
-    return { success: true, message: 'Password updated successfully' };
+    const payload: TokenPayload = {
+      sub: user.id,
+      email: user.email ?? '',
+      role: user.role,
+      orgId: user.companyId ?? '',
+    };
+    const refreshToken = await this.tokenService.generateRefreshToken(payload);
+    const replaced = await this.authRepository.replacePasswordAndSession(
+      id,
+      user.password,
+      hashedPassword,
+      createRefreshTokenVerifier(refreshToken),
+    );
+    if (!replaced) {
+      throw new ConflictException(
+        'Your password was changed by another request. Sign in again to continue.',
+      );
+    }
+    const accessToken = await this.tokenService.generateAccessToken(payload);
+    return {
+      success: true,
+      message: 'Password updated successfully',
+      accessToken,
+      refreshToken,
+    };
   }
 
   async sendForgotPasswordEmail(email: string) {
@@ -385,11 +451,16 @@ export class AuthService {
       message:
         'If an account exists for this email, password reset instructions will be sent.',
     };
+    const requestId = randomUUID();
+    const startedAt = Date.now();
+    let stage = 'account_lookup';
+    this.logger.log({ event: 'password_recovery.stage', requestId, stage, elapsedMs: 0 });
 
     try {
-      const user = await this.authRepository.findUserByEmail(email);
+      const user = await this.authRepository.findUserByEmail(canonicalEmail(email));
       if (!user) return genericResponse;
 
+      stage = 'token_generation';
       const token = randomBytes(32).toString('hex');
       const verifier = createOneTimeTokenVerifier(token, 'password-reset');
       if (!verifier) return genericResponse;
@@ -399,18 +470,29 @@ export class AuthService {
       const resetUrl = new URL('/auth/reset-password', this.FRONTEND_URL);
       resetUrl.searchParams.set('userId', user.id);
       resetUrl.hash = new URLSearchParams({ token }).toString();
+      stage = 'token_persistence';
+      this.logger.log({ event: 'password_recovery.stage', requestId, stage, elapsedMs: Date.now() - startedAt });
       await this.authRepository.saveVerificationTokenVerifier(
         user.id,
         verifier,
         expiresAt,
       );
+      stage = 'email_delivery';
+      this.logger.log({ event: 'password_recovery.stage', requestId, stage, elapsedMs: Date.now() - startedAt });
+      // Deliver to the address on record, never to a caller-typed variant of it.
       await this.mailService.sendResetPasswordEmail(
-        email,
+        user.email ?? canonicalEmail(email),
         user.fullName ?? 'User',
         resetUrl.toString(),
       );
-    } catch {
-      this.logger.warn('Password recovery request could not be completed');
+    } catch (error) {
+      this.logger.warn({
+        event: 'password_recovery.failed', requestId, stage,
+        elapsedMs: Date.now() - startedAt,
+        ...recoveryFailureDetails(error),
+      });
+    } finally {
+      this.logger.log({ event: 'password_recovery.completed', requestId, elapsedMs: Date.now() - startedAt });
     }
 
     return genericResponse;

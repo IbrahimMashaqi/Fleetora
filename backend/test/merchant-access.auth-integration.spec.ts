@@ -323,6 +323,60 @@ describe('merchant identity on disposable PostgreSQL', () => {
     });
   });
 
+  it('denies attaching another company admin through a case-variant invitation', async () => {
+    await prisma.User.where({ id: foreignAdmin.sub }).update({ password: await bcrypt.hash(password, 4) });
+    const target = await prisma.User.where({ id: foreignAdmin.sub }).first();
+    if (!target?.email) throw new Error('Missing foreign admin fixture');
+    const invitation = await service.issueByAdmin(admin, merchantId, {
+      email: ` ${target.email.toUpperCase()} `,
+      role: 'OWNER',
+    });
+    expect(invitation.email).toBe(target.email);
+    await expect(
+      service.accept({ token: invitation.token, password }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(await prisma.User.where({ id: target.id }).first()).toMatchObject({
+      companyId: target.companyId,
+      role: 'COMPANY_ADMIN',
+    });
+    expect(
+      await prisma.db.orm.public.MerchantMembership.where({ userId: target.id }).first(),
+    ).toBeNull();
+  });
+
+  it('attaches a legacy mixed-case merchant identity without creating a duplicate', async () => {
+    const legacyEmail = `Legacy-${randomUUID()}@Example.Invalid`;
+    const legacy = await prisma.User.create({
+      email: legacyEmail,
+      fullName: 'Legacy identity',
+      password: await bcrypt.hash('ExistingPass1', 4),
+      role: 'MERCHANT',
+      companyId: null,
+      isActive: true,
+      isEmailVerified: true,
+    });
+    unattachedUsers.push(legacy.id);
+    const invitation = await service.issueByAdmin(admin, merchantId, {
+      email: legacyEmail,
+      role: 'OWNER',
+    });
+    expect(invitation.email).toBe(legacyEmail.toLowerCase());
+    await expect(
+      service.accept({ token: invitation.token, name: 'Imposter', password: 'AttackerPass1' }),
+    ).rejects.toMatchObject({ status: 401 });
+    await service.accept({ token: invitation.token, password: 'ExistingPass1' });
+    expect(await prisma.User.where({ id: legacy.id }).first()).toMatchObject({
+      email: legacyEmail,
+      companyId,
+    });
+    const sameIdentity = await prisma.db.runtime().query(
+      prisma.db.raw.sql`SELECT count(*)::int AS n FROM users WHERE lower(email) = lower(${legacyEmail})`
+        .returnsRow({ n: 'pg/int4@1' })
+        .build(),
+    );
+    expect(sameIdentity[0].n).toBe(1);
+  });
+
   it('separates employee financial grants and enforces revocation on the next request', async () => {
     const owner = await activate();
     const invitation = await service.issueByOwner(owner.actor, {

@@ -30,7 +30,7 @@ describe('AuthService signin', () => {
     findUserById: vi.fn(),
     findSessionContextById: vi.fn(),
     withRefreshTokenLock: vi.fn(),
-    updatePassword: vi.fn().mockResolvedValue(undefined),
+    replacePasswordAndSession: vi.fn().mockResolvedValue(true),
   };
   const tokens = {
     generateAccessToken: vi.fn().mockResolvedValue('access-token'),
@@ -63,6 +63,20 @@ describe('AuthService signin', () => {
       ],
     }).compile();
     service = module.get(AuthService);
+  });
+
+  it('resolves the account through its canonical email', async () => {
+    await service.signin({ email: ' AMINA@Example.com ', password: 'Passw0rd' });
+    expect(repository.findUserByEmail).toHaveBeenCalledWith('amina@example.com');
+  });
+
+  it('spends a password comparison on unknown accounts so timing does not reveal existence', async () => {
+    repository.findUserByEmail.mockResolvedValue(null);
+    await expect(service.signin({ email: 'ghost@example.com', password: 'Guess-1234' }))
+      .rejects.toThrow(new UnauthorizedException('Invalid credentials'));
+    expect(bcryptMocks.compare).toHaveBeenCalledTimes(1);
+    expect(bcryptMocks.compare).toHaveBeenCalledWith('Guess-1234', expect.any(String));
+    expect(tokens.generateAccessToken).not.toHaveBeenCalled();
   });
 
   it('checks the password before revealing that the account is unverified', async () => {
@@ -264,6 +278,7 @@ describe('AuthService signin', () => {
     repository.findUserById.mockResolvedValue({ ...user, isEmailVerified: false });
     await expect(service.updatePassword(user.id, 'old-password', 'NewPassword1')).rejects.toBeInstanceOf(UnauthorizedException);
     expect(bcryptMocks.compare).not.toHaveBeenCalled();
+    expect(repository.replacePasswordAndSession).not.toHaveBeenCalled();
   });
 
   it('returns tokens for valid active verified credentials', async () => {

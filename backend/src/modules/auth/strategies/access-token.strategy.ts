@@ -4,20 +4,27 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthRepository } from '../auth.repository.js';
 import { TokenPayload } from '../token/token.payload.js';
+import {
+  hasTokenType,
+  JWT_ALGORITHM,
+  readAccessTokenSecret,
+} from '../token/token-secrets.js';
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
-    private configService: ConfigService,
+    configService: ConfigService,
     private readonly authRepository: AuthRepository,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get<string>('ACCESS_TOKEN_SECRET')!,
+      secretOrKey: readAccessTokenSecret(configService),
+      algorithms: [JWT_ALGORITHM],
     });
   }
 
   async validate(payload: TokenPayload): Promise<TokenPayload> {
+    if (!hasTokenType(payload, 'access')) throw new UnauthorizedException();
     const user = await this.authRepository.findUserById(payload.sub);
     if (
       !user ||

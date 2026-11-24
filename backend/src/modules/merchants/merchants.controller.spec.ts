@@ -69,7 +69,7 @@ describe('Company Admin merchant-account API (isolated fixtures)', () => {
   afterAll(async () => { await app?.close(); });
 
   function token(claims: Record<string, unknown> = {}) {
-    return jwt.sign({ sub: actor.id, email: actor.email, role: actor.role, orgId: actor.companyId ?? '', ...claims }, { expiresIn: '5m' });
+    return jwt.sign({ sub: actor.id, email: actor.email, role: actor.role, orgId: actor.companyId ?? '', typ: 'access', ...claims }, { expiresIn: '5m' });
   }
   function get(path = '/merchants', bearer = token()) {
     return request(app.getHttpServer()).get(path).set('Authorization', `Bearer ${bearer}`);

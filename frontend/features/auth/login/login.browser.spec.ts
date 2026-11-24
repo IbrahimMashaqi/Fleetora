@@ -1,9 +1,10 @@
+import { createHmac } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import { test, expect, type Page } from "@playwright/test";
 import { isSessionUser } from "@/lib/auth/session.types";
 
 let server: Server;
-let requests: { method?: string; path?: string; authorization?: string; body: unknown }[];
+let requests: { method?: string; path?: string; authorization?: string; clientSource?: string; body: unknown }[];
 let signinStatus: number;
 let signinMessage: string;
 let sessionStatus: number;
@@ -21,7 +22,8 @@ test.beforeAll(async () => {
     let raw = "";
     for await (const chunk of request) raw += chunk;
     const body = raw ? JSON.parse(raw) : null;
-    requests.push({ method: request.method, path: request.url, authorization: request.headers.authorization, body });
+    const clientSource = request.headers["x-fleetora-client-source"];
+    requests.push({ method: request.method, path: request.url, authorization: request.headers.authorization, clientSource: typeof clientSource === "string" ? clientSource : undefined, body });
     response.setHeader("Content-Type", "application/json");
     if (request.url === "/auth/signin") {
       response.writeHead(signinStatus);
@@ -467,6 +469,46 @@ test("connects the Forgot Password link to the existing email recovery flow", as
   expect(requests.find((request) => request.path === "/auth/forgot-password")).toMatchObject({
     method: "POST", body: { email: "amina@example.com" },
   });
+});
+
+// The Playwright config supplies a test-only shared secret and trusted header name.
+function verifiedClientAddress(path: string) {
+  const header = requests.find((request) => request.path === path)?.clientSource;
+  expect(header).toMatch(/^v1\.\d{13}\.[A-Za-z0-9_-]*\.[a-f0-9]{64}$/);
+  const [, timestamp, encoded, signature] = header!.split(".");
+  const address = Buffer.from(encoded, "base64url").toString();
+  const expected = createHmac("sha256", process.env.FLEETORA_CLIENT_SOURCE_SECRET!)
+    .update(["fleetora-client-source", "v1", "POST", path, timestamp, address].join("\n"))
+    .digest("hex");
+  expect(signature).toBe(expected);
+  expect(Math.abs(Date.now() - Number(timestamp))).toBeLessThan(60_000);
+  return address;
+}
+
+test("signs the browser address from the trusted edge header on sign-in", async ({ page }) => {
+  await page.setExtraHTTPHeaders({ [process.env.FLEETORA_TRUSTED_CLIENT_IP_HEADER!]: "198.51.100.7" });
+  await fillLogin(page);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  expect(verifiedClientAddress("/auth/signin")).toBe("198.51.100.7");
+});
+
+test("never promotes a browser-supplied X-Forwarded-For to a trusted address", async ({ page }) => {
+  signinStatus = 401;
+  await page.setExtraHTTPHeaders({ "X-Forwarded-For": "203.0.113.9", "X-Real-IP": "203.0.113.10" });
+  await fillLogin(page);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.locator("main").getByRole("alert")).toContainText("We couldn't sign you in");
+  expect(verifiedClientAddress("/auth/signin")).toBe("");
+});
+
+test("attributes password recovery to the trusted browser address", async ({ page }) => {
+  await page.setExtraHTTPHeaders({ [process.env.FLEETORA_TRUSTED_CLIENT_IP_HEADER!]: "2001:db8::7" });
+  await page.goto("/forgot-password");
+  await page.getByLabel("Work email").fill("amina@example.com");
+  await page.getByRole("button", { name: "Send reset link" }).click();
+  await expect(page.getByRole("status")).toContainText("If an account matches that email, a reset link is on its way.");
+  expect(verifiedClientAddress("/auth/forgot-password")).toBe("2001:db8::7");
 });
 
 test("shows the same recovery success state for an unknown email", async ({ page }) => {

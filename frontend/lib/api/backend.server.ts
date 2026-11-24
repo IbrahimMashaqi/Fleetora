@@ -14,12 +14,14 @@ export async function requestBackend(
     bearer,
     timeoutMs = 15_000,
     expectedCompany,
+    clientSource,
   }: {
     method: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
     expectedCompany?: string;
     body?: unknown;
     bearer?: string;
     timeoutMs?: number;
+    clientSource?: string;
   },
 ): Promise<Response> {
   const headers: Record<string, string> = {};
@@ -27,6 +29,7 @@ export async function requestBackend(
   if (expectedCompany !== undefined)
     headers["X-Fleetora-Company-Context"] = expectedCompany;
   if (bearer !== undefined) headers.Authorization = `Bearer ${bearer}`;
+  if (clientSource !== undefined) headers["X-Fleetora-Client-Source"] = clientSource;
   return fetch(endpoint, {
     method,
     headers,

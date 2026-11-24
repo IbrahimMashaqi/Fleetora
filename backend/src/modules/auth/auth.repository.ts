@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -9,12 +8,34 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { dateToInstant, instantToMs } from '../../common/utils/temporal.js';
 import { matchesOneTimeTokenVerifier } from './token/one-time-token.js';
 
+function isUniqueViolation(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const code = 'code' in error ? String(error.code) : '';
+  const sqlState = 'sqlState' in error ? String(error.sqlState) : '';
+  const message = 'message' in error && typeof error.message === 'string' ? error.message : '';
+  return code === 'P2002' || code === '23505' || sqlState === '23505' || message.includes('P2002');
+}
+
 @Injectable()
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Case-insensitive identity lookup. Both sides use PostgreSQL lower(), exactly as
+   * the users_email_lower unique index does, so legacy mixed-case rows still match.
+   */
   async findUserByEmail(email: string) {
-    return this.prisma.User.where({ email }).first();
+    const rows = await this.prisma.db.runtime().query(
+      this.prisma.db.raw.sql`SELECT "id" FROM "users" WHERE lower("email") = lower(${email}) LIMIT 2`
+        .returnsRow({ id: 'pg/text@1' })
+        .build(),
+    );
+    if (rows.length === 0) return null;
+    // Only possible before the users_email_lower migration; never guess which account is meant.
+    if (rows.length > 1) {
+      throw new InternalServerErrorException('Account identity is ambiguous');
+    }
+    return this.prisma.User.where({ id: rows[0].id }).first();
   }
 
   async findUserById(userId: string) {
@@ -214,7 +235,7 @@ export class AuthRepository {
     email: string,
     hashedPassword: string,
   ) {
-    const existingUser = await this.prisma.User.where({ email }).first();
+    const existingUser = await this.findUserByEmail(email);
 
     if (existingUser) {
       throw new ConflictException('Email already in use');
@@ -239,8 +260,8 @@ export class AuthRepository {
         return { user, company };
       });
     } catch (error: any) {
-      if (error?.code === 'P2002' || error?.message?.includes('P2002')) {
-        throw new BadRequestException('Email already in use');
+      if (isUniqueViolation(error)) {
+        throw new ConflictException('Email already in use');
       }
 
       throw new InternalServerErrorException(
@@ -249,10 +270,35 @@ export class AuthRepository {
     }
   }
 
-  async updatePassword(id: string, hashedPassword: string) {
+  /**
+   * Compare-and-swap: succeeds only while the stored hash is still the one the caller
+   * verified, and replaces the refresh verifier in the same statement so every
+   * previously issued refresh token stops working atomically with the new password.
+   */
+  async replacePasswordAndSession(
+    id: string,
+    expectedPasswordHash: string,
+    passwordHash: string,
+    refreshTokenVerifier: string,
+  ): Promise<boolean> {
     try {
-      return await this.prisma.User.where({ id }).update({
-        password: hashedPassword,
+      return await this.prisma.db.transaction(async (tx) => {
+        // A conditional ORM update is not atomic under concurrency; lock the row,
+        // then recheck the hash, exactly like refresh-token rotation does.
+        await tx.execute(
+          this.prisma.db.raw.sql`SELECT "id" FROM "users" WHERE "id" = ${id} FOR UPDATE`
+            .affectedCount()
+            .build(),
+        );
+        const current = await tx.orm.public.User.where({ id })
+          .select('password')
+          .first();
+        if (!current || current.password !== expectedPasswordHash) return false;
+        await tx.orm.public.User.where({ id }).update({
+          password: passwordHash,
+          refreshToken: refreshTokenVerifier,
+        });
+        return true;
       });
     } catch {
       throw new InternalServerErrorException('Failed to update password');

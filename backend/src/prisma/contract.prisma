@@ -171,6 +171,8 @@ model User {
   revokedPlatformGrants PlatformAdminGrant[] @relation("PlatformGrantRevoker")
 
   @@index([companyId])
+  // One identity per address regardless of case; existing rows are not rewritten.
+  @@index(expression: "lower(email)", unique: true, name: "users_email_lower")
   @@map("users")
 }
 

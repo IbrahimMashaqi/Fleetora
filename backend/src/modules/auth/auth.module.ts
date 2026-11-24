@@ -11,6 +11,11 @@ import {
   InMemoryRecoveryRateLimiter,
   RECOVERY_RATE_LIMITER,
 } from './recovery-rate-limiter.js';
+import {
+  InMemorySigninRateLimiter,
+  SIGNIN_RATE_LIMITER,
+} from './signin-rate-limiter.js';
+import { ClientSourceService } from './client-source.js';
 
 @Module({
   imports: [JwtModule, ConfigModule],
@@ -25,6 +30,12 @@ import {
       provide: RECOVERY_RATE_LIMITER,
       useExisting: InMemoryRecoveryRateLimiter,
     },
+    InMemorySigninRateLimiter,
+    {
+      provide: SIGNIN_RATE_LIMITER,
+      useExisting: InMemorySigninRateLimiter,
+    },
+    ClientSourceService,
   ],
   controllers: [AuthController],
   exports: [AuthRepository],

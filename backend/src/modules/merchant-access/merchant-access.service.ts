@@ -24,6 +24,7 @@ import {
   type MerchantIdentity,
   type MerchantPermission,
 } from './merchant-access.types.js';
+import { canonicalEmail } from '../../common/utils/email.js';
 import type {
   AcceptMerchantInvitationDto,
   CompanyMerchantInvitationDto,
@@ -240,7 +241,7 @@ export class MerchantAccessService {
       }).first())
     )
       throw new ConflictException('Merchant already has an owner');
-    const email = input.email.trim().toLowerCase();
+    const email = canonicalEmail(input.email);
     const grant = permissions(input.permissions ?? []);
     const expiresInHours = input.expiresInHours ?? 48;
     if (
@@ -432,7 +433,7 @@ export class MerchantAccessService {
         existing &&
         (!user ||
           user.password !== existing.password ||
-          user.email?.toLowerCase() !== invite.email ||
+          canonicalEmail(user.email ?? '') !== invite.email ||
           !user.isActive ||
           user.role !== 'MERCHANT' ||
           (user.companyId !== null && user.companyId !== invite.companyId))

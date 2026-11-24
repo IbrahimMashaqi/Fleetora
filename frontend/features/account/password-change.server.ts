@@ -4,6 +4,7 @@ import { getBackendEndpoint, readBackendBody, requestBackend } from "@/lib/api/b
 import { accessCookie, refreshCookie, clearSessionCookies, setSessionTokens } from "@/lib/auth/cookies.server";
 import { newPasswordError } from "@/lib/auth/password-policy";
 import { resolveSession } from "@/lib/auth/session.server";
+import { parseTokenPair } from "@/lib/auth/tokens.server";
 import type { PasswordChangeField, PasswordChangeState } from "./password-change.types";
 
 // A narrow cookie boundary lets isolated tests exercise the real session/API flow.
@@ -80,8 +81,14 @@ export async function changePasswordForSession(
       }
       return { status: "error", message: "We couldn't accept that password change. Check your current password and the new password requirements." };
     }
-    if (response.status === 200 && acknowledged(await readBackendBody(response))) {
-      return { status: "success", message: "Your password has been changed." };
+    if (response.status === 200) {
+      const body = await readBackendBody(response);
+      if (acknowledged(body)) {
+        // The change revoked every earlier refresh token; keep only the pair issued for this session.
+        const replacement = parseTokenPair(body);
+        if (replacement) setSessionTokens(jar, replacement);
+        return { status: "success", message: "Your password has been changed." };
+      }
     }
     return uncertain;
   } catch { return uncertain; }

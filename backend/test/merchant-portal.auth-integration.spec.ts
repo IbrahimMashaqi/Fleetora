@@ -114,6 +114,7 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
         orgId: row.id,
         role: user.role,
         email: user.email,
+        typ: 'access',
       }),
     };
   }
@@ -1166,8 +1167,8 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
         merchantEmail: merchant.email,
         password,
         zoneLabel: 'Fixture city · Fixture neighborhood',
-        expiredAccessToken: await jwt.signAsync(payload, { expiresIn: '-1s' }),
-        expiredRefreshToken: await jwt.signAsync(payload, {
+        expiredAccessToken: await jwt.signAsync({ ...payload, typ: 'access' }, { expiresIn: '-1s' }),
+        expiredRefreshToken: await jwt.signAsync({ ...payload, typ: 'refresh' }, {
           secret: configuration.getOrThrow<string>('REFRESH_TOKEN_SECRET'),
           expiresIn: '-1s',
         }),

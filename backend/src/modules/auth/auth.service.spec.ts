@@ -182,6 +182,13 @@ describe('AuthService email verification', () => {
     expect(expiry).toBe(15);
   });
 
+  it('looks up the canonical identity and mails the stored address, not the typed variant', async () => {
+    authRepository.findUserByEmail.mockResolvedValue({ id: 'user-1', email: 'Amina@Example.com', fullName: 'Amina Hassan' });
+    await authService.sendForgotPasswordEmail(' AMINA@example.COM ');
+    expect(authRepository.findUserByEmail).toHaveBeenCalledWith('amina@example.com');
+    expect(mailService.sendResetPasswordEmail).toHaveBeenCalledWith('Amina@Example.com', 'Amina Hassan', expect.any(String));
+  });
+
   it('builds a reset link from the configured frontend URL', async () => {
     await authService.sendForgotPasswordEmail('amina@example.com');
 
@@ -247,8 +254,15 @@ describe('AuthService email verification', () => {
 
     expect(mailService.sendResetPasswordEmail).not.toHaveBeenCalled();
     expect(loggerWarning).toHaveBeenCalledWith(
-      'Password recovery request could not be completed',
+      expect.objectContaining({
+        event: 'password_recovery.failed',
+        requestId: expect.any(String),
+        stage: 'account_lookup',
+        elapsedMs: expect.any(Number),
+        errorCode: 'UNKNOWN',
+      }),
     );
+    expect(JSON.stringify(loggerWarning.mock.calls)).not.toMatch(/private|amina@example.com/);
     expect(loggerWarning.mock.calls[0]).toHaveLength(1);
     loggerWarning.mockRestore();
   });
@@ -264,10 +278,103 @@ describe('AuthService email verification', () => {
     ).resolves.toEqual(genericRecoveryResponse);
 
     expect(loggerWarning).toHaveBeenCalledWith(
-      'Password recovery request could not be completed',
+      expect.objectContaining({
+        event: 'password_recovery.failed',
+        stage: 'email_delivery',
+        elapsedMs: expect.any(Number),
+        errorCode: 'UNKNOWN',
+      }),
     );
+    expect(JSON.stringify(loggerWarning.mock.calls)).not.toMatch(/private|amina@example.com/);
     expect(loggerWarning.mock.calls[0]).toHaveLength(1);
     loggerWarning.mockRestore();
+  });
+
+  it.each([
+    { code: 'ETIMEDOUT', command: 'CONN' },
+    { code: 'EAUTH', command: 'AUTH PLAIN', responseCode: 535 },
+    { code: 'EENVELOPE', command: 'RCPT TO', responseCode: 550 },
+  ])('logs safe SMTP diagnostics for $code without changing the public response', async details => {
+    const loggerWarning = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    mailService.sendResetPasswordEmail.mockRejectedValue(Object.assign(
+      new Error('provider response includes amina@example.com and smtp-password'),
+      { ...details, response: 'private SMTP response', stack: 'private stack' },
+    ));
+    try {
+      await expect(authService.sendForgotPasswordEmail(user.email)).resolves.toEqual(genericRecoveryResponse);
+      expect(loggerWarning).toHaveBeenCalledWith(expect.objectContaining({
+        event: 'password_recovery.failed', stage: 'email_delivery',
+        errorCode: details.code, smtpCommand: details.command,
+        ...('responseCode' in details ? { smtpResponseCode: details.responseCode } : {}),
+      }));
+      expect(JSON.stringify(loggerWarning.mock.calls)).not.toMatch(/amina@example.com|smtp-password|private/);
+    } finally { loggerWarning.mockRestore(); }
+  });
+
+  it('identifies token persistence failures before attempting email delivery', async () => {
+    const loggerWarning = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    authRepository.saveVerificationTokenVerifier.mockRejectedValue({ code: 'CONTRACT.MARKER_READ_FAILED' });
+    try {
+      await expect(authService.sendForgotPasswordEmail(user.email)).resolves.toEqual(genericRecoveryResponse);
+      expect(loggerWarning).toHaveBeenCalledWith(expect.objectContaining({
+        stage: 'token_persistence', errorCode: 'CONTRACT.MARKER_READ_FAILED',
+      }));
+      expect(mailService.sendResetPasswordEmail).not.toHaveBeenCalled();
+    } finally { loggerWarning.mockRestore(); }
+  });
+
+  it('does not copy arbitrary provider error fields into logs', async () => {
+    const loggerWarning = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+    mailService.sendResetPasswordEmail.mockRejectedValue({
+      code: 'private-password', command: 'AUTH PLAIN private-token',
+      responseCode: 'private-response', response: 'private-response',
+      message: 'private-error', cause: { message: 'private-cause' },
+    });
+    try {
+      await authService.sendForgotPasswordEmail(user.email);
+      expect(loggerWarning).toHaveBeenCalledWith(expect.objectContaining({ errorCode: 'UNKNOWN' }));
+      expect(JSON.stringify(loggerWarning.mock.calls)).not.toMatch(/private|amina@example.com/);
+    } finally { loggerWarning.mockRestore(); }
+  });
+
+  it('logs the pending delivery stage before the provider responds', async () => {
+    const logger = vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+    let completeDelivery!: () => void;
+    mailService.sendResetPasswordEmail.mockImplementation(() => new Promise<void>(resolve => { completeDelivery = resolve; }));
+    const recovery = authService.sendForgotPasswordEmail(user.email);
+    try {
+      await vi.waitFor(() => expect(logger).toHaveBeenCalledWith(expect.objectContaining({
+        event: 'password_recovery.stage', stage: 'email_delivery',
+        requestId: expect.any(String), elapsedMs: expect.any(Number),
+      })));
+      expect(logger).not.toHaveBeenCalledWith(expect.objectContaining({ event: 'password_recovery.completed' }));
+      completeDelivery();
+      await expect(recovery).resolves.toEqual(genericRecoveryResponse);
+      expect(logger).toHaveBeenCalledWith(expect.objectContaining({ event: 'password_recovery.completed' }));
+      const requestIds = logger.mock.calls.map(call => call[0].requestId);
+      expect(new Set(requestIds).size).toBe(1);
+      const logged = JSON.stringify(logger.mock.calls);
+      const resetUrl = new URL(mailService.sendResetPasswordEmail.mock.calls[0][2]);
+      const token = new URLSearchParams(resetUrl.hash.slice(1)).get('token');
+      if (!token) throw new Error('Expected a reset token in the test email');
+      expect(logged).not.toMatch(/amina@example.com|user-1|reset-password/);
+      expect(logged).not.toContain(token);
+      expect(logged).not.toContain(resetUrl.toString());
+    } finally {
+      completeDelivery?.();
+      await recovery;
+      logger.mockRestore();
+    }
+  });
+
+  it('acknowledges a resend without disclosing the account email to the caller', async () => {
+    user.verificationTokenExpiresAt = new Date(Date.now() - 15 * 60_000 - 1);
+    const response = await authService.resendVerificationCode(user.id);
+    expect(response).toEqual({ message: 'Verification code sent. Please check your email.' });
+    expect(JSON.stringify(response)).not.toContain(user.email);
+    expect(mailService.sendVerificationEmail).toHaveBeenCalledWith(
+      user.email, expect.any(String), expect.any(String), expect.any(Number),
+    );
   });
 
   it('limits repeated resends while allowing another account to request one', async () => {
@@ -360,6 +467,18 @@ describe('AuthService frontend URL configuration', () => {
       expect(mail.sendVerificationEmail.mock.calls[0][3]).toBe(15);
       await module.close();
     } finally { vi.useRealTimers(); }
+  });
+
+  it('stores new accounts under the canonical email even when called without the DTO', async () => {
+    const repository = {
+      createUserWithDefaultCompany: vi.fn().mockResolvedValue({ user: { id: 'fixture', email: 'mixed@example.invalid', fullName: 'Fixture' } }),
+      saveVerificationTokenVerifier: vi.fn().mockResolvedValue(undefined),
+    };
+    const mail = { sendVerificationEmail: vi.fn().mockResolvedValue(undefined) };
+    const module = await compileWithConfig({ SALT_ROUNDS: '4' }, repository, mail);
+    await module.get(AuthService).signup({ name: 'Fixture', email: ' Mixed@Example.INVALID ', password: 'NewPassword1' });
+    expect(repository.createUserWithDefaultCompany.mock.calls[0][1]).toBe('mixed@example.invalid');
+    await module.close();
   });
 
   for (const key of ['SALT_ROUNDS', 'VERIFICATION_CODE_EXPIRY_MINUTES']) {

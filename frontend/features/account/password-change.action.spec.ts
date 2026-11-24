@@ -100,6 +100,34 @@ test("posts only passwords with cookie-derived authority and returns a minimal a
   expectNoSecrets(result);
 });
 
+test("replaces the session cookies with the pair issued by the password change", async () => {
+  // The backend revokes every earlier refresh token; only this pair keeps the current browser signed in.
+  replies = [
+    { path: "/auth/session", body: identity },
+    { path: "/auth/update-password", body: { success: true, data: { ...success.data, accessToken: "post-change-access", refreshToken: "post-change-refresh" } } },
+  ];
+  const result = await change();
+  expect(result).toEqual({ status: "success", message: "Your password has been changed." });
+  expect(values.get("fleetora_access")).toBe("post-change-access");
+  expect(values.get("fleetora_refresh")).toBe("post-change-refresh");
+  expect(writes.map(write => write.options)).toEqual([
+    { httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 600 },
+    { httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 604800 },
+  ]);
+  expect(JSON.stringify(result)).not.toMatch(/post-change/);
+});
+
+test("ignores a malformed replacement session instead of storing partial credentials", async () => {
+  replies = [
+    { path: "/auth/session", body: identity },
+    { path: "/auth/update-password", body: { success: true, data: { ...success.data, accessToken: "post-change-access", refreshToken: "" } } },
+  ];
+  const result = await change();
+  expect(result.status).toBe("success");
+  expect(writes).toHaveLength(0);
+  expect(values.get("fleetora_access")).toBe("fixture-access");
+});
+
 test("blocks stale or forged form identity without selecting a target from it", async () => {
   const result = await change(form(), "different-subject");
   expect(result.status).toBe("session-changed");
