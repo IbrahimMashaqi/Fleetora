@@ -3,6 +3,7 @@ import { orm, type RuntimeQueryable } from '@prisma/orm-postgres/orm-client';
 import { AsyncIterableResult } from '@prisma/orm-postgres/components/runtime';
 import { Test } from '@nestjs/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { MerchantPricingService } from '../merchant-pricing/merchant-pricing.service.js';
 import type { Contract } from '../../prisma/generated/contract.d';
 import contractJson from '../../prisma/generated/contract.json' with { type: 'json' };
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -42,6 +43,8 @@ describe('parcel SQL tenant boundaries (offline, no database)', () => {
         ParcelStore,
         ParcelLedger,
         ParcelOperationsRepository,
+        // Pricing is exercised by the PG suites; these specs never quote.
+        { provide: MerchantPricingService, useValue: {} },
         ParcelFinanceRepository,
         ParcelDashboardRepository,
         {

@@ -10,6 +10,7 @@ import { withSessionLock } from "@/lib/auth/session-lock";
 import { operationsAction } from "../operations.action";
 import { useOperations } from "../use-operations";
 import { displayMoney } from "../money";
+import { PricingQuoteField, WarehouseField } from "./parcel-pricing-fields";
 import type {
   Data,
   Failure,
@@ -118,9 +119,11 @@ const errors: Record<Failure, TranslationKey> = {
 export function ErrorState({
   status,
   retry,
+  message,
 }: {
   status: Failure;
   retry?: () => void;
+  message?: TranslationKey;
 }) {
   const { t } = useLocale();
   return (
@@ -128,7 +131,7 @@ export function ErrorState({
       role="alert"
       className="rounded-lg border border-danger-border bg-surface p-5 text-sm"
     >
-      <p>{t(errors[status])}</p>
+      <p>{t(message ?? errors[status])}</p>
       {retry && status !== "uncertain" && (
         <Button variant="outline" className="mt-3" onClick={retry}>
           {t("Retry")}
@@ -210,6 +213,8 @@ export function Pager({
   onPage: (page: number) => void;
 }) {
   const { t, locale } = useLocale();
+  // A single page needs no paging controls.
+  if (data.page <= 1 && !data.hasNext) return null;
   return (
     <nav
       aria-label={t("Pagination")}
@@ -360,7 +365,9 @@ export type Field = {
     | "textarea"
     | "date"
     | "datetime-local"
-    | "checkbox";
+    | "checkbox"
+    | "pricing"
+    | "warehouse";
   required?: boolean;
   signed?: boolean;
   value?: ScalarValue;
@@ -372,6 +379,8 @@ export type Field = {
     literal?: boolean;
   }[];
   lookup?: "merchants" | "drivers" | "parcels";
+  /** Extra server-side filters for the lookup (e.g. eligible drivers only). */
+  lookupQuery?: Record<string, string>;
   lookupLabel?: string;
   span?: boolean;
 };
@@ -393,7 +402,12 @@ export function EntityPicker({ scope, field }: { scope: Scope; field: Field }) {
   }, [search]);
   const { result, retry } = useOperations(scope, {
     resource: field.lookup ?? "merchants",
-    query: { search: debounced, page: String(page), pageSize: "25" },
+    query: {
+      search: debounced,
+      page: String(page),
+      pageSize: "25",
+      ...field.lookupQuery,
+    },
   });
   const data =
     result?.status === "ready" && result.data.kind === "page"
@@ -454,6 +468,10 @@ function FormField({ field, scope }: { field: Field; scope: Scope }) {
   const { t } = useLocale();
   const id = useId();
   if (field.lookup) return <EntityPicker scope={scope} field={field} />;
+  if (field.type === "pricing")
+    return <PricingQuoteField scope={scope} field={field} />;
+  if (field.type === "warehouse")
+    return <WarehouseField scope={scope} field={field} />;
   const common = {
     id,
     name: field.name,
@@ -514,6 +532,8 @@ function FormField({ field, scope }: { field: Field; scope: Scope }) {
     </div>
   );
 }
+const receiving = (status: string) =>
+  status === "RECEIVED_FROM_MERCHANT" || status === "AT_WAREHOUSE";
 export function OperationDialog({
   title,
   scope,
@@ -525,6 +545,7 @@ export function OperationDialog({
   children,
   confirmLabel = "Save",
   financial = false,
+  messages,
 }: {
   title: TranslationKey;
   scope: Scope;
@@ -536,6 +557,8 @@ export function OperationDialog({
   children?: ReactNode;
   confirmLabel?: TranslationKey;
   financial?: boolean;
+  /** Task-specific wording for failures the generic text would hide. */
+  messages?: Partial<Record<Failure, TranslationKey>>;
 }) {
   const { t } = useLocale();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -565,6 +588,9 @@ export function OperationDialog({
       ...(financial ? { idempotencyKey: requestId } : {}),
     };
     for (const field of fields) {
+      if (field.type === "warehouse" && !receiving(targetStatus)) continue;
+      if (field.type === "pricing")
+        input.pricingVersion = String(formData.get("pricingVersion") ?? "");
       const raw = String(formData.get(field.name) ?? "").trim();
       input[field.name] =
         field.type === "checkbox"
@@ -645,7 +671,12 @@ export function OperationDialog({
               disabled={pending || result?.status === "uncertain"}
               className="grid min-w-0 gap-5 sm:grid-cols-2"
             >
-              {fields.map((field) => (
+              {fields
+                .filter(
+                  (field) =>
+                    field.type !== "warehouse" || receiving(targetStatus),
+                )
+                .map((field) => (
                 <div className={field.span ? "sm:col-span-2" : ""} key={field.name}>
                   <FormField
                     field={{
@@ -665,7 +696,10 @@ export function OperationDialog({
             </fieldset>
             {result && result.status !== "ready" && (
               <div className="mt-5">
-                <ErrorState status={result.status} />
+                <ErrorState
+                  status={result.status}
+                  message={messages?.[result.status]}
+                />
               </div>
             )}
           </div>

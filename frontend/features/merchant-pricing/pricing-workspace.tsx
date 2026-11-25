@@ -113,7 +113,7 @@ function PricingDirectory({
       </div>
       <PricingRead {...read}>
         {(data) =>
-          data.kind !== "plan" && (
+          (data.kind === "zones" || data.kind === "plans") && (
             <>
               {data.page.items.length === 0 ? (
                 <p className="rounded-lg border bg-surface p-6 text-sm text-muted-foreground">

@@ -256,7 +256,7 @@ test("creates a plan and saves an explicit named promotion tariff", async ({
     .getByRole("button", { name: `Zone tariffs: ${plan.name}`, exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Save zone tariff", exact: true })
+    .getByRole("button", { name: "Add zone tariff", exact: true })
     .click();
   const tariffDialog = page.getByRole("dialog", {
     name: `Zone tariffs: ${plan.name}`,

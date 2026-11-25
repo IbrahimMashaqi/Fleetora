@@ -58,7 +58,6 @@ function MerchantContent({
       {(data) =>
         data.kind === "merchant" ? (
           <>
-            <CompanyMerchantInvitations merchantId={id} />
             <PageIntro title="Merchant details">
               <Button asChild variant="outline">
                 <Link href="/app/merchants">{t("Back")}</Link>
@@ -70,13 +69,12 @@ function MerchantContent({
               )}
             </PageIntro>
             <div className="space-y-6">
-              <Panel title="Business merchants">
+              <Panel title="Business profile">
                 <h3 className="mb-5 text-xl font-semibold">
                   {valueText(data.merchant, "name")}
                 </h3>
                 <DetailsGrid
                   entries={[
-                    { label: "Merchant ID", value: <bdi dir="ltr">{id}</bdi> },
                     {
                       label: "Contact person",
                       value: valueText(data.merchant, "contactName"),
@@ -116,6 +114,8 @@ function MerchantContent({
                   ]}
                 />
               </Panel>
+              {/* App access belongs under the merchant profile, not above the page title. */}
+              <CompanyMerchantInvitations merchantId={id} />
               <Panel title="Commercial terms">
                 <DetailsGrid
                   entries={[

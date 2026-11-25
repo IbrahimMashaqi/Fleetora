@@ -271,3 +271,81 @@ test("reports revision conflicts and uncertain dispatched writes without retryin
     requests.filter((request) => request.path.startsWith("/merchant-pricing")),
   ).toHaveLength(2);
 });
+
+const merchantId = "10000000-0000-4000-8000-000000000003";
+const quote = {
+  deliveryZoneId: id,
+  zoneName: "Fixture locality",
+  city: "Fixture city",
+  pricingPlanId: planId,
+  planName: "Fixture plan",
+  pricingVersion: "b".repeat(64),
+  currency: "ILS",
+  finalCustomerAmount: "150.00",
+  baseDeliveryFee: "20.00",
+  discount: "3.00",
+  promotionDiscount: "2.00",
+  promotionLabel: null,
+  deliveryFee: "15.00",
+  expectedMerchantProceeds: "135.00",
+  feePayer: "MERCHANT",
+};
+test("quotes a staff parcel through the read-only parcels endpoint without treating it as a write", async () => {
+  data = { companyId: scope.companyId, quote };
+  const result = await pricingForSession(jar, scope, {
+    kind: "quote",
+    merchantId,
+    zoneId: id,
+    finalCustomerAmount: "150.00",
+  });
+  expect(result).toEqual({
+    status: "ready",
+    data: {
+      kind: "quote",
+      quote: {
+        deliveryZoneId: id,
+        zoneName: "Fixture locality",
+        city: "Fixture city",
+        currency: "ILS",
+        pricingVersion: "b".repeat(64),
+        finalCustomerAmount: "150.00",
+        baseDeliveryFee: "20.00",
+        discount: "3.00",
+        promotionDiscount: "2.00",
+        deliveryFee: "15.00",
+        expectedMerchantProceeds: "135.00",
+      },
+    },
+  });
+  expect(requests.at(-1)).toMatchObject({
+    path: "/parcels/quote",
+    method: "POST",
+    body: { merchantId, zoneId: id, finalCustomerAmount: "150.00" },
+  });
+});
+test("rejects malformed quote requests and responses that do not match the zone or company", async () => {
+  for (const operation of [
+    { kind: "quote", merchantId: "x", zoneId: id, finalCustomerAmount: "1" },
+    { kind: "quote", merchantId, zoneId: id, finalCustomerAmount: "-1" },
+    { kind: "quote", merchantId, zoneId: id, finalCustomerAmount: "1", extra: 1 },
+  ])
+    expect(preparePricingOperation(operation)).toBeNull();
+  data = { companyId: scope.companyId, quote: { ...quote, deliveryZoneId: planId } };
+  expect(
+    (await pricingForSession(jar, scope, {
+      kind: "quote",
+      merchantId,
+      zoneId: id,
+      finalCustomerAmount: "150.00",
+    })).status,
+  ).toBe("unavailable");
+  data = { companyId: "company-b", quote };
+  expect(
+    (await pricingForSession(jar, scope, {
+      kind: "quote",
+      merchantId,
+      zoneId: id,
+      finalCustomerAmount: "150.00",
+    })).status,
+  ).toBe("changed");
+});

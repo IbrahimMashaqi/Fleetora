@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, or } from '@prisma/orm-postgres/orm-client';
+import { and, not, or } from '@prisma/orm-postgres/orm-client';
 import { shipmentFilter } from './parcel-filters.js';
 import { randomUUID } from 'node:crypto';
 import type { TokenPayload } from '../auth/token/token.payload.js';
@@ -30,6 +30,12 @@ import {
   RETURN_PARCEL_FIELDS,
 } from './parcel-store.js';
 import { ParcelLedger } from './parcel-ledger.js';
+import { MerchantPricingService } from '../merchant-pricing/merchant-pricing.service.js';
+import { lockLinkableWarehouse } from '../warehouses/warehouses.repository.js';
+import {
+  MerchantWorkflowError,
+  requireCollectionMode,
+} from '../merchant-portal/merchant-portal.domain.js';
 import type {
   AssignmentDto,
   AttemptDto,
@@ -39,9 +45,12 @@ import type {
   PageDto,
   ParcelEditDto,
   ParcelInputDto,
+  ParcelQuoteDto,
   ReturnInputDto,
   TransitionDto,
 } from './parcel.dto.js';
+import { RECEIVING_STATUSES } from './parcel.dto.js';
+type ReceivingWarehouse = { id: string; name: string };
 function status(value: string): asserts value is ParcelRow['status'] {
   if (!Object.hasOwn(TRANSITIONS, value))
     throw new BadRequestException('Invalid parcel status');
@@ -58,6 +67,8 @@ export class ParcelOperationsRepository {
   constructor(
     @Inject(ParcelStore) private readonly store: ParcelStore,
     @Inject(ParcelLedger) private readonly ledger: ParcelLedger,
+    @Inject(MerchantPricingService)
+    private readonly pricing: MerchantPricingService,
   ) {}
   async merchants(actor: TokenPayload, q: PageDto) {
     const companyId = company(actor);
@@ -161,6 +172,9 @@ export class ParcelOperationsRepository {
   async drivers(actor: TokenPayload, q: PageDto) {
     const companyId = company(actor);
     let query = this.store.orm.Worker.where({ companyId });
+    // Pickers ask for eligible drivers only; suspended drivers never qualify.
+    if (q.active === true)
+      query = query.where((w) => not(w.status.eq('SUSPENDED')));
     if (q.search)
       query = query.where((w) =>
         or(
@@ -190,6 +204,19 @@ export class ParcelOperationsRepository {
       status(q.status);
       query = query.where({ status: q.status });
     }
+    // Mirrors collect(): delivered, not yet collected, and something to collect.
+    if (q.collectable === true)
+      query = query
+        .where({ status: 'DELIVERED' })
+        .where((s) =>
+          and(
+            s.collection.none(),
+            or(
+              s.codMinor.gt(0n),
+              and(s.pricingMode.eq('LEGACY'), s.feePayer.eq('CUSTOMER')),
+            ),
+          ),
+        );
     if (q.search)
       query = query.where((s) =>
         or(
@@ -296,6 +323,17 @@ export class ParcelOperationsRepository {
       q,
     );
   }
+  /** Staff price preview; same engine and version check as merchant parcels. */
+  async quote(actor: TokenPayload, input: ParcelQuoteDto) {
+    const companyId = company(actor, 'manageParcels');
+    const result = await this.pricing.quote(
+      companyId,
+      input.merchantId,
+      input.zoneId,
+      input.finalCustomerAmount,
+    );
+    return { companyId, quote: result.preview };
+  }
   async saveParcel(
     actor: TokenPayload,
     input: ParcelInputDto | ParcelEditDto,
@@ -314,8 +352,11 @@ export class ParcelOperationsRepository {
         if (!merchant) throw new NotFoundException('Active merchant not found');
         const old = id ? await this.find(tx, id, companyId) : null;
         if (old) {
-          if (old.pricingMode === 'FINAL_INCLUSIVE')
-            throw new ConflictException('Use the merchant pricing workflow to amend an inclusive-price parcel');
+          // D1: legacy snapshots stay fixed; they are never re-priced by an edit.
+          if (old.pricingMode !== 'FINAL_INCLUSIVE')
+            throw new ConflictException(
+              'Parcels priced before zone pricing keep their stored fees and cannot be edited',
+            );
           if (old.status !== 'CREATED')
             throw new ConflictException('Only new parcels may be edited');
           if (!('revision' in input))
@@ -331,15 +372,33 @@ export class ParcelOperationsRepository {
           throw new ConflictException(
             'Merchant cannot be changed after an operational handoff',
           );
-        // Existing snapshots stay fixed on edits. A new merchant selection snapshots that merchant's current terms.
-        const terms = old?.merchantId === merchant.id ? old : merchant;
+        const quote = await this.pricing.quote(
+          companyId,
+          merchant.id,
+          input.zoneId,
+          input.finalCustomerAmount,
+          tx,
+        );
+        if (quote.preview.pricingVersion !== input.pricingVersion)
+          throw new ConflictException(
+            'Pricing changed; review the current quote before saving',
+          );
+        try {
+          requireCollectionMode(quote.snapshot.codMinor, input.collectionMode);
+        } catch (error) {
+          if (error instanceof MerchantWorkflowError)
+            throw new BadRequestException(error.message);
+          throw error;
+        }
+        const keepReturnTerms = !!old && !merchantChanged;
         const data = {
+          ...quote.snapshot,
           merchantId: merchant.id,
           merchantReference: input.merchantReference ?? null,
           recipientName: input.recipientName,
           recipientPhone: input.recipientPhone,
           secondaryPhone: input.secondaryPhone ?? null,
-          city: input.city,
+          city: quote.preview.city,
           destination: input.destination,
           latitude: input.latitude ?? null,
           longitude: input.longitude ?? null,
@@ -349,15 +408,15 @@ export class ParcelOperationsRepository {
           pieces: input.pieces,
           weight: input.weight ?? null,
           declaredValueMinor: input.declaredValue
-            ? money(input.declaredValue, terms.currency)
+            ? money(input.declaredValue, quote.snapshot.currency)
             : null,
-          codMinor: money(input.codAmount, terms.currency),
-          deliveryFeeMinor: terms.deliveryFeeMinor,
-          returnFeeMinor: terms.returnFeeMinor,
-          returnFeePolicy: terms.returnFeePolicy,
-          serviceFeeMinor: terms.serviceFeeMinor,
-          currency: terms.currency,
-          feePayer: terms.feePayer,
+          collectionMode: input.collectionMode,
+          returnFeeMinor: keepReturnTerms
+            ? old.returnFeeMinor
+            : merchant.returnFeeMinor,
+          returnFeePolicy: keepReturnTerms
+            ? old.returnFeePolicy
+            : merchant.returnFeePolicy,
           notes: input.notes ?? null,
           scheduledAt: input.scheduledAt ? instant(input.scheduledAt) : null,
           priority: input.priority ?? ('NORMAL' as const),
@@ -410,9 +469,12 @@ export class ParcelOperationsRepository {
     target: string,
     note?: string,
     internal = false,
+    warehouse?: ReceivingWarehouse,
   ) {
     status(target);
     assertTransition(parcel.status, target);
+    if (RECEIVING_STATUSES.includes(target) && !warehouse)
+      throw new BadRequestException('Choose the receiving warehouse');
     if (
       !internal &&
       [
@@ -464,13 +526,15 @@ export class ParcelOperationsRepository {
       status: target,
       revision: parcel.revision + 1,
       custody,
-      locationLabel,
-      locationSource:
-        target === 'DELIVERED'
+      locationLabel: warehouse?.name ?? locationLabel,
+      locationSource: warehouse
+        ? 'WAREHOUSE'
+        : target === 'DELIVERED'
           ? 'VERIFIED_DELIVERY'
           : target === 'RETURNED_TO_MERCHANT'
             ? 'VERIFIED_RETURN_HANDOFF'
             : 'OPERATIONAL_EVENT',
+      ...(warehouse ? { warehouseId: warehouse.id } : {}),
       locationUpdatedAt: now(),
       responsibleActorId: actor.sub,
       ...(target === 'DELIVERED' ? { deliveredAt: now() } : {}),
@@ -504,9 +568,35 @@ export class ParcelOperationsRepository {
           input.status === 'FAILED_DELIVERY' ? input.note : undefined,
           input.note,
         );
-      else await this.change(tx, actor, parcel, input.status, input.note);
+      else
+        await this.change(
+          tx,
+          actor,
+          parcel,
+          input.status,
+          input.note,
+          false,
+          RECEIVING_STATUSES.includes(input.status)
+            ? await this.receivingWarehouse(tx, companyId, input.warehouseId)
+            : undefined,
+        );
     });
     return this.parcelResult(actor, id);
+  }
+  private async receivingWarehouse(
+    tx: ParcelTransaction,
+    companyId: string,
+    id: string | undefined,
+  ): Promise<ReceivingWarehouse> {
+    if (!id) throw new BadRequestException('Choose the receiving warehouse');
+    // Share-locks the row so a concurrent archive cannot slip in before commit.
+    if (!(await lockLinkableWarehouse(this.store.prisma, tx, id, companyId)))
+      throw new NotFoundException('Active warehouse not found');
+    const warehouse = await tx.orm.public.Warehouse.where({ id, companyId })
+      .select('id', 'name')
+      .first();
+    if (!warehouse) throw new NotFoundException('Active warehouse not found');
+    return warehouse;
   }
   async assignment(actor: TokenPayload, id: string, input: AssignmentDto) {
     await this.store.write(actor, 'manageParcels', async (tx, companyId) => {

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { TokenPayload } from '../auth/token/token.payload.js';
-import { amount, company } from './parcel-domain.js';
+import { amount, company, statusBuckets } from './parcel-domain.js';
 import type { OverviewResponse } from './overview.types.js';
 
 @Injectable()
@@ -129,7 +129,7 @@ export class OverviewRepository {
       companyId, generatedAt, timeZone: 'UTC',
       kpis: {
         totalParcels,
-        inWarehouse: count('AT_WAREHOUSE'),
+        inWarehouse: statusBuckets(parcelsByStatus).atWarehouse,
         outForDelivery: count('OUT_FOR_DELIVERY'),
         deliveredToday: parcelActivityLast7Days.find((day) => day.date === today)?.delivered ?? 0,
         returnsCount: failedOrReturned,
