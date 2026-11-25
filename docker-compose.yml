@@ -1,0 +1,71 @@
+# Local full stack: PostgreSQL 18, migrations, backend API, frontend.
+# Copy .env.example to .env and fill in the secrets first.
+name: fleetora
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: fleetora
+      POSTGRES_USER: fleetora
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql
+    ports:
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fleetora -d fleetora"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build:
+      context: ./backend
+      target: migrate
+    environment:
+      DATABASE_URL: postgresql://fleetora:${POSTGRES_PASSWORD}@db:5432/fleetora
+      PRISMA_DISABLE_TELEMETRY: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+      target: runtime
+    environment:
+      # Local stack serves plain http://localhost; production (HTTPS) rules apply when NODE_ENV=production.
+      NODE_ENV: ${BACKEND_NODE_ENV:-development}
+      DATABASE_URL: postgresql://fleetora:${POSTGRES_PASSWORD}@db:5432/fleetora
+      PORT: 3001
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET:?set ACCESS_TOKEN_SECRET in .env}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:?set REFRESH_TOKEN_SECRET in .env}
+      FLEETORA_CLIENT_SOURCE_SECRET: ${FLEETORA_CLIENT_SOURCE_SECRET:?set FLEETORA_CLIENT_SOURCE_SECRET in .env}
+      SIGNIN_RATE_LIMIT_KEY: ${SIGNIN_RATE_LIMIT_KEY:-}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:3001:3001"
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      FLEETORA_API_URL: http://backend:3001
+      FLEETORA_CLIENT_SOURCE_SECRET: ${FLEETORA_CLIENT_SOURCE_SECRET}
+      FLEETORA_TRUSTED_CLIENT_IP_HEADER: ${FLEETORA_TRUSTED_CLIENT_IP_HEADER:-}
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  db-data:
