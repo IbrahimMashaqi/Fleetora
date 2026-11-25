@@ -11,7 +11,6 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { Workbook } from 'exceljs';
 import * as bcrypt from 'bcrypt';
-import { verifyMerchantBrowser } from './merchant-browser.js';
 import { verifyMerchantAndroid } from './merchant-android.js';
 import { configureMerchantImportBody } from '../src/modules/merchant-portal/merchant-import-body.js';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -1096,6 +1095,8 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
     const address = app.getHttpServer().address();
     if (!address || typeof address === 'string')
       throw new Error('Disposable backend address unavailable');
+    // Lazy: the browser helper pulls Playwright from frontend/node_modules.
+    const { verifyMerchantBrowser } = await import('./merchant-browser.js');
     const output = await verifyMerchantBrowser({
       backendPort: address.port,
       merchantEmail: merchant.email,
