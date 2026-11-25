@@ -167,7 +167,6 @@ export function parcelFields(
       required: true,
       value: row?.priority ?? "NORMAL",
       options: [
-        { value: "LOW", label: "Low" },
         { value: "NORMAL", label: "Normal" },
         { value: "HIGH", label: "High" },
         { value: "URGENT", label: "Urgent" },

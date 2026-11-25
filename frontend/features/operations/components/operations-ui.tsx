@@ -51,7 +51,6 @@ const states: Record<string, TranslationKey> = {
   DRAFT: "Draft",
   FINALIZED: "Finalized",
   PAID: "Paid",
-  LOW: "Low",
   NORMAL: "Normal",
   HIGH: "High",
   URGENT: "Urgent",

@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'8faca95d054b124a36c5a93ca6fef78946a8653f5f978d2dfb92f881caffe1f3'>;
+  StorageHashBase<'f0ba33380248edd4599dfcbb3e7f84bff45cf5c9b67ffe362e8b073a1ef7aa0e'>;
 export type ExecutionHash =
   ExecutionHashBase<'136efae69fcefa90706b18d368032752b32d01366a8d36768a8029e128deee87'>;
 export type ProfileHash =
@@ -691,7 +691,7 @@ export type FieldOutputTypes = {
         | 'RETURN_IN_PROGRESS'
         | 'RETURNED_TO_WAREHOUSE'
         | 'RETURNED_TO_MERCHANT';
-      readonly priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+      readonly priority: 'NORMAL' | 'HIGH' | 'URGENT';
       readonly destination: CodecTypes['pg/text@1']['output'];
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -1231,7 +1231,7 @@ export type FieldInputTypes = {
         | 'RETURN_IN_PROGRESS'
         | 'RETURNED_TO_WAREHOUSE'
         | 'RETURNED_TO_MERCHANT';
-      readonly priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+      readonly priority: 'NORMAL' | 'HIGH' | 'URGENT';
       readonly destination: CodecTypes['pg/text@1']['input'];
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -1757,7 +1757,7 @@ export type StorageColumnTypes = {
       readonly pricingMode: CodecTypes['pg/text@1']['output'];
       readonly pricingPlanId: CodecTypes['pg/text@1']['output'] | null;
       readonly pricingPlanVersion: CodecTypes['pg/text@1']['output'] | null;
-      readonly priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+      readonly priority: 'NORMAL' | 'HIGH' | 'URGENT';
       readonly promotionDiscountMinor: CodecTypes['pg/int8@1']['output'] | null;
       readonly recipientName: CodecTypes['pg/text@1']['output'] | null;
       readonly recipientPhone: CodecTypes['pg/text@1']['output'] | null;
@@ -2297,7 +2297,7 @@ export type StorageColumnInputTypes = {
       readonly pricingMode: CodecTypes['pg/text@1']['input'];
       readonly pricingPlanId: CodecTypes['pg/text@1']['input'] | null;
       readonly pricingPlanVersion: CodecTypes['pg/text@1']['input'] | null;
-      readonly priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+      readonly priority: 'NORMAL' | 'HIGH' | 'URGENT';
       readonly promotionDiscountMinor: CodecTypes['pg/int8@1']['input'] | null;
       readonly recipientName: CodecTypes['pg/text@1']['input'] | null;
       readonly recipientPhone: CodecTypes['pg/text@1']['input'] | null;
@@ -2656,7 +2656,7 @@ export namespace Models {
       | 'RETURN_IN_PROGRESS'
       | 'RETURNED_TO_WAREHOUSE'
       | 'RETURNED_TO_MERCHANT';
-    priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+    priority: 'NORMAL' | 'HIGH' | 'URGENT';
     destination: CodecTypes['pg/text@1']['output'];
     notes: CodecTypes['pg/text@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -7788,7 +7788,7 @@ type ContractBase = Omit<
             };
             readonly ShipmentPriority: {
               readonly kind: 'valueSet';
-              readonly values: readonly ['LOW', 'NORMAL', 'HIGH', 'URGENT'];
+              readonly values: readonly ['NORMAL', 'HIGH', 'URGENT'];
             };
             readonly ShipmentStatus: {
               readonly kind: 'valueSet';
@@ -12799,7 +12799,6 @@ type ContractBase = Omit<
           readonly ShipmentPriority: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
-              { readonly name: 'LOW'; readonly value: 'LOW' },
               { readonly name: 'NORMAL'; readonly value: 'NORMAL' },
               { readonly name: 'HIGH'; readonly value: 'HIGH' },
               { readonly name: 'URGENT'; readonly value: 'URGENT' },

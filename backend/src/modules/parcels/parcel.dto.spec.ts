@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MerchantInputDto,
   PageDto,
+  ParcelEditDto,
   ParcelInputDto,
   PaymentDto,
   ReturnInputDto,
@@ -154,6 +155,40 @@ describe('parcel input contracts', () => {
           ),
         ).rejects.toMatchObject({ status: 400 });
     });
+    it.each(['NORMAL', 'HIGH', 'URGENT'])(
+      'OD-10/BR-083: accepts priority %s',
+      async (priority) => {
+        await expect(
+          parcelValidation.transform(
+            { ...priced, priority },
+            { type: 'body', metatype: ParcelInputDto },
+          ),
+        ).resolves.toMatchObject({ priority });
+      },
+    );
+    it.each(['LOW', 'low', 'normal', 'CRITICAL', ''])(
+      'OD-10/BR-083: rejects priority %s on create and edit',
+      async (priority) => {
+        for (const [metatype, extra] of [
+          [ParcelInputDto, {}],
+          [ParcelEditDto, { revision: 1 }],
+        ] as const) {
+          // The same body without priority is valid, so the rejection is the priority.
+          await expect(
+            parcelValidation.transform(
+              { ...priced, ...extra },
+              { type: 'body', metatype },
+            ),
+          ).resolves.toBeDefined();
+          await expect(
+            parcelValidation.transform(
+              { ...priced, ...extra, priority },
+              { type: 'body', metatype },
+            ),
+          ).rejects.toMatchObject({ status: 400 });
+        }
+      },
+    );
     it.each(['zoneId', 'finalCustomerAmount', 'pricingVersion', 'collectionMode'])(
       'requires %s, so no legacy-shaped parcel can be created',
       async (field) => {
