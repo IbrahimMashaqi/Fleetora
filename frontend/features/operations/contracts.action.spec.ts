@@ -5,7 +5,7 @@ import {
   parseParcel,
   writeFields,
 } from "./operations-contract";
-import { parcelFields } from "./components/operation-forms";
+import { merchantFields, parcelFields } from "./components/operation-forms";
 
 test("outgoing operations constrain routes and allowlist ownership-free fields", () => {
   expect(
@@ -54,4 +54,12 @@ test("OD-10/BR-083: parcel priority offers only Normal, High and Urgent", () => 
   const priority = parcelFields().find((field) => field.name === "priority");
   expect(priority?.value).toBe("NORMAL");
   expect(priority?.options?.map((option) => option.value)).toEqual(["NORMAL", "HIGH", "URGENT"]);
+});
+
+test("OD-02/BR-066: merchant terms offer only the company currency", () => {
+  for (const currency of ["ILS", "JOD"] as const) {
+    const field = merchantFields(null, currency).find((entry) => entry.name === "currency");
+    expect(field?.value).toBe(currency);
+    expect(field?.options?.map((option) => option.value)).toEqual([currency]);
+  }
 });

@@ -481,6 +481,20 @@ describe('AuthService frontend URL configuration', () => {
     await module.close();
   });
 
+  it('OD-02/BR-066: creates the company in the chosen currency, ILS by default', async () => {
+    const repository = {
+      createUserWithDefaultCompany: vi.fn().mockResolvedValue({ user: { id: 'fixture', email: 'currency@example.invalid', fullName: 'Fixture' } }),
+      saveVerificationTokenVerifier: vi.fn().mockResolvedValue(undefined),
+    };
+    const mail = { sendVerificationEmail: vi.fn().mockResolvedValue(undefined) };
+    const module = await compileWithConfig({ SALT_ROUNDS: '4' }, repository, mail);
+    const service = module.get(AuthService);
+    await service.signup({ name: 'Fixture', email: 'currency@example.invalid', password: 'NewPassword1', currency: 'JOD' });
+    await service.signup({ name: 'Fixture', email: 'currency@example.invalid', password: 'NewPassword1' });
+    expect(repository.createUserWithDefaultCompany.mock.calls.map((call) => call[3])).toEqual(['JOD', 'ILS']);
+    await module.close();
+  });
+
   for (const key of ['SALT_ROUNDS', 'VERIFICATION_CODE_EXPIRY_MINUTES']) {
     it(`fails closed for invalid ${key} without echoing its value`, async () => {
       await expect(compileWithConfig({ [key]: 'private-invalid-value' })).rejects.toThrow(key);

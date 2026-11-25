@@ -292,7 +292,7 @@ describe('AuthRepository company authentication status', () => {
       'id', 'fullName', 'email', 'role', 'companyId', 'isActive', 'isEmailVerified',
     );
     expect(include).toHaveBeenCalledWith('company', expect.any(Function));
-    expect(companySelect).toHaveBeenCalledWith('id', 'name', 'suspended');
+    expect(companySelect).toHaveBeenCalledWith('id', 'name', 'suspended', 'currency');
     expect(sessionFirst).toHaveBeenCalledTimes(1);
   });
 });

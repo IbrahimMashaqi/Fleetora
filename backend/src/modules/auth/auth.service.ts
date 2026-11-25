@@ -191,6 +191,7 @@ export class AuthService {
       name,
       email,
       hashedPassword,
+      createUserDto.currency ?? 'ILS',
     );
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date();
@@ -356,7 +357,9 @@ export class AuthService {
       email: user.email,
       role: user.role,
       orgId: user.companyId,
-      company: company ? { id: company.id, name: company.name } : null,
+      company: company
+        ? { id: company.id, name: company.name, currency: company.currency }
+        : null,
     };
   }
 

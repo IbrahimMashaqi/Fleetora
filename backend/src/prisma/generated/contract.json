@@ -842,6 +842,24 @@
                   "namespace": "public"
                 }
               },
+              "companyCurrency": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
               "ledgerEntries": {
                 "cardinality": "1:N",
                 "on": {
@@ -987,6 +1005,13 @@
                   "kind": "scalar"
                 }
               },
+              "currency": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -1072,6 +1097,159 @@
                 },
                 "to": {
                   "model": "CodCollection",
+                  "namespace": "public"
+                }
+              },
+              "currencyCodCollections": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "companyId",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "CodCollection",
+                  "namespace": "public"
+                }
+              },
+              "currencyDeliveryZones": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "companyId",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "DeliveryZone",
+                  "namespace": "public"
+                }
+              },
+              "currencyLedgerEntries": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "companyId",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "MerchantLedgerEntry",
+                  "namespace": "public"
+                }
+              },
+              "currencyMerchantPlans": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "companyId",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "MerchantPlan",
+                  "namespace": "public"
+                }
+              },
+              "currencyMerchants": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "companyId",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "Merchant",
+                  "namespace": "public"
+                }
+              },
+              "currencySettlementPayments": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "companyId",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "SettlementPayment",
+                  "namespace": "public"
+                }
+              },
+              "currencySettlementRequests": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "companyId",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "MerchantSettlementRequest",
+                  "namespace": "public"
+                }
+              },
+              "currencySettlements": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "companyId",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "MerchantSettlement",
+                  "namespace": "public"
+                }
+              },
+              "currencyShipments": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "companyId",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "Shipment",
                   "namespace": "public"
                 }
               },
@@ -1472,6 +1650,9 @@
                 "createdAt": {
                   "column": "createdAt"
                 },
+                "currency": {
+                  "column": "currency"
+                },
                 "id": {
                   "column": "id"
                 },
@@ -1789,6 +1970,24 @@
                   ],
                   "targetFields": [
                     "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
+              "companyCurrency": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "currency"
                   ]
                 },
                 "to": {
@@ -2347,6 +2546,24 @@
                   ],
                   "targetFields": [
                     "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
+              "companyCurrency": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "currency"
                   ]
                 },
                 "to": {
@@ -3190,6 +3407,24 @@
                   "namespace": "public"
                 }
               },
+              "companyCurrency": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
               "lines": {
                 "cardinality": "1:N",
                 "on": {
@@ -3772,6 +4007,24 @@
                   "namespace": "public"
                 }
               },
+              "companyCurrency": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
               "merchants": {
                 "cardinality": "1:N",
                 "on": {
@@ -4032,6 +4285,24 @@
                   ],
                   "targetFields": [
                     "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
+              "companyCurrency": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "currency"
                   ]
                 },
                 "to": {
@@ -4375,6 +4646,24 @@
                   ],
                   "targetFields": [
                     "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
+              "companyCurrency": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "currency"
                   ]
                 },
                 "to": {
@@ -5967,6 +6256,24 @@
                   "namespace": "public"
                 }
               },
+              "companyCurrency": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "currency"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
               "settlement": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -6447,6 +6754,24 @@
                   ],
                   "targetFields": [
                     "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
+              "companyCurrency": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "currency"
                   ]
                 },
                 "to": {
@@ -8395,6 +8720,25 @@
                   "onDelete": "restrict",
                   "source": {
                     "columns": [
+                      "companyId",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "cod_collections"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
                       "shipmentId",
                       "companyId"
                     ],
@@ -8450,6 +8794,15 @@
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "name": "cod_collections_companyId_currency_idx_00c76a95",
+                  "prefix": "cod_collections_companyId_currency_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "companyId"
@@ -8527,6 +8880,11 @@
                   "expression": "\"plan\" IN ('TRIAL', 'BASIC', 'PRO', 'ENTERPRISE')",
                   "name": "companies_plan_check_16898502",
                   "prefix": "companies_plan_check"
+                },
+                {
+                  "expression": "\"currency\" IN ('ILS','USD','EUR','JOD')",
+                  "name": "company_currency_de87c3c6",
+                  "prefix": "company_currency"
                 }
               ],
               "columns": {
@@ -8537,6 +8895,15 @@
                     "kind": "function"
                   },
                   "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "currency": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "ILS"
+                  },
+                  "nativeType": "text",
                   "nullable": false
                 },
                 "id": {
@@ -8586,7 +8953,14 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "id",
+                    "currency"
+                  ]
+                }
+              ]
             },
             "company_headquarters": {
               "checks": [
@@ -8911,6 +9285,25 @@
                     "namespaceId": "public",
                     "tableName": "companies"
                   }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "companyId",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "delivery_zones"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
                 }
               ],
               "indexes": [
@@ -8922,6 +9315,15 @@
                   ],
                   "name": "delivery_zones_companyId_city_name_idx_8c744ff0",
                   "prefix": "delivery_zones_companyId_city_name_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "name": "delivery_zones_companyId_currency_idx_00c76a95",
+                  "prefix": "delivery_zones_companyId_currency_idx",
                   "unique": false
                 },
                 {
@@ -9698,6 +10100,25 @@
                   "onDelete": "restrict",
                   "source": {
                     "columns": [
+                      "companyId",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "merchant_ledger_entries"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
                       "merchantId",
                       "companyId"
                     ],
@@ -9779,6 +10200,15 @@
                   ],
                   "name": "merchant_ledger_entries_collectionId_companyId_idx_00746e5a",
                   "prefix": "merchant_ledger_entries_collectionId_companyId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "name": "merchant_ledger_entries_companyId_currency_idx_00c76a95",
+                  "prefix": "merchant_ledger_entries_companyId_currency_idx",
                   "unique": false
                 },
                 {
@@ -10327,9 +10757,37 @@
                     "namespaceId": "public",
                     "tableName": "companies"
                   }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "companyId",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "merchant_plans"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "name": "merchant_plans_companyId_currency_idx_00c76a95",
+                  "prefix": "merchant_plans_companyId_currency_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "companyId"
@@ -10597,6 +11055,25 @@
                   "onDelete": "restrict",
                   "source": {
                     "columns": [
+                      "companyId",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "merchant_settlement_requests"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
                       "merchantId",
                       "companyId"
                     ],
@@ -10614,6 +11091,15 @@
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "name": "merchant_settlement_requests_companyId_currency_idx_00c76a95",
+                  "prefix": "merchant_settlement_requests_companyId_currency_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "companyId"
@@ -10811,6 +11297,25 @@
                   "onDelete": "restrict",
                   "source": {
                     "columns": [
+                      "companyId",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "merchant_settlements"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
                       "merchantId",
                       "companyId"
                     ],
@@ -10828,6 +11333,15 @@
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "name": "merchant_settlements_companyId_currency_idx_00c76a95",
+                  "prefix": "merchant_settlements_companyId_currency_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "companyId"
@@ -11076,9 +11590,37 @@
                     "namespaceId": "public",
                     "tableName": "companies"
                   }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "companyId",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "merchants"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "name": "merchants_companyId_currency_idx_00c76a95",
+                  "prefix": "merchants_companyId_currency_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "companyId"
@@ -12646,6 +13188,25 @@
                   "onDelete": "restrict",
                   "source": {
                     "columns": [
+                      "companyId",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "settlement_payments"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
                       "settlementId",
                       "companyId"
                     ],
@@ -12670,6 +13231,15 @@
                   ],
                   "name": "parcel_ops_index_22_5377e5d5",
                   "prefix": "parcel_ops_index_22",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "name": "settlement_payments_companyId_currency_idx_00c76a95",
+                  "prefix": "settlement_payments_companyId_currency_idx",
                   "unique": false
                 },
                 {
@@ -13249,6 +13819,25 @@
                   }
                 },
                 {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "companyId",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "shipments"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "currency"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                },
+                {
                   "source": {
                     "columns": [
                       "warehouseId",
@@ -13328,6 +13917,15 @@
                   ],
                   "name": "shipments_companyId_createdAt_idx_5377e5d5",
                   "prefix": "shipments_companyId_createdAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "companyId",
+                    "currency"
+                  ],
+                  "name": "shipments_companyId_currency_idx_00c76a95",
+                  "prefix": "shipments_companyId_currency_idx",
                   "unique": false
                 },
                 {
@@ -14237,7 +14835,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "f0ba33380248edd4599dfcbb3e7f84bff45cf5c9b67ffe362e8b073a1ef7aa0e"
+    "storageHash": "c8a9d6da8ad8dccf886dbbbdc8ef3564762b631b3fcc5c988586be2b5daa9a2c"
   },
   "execution": {
     "executionHash": "136efae69fcefa90706b18d368032752b32d01366a8d36768a8029e128deee87",

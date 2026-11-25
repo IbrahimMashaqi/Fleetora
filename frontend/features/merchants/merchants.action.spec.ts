@@ -12,7 +12,7 @@ let values: Map<string, string>;
 let jar: Jar;
 const originalApi = process.env.FLEETORA_API_URL;
 const scope = { userId: 'admin', companyId: 'company-a' };
-const user = { id: 'admin', name: 'Admin', email: null, role: 'COMPANY_ADMIN', orgId: 'company-a', company: { id: 'company-a', name: 'Company A' } };
+const user = { id: 'admin', name: 'Admin', email: null, role: 'COMPANY_ADMIN', orgId: 'company-a', company: { id: 'company-a', name: 'Company A', currency: "ILS" } };
 const merchant = { id: '33333333-3333-4333-8333-333333333333', name: 'Alpha Supplies', email: null, isActive: true, isEmailVerified: false };
 const query = { search: '', page: 1, pageSize: 20 };
 const identity = { success: true, data: user };

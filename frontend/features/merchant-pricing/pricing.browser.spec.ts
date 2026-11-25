@@ -10,7 +10,7 @@ const admin = {
   email: null,
   role: "COMPANY_ADMIN",
   orgId: companyId,
-  company: { id: companyId, name: "Pricing fixture company" },
+  company: { id: companyId, name: "Pricing fixture company", currency: "ILS" },
 };
 const zone = {
   id: zoneId,
@@ -69,7 +69,7 @@ test.beforeAll(async () => {
       company:
         role === "PLATFORM_ADMIN"
           ? null
-          : { id: sessionCompany, name: admin.company.name },
+          : { id: sessionCompany, name: admin.company.name , currency: "ILS" },
     };
     if (url.pathname === "/auth/session")
       return res.end(JSON.stringify({ success: true, data: user }));

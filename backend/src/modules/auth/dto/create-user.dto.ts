@@ -1,6 +1,8 @@
 import {
   IsEmail,
+  IsIn,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MinLength,
@@ -32,4 +34,10 @@ export class CreateUserDto {
     message: 'Password must contain at least one uppercase letter (A-Z)',
   })
   password!: string;
+
+  /** OD-02 / BR-066: the company's single operating currency, chosen at signup. */
+  @ApiProperty({ enum: ['ILS', 'USD', 'EUR', 'JOD'], default: 'ILS', required: false })
+  @IsOptional()
+  @IsIn(['ILS', 'USD', 'EUR', 'JOD'])
+  currency?: 'ILS' | 'USD' | 'EUR' | 'JOD';
 }

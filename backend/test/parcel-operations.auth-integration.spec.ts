@@ -887,7 +887,8 @@ describe('parcel operations on disposable PostgreSQL', () => {
       }),
     ).rejects.toMatchObject({ status: 400 });
   });
-  it('settles JOD three-digit amounts exactly and keeps currencies independent', async () => {
+  it('settles JOD three-digit amounts exactly in a JOD company and rejects any other currency (OD-02)', async () => {
+    await prisma.Company.where({ id: actor.orgId }).update({ currency: 'JOD' });
     const merchantId = str(
       (
         await ops.saveMerchant(actor, {
@@ -916,14 +917,77 @@ describe('parcel operations on disposable PostgreSQL', () => {
         .netPayable,
     ).toBe('98.889');
     expect(
-      (await finance.preview(actor, { merchantId, currency: 'USD' })).preview
-        .netPayable,
-    ).toBe('0.00');
+      (await finance.preview(actor, { merchantId })).preview.netPayable,
+    ).toBe('98.889');
+    await expect(
+      finance.preview(actor, { merchantId, currency: 'USD' }),
+    ).rejects.toMatchObject({ status: 400 });
     const draft = await finance.draft(
       actor,
       await draftInput(merchantId, 'JOD'),
     );
     expect(draft.settlement.netPayable).toBe('98.889');
+  });
+  it('OD-02/BR-066: merchant terms, adjustments and settlements use only the company currency', async () => {
+    await expect(
+      ops.saveMerchant(actor, { ...merchantInput(), currency: 'USD' }),
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'Currency must be the company currency (ILS)',
+    });
+    const { currency: _omitted, ...withoutCurrency } = merchantInput();
+    const created = (await ops.saveMerchant(actor, withoutCurrency)).merchant;
+    expect(created.currency).toBe('ILS');
+    const merchantId = str(created.id);
+    await expect(
+      ops.saveMerchant(
+        actor,
+        { ...merchantInput(), currency: 'JOD', revision: Number(created.revision) },
+        merchantId,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    await expect(
+      finance.adjustment(actor, {
+        merchantId,
+        currency: 'EUR',
+        amount: '1.00',
+        reason: 'Fixture adjustment',
+        idempotencyKey: key(),
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+    const adjustment = await finance.adjustment(actor, {
+      merchantId,
+      amount: '1.00',
+      reason: 'Fixture adjustment',
+      idempotencyKey: key(),
+    });
+    expect(adjustment.entry.currency).toBe('ILS');
+    await expect(
+      finance.preview(actor, { merchantId, currency: 'JOD' }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect((await finance.preview(actor, { merchantId })).preview.currency).toBe('ILS');
+  });
+  it('OD-02/BR-066: each tenant keeps its own currency; one company never selects another tenant currency', async () => {
+    await prisma.Company.where({ id: foreign.orgId }).update({ currency: 'USD' });
+    const { currency: _omitted, ...withoutCurrency } = merchantInput();
+    expect(
+      (await ops.saveMerchant(foreign, withoutCurrency)).merchant.currency,
+    ).toBe('USD');
+    expect((await ops.saveMerchant(actor, withoutCurrency)).merchant.currency).toBe(
+      'ILS',
+    );
+    await expect(
+      ops.saveMerchant(actor, { ...merchantInput(), currency: 'USD' }),
+    ).rejects.toMatchObject({ status: 400 });
+    const foreignMerchant = str(
+      (await ops.saveMerchant(foreign, withoutCurrency)).merchant.id,
+    );
+    await expect(
+      finance.preview(actor, { merchantId: foreignMerchant, currency: 'USD' }),
+    ).rejects.toMatchObject({ status: 400 });
+    await expect(
+      finance.preview(actor, { merchantId: foreignMerchant }),
+    ).rejects.toMatchObject({ status: 404 });
   });
   it('prevents concurrent delivery from duplicating fee postings', async () => {
     const merchantId = await merchant(),

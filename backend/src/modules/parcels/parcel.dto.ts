@@ -99,7 +99,8 @@ export class MerchantInputDto {
   longitude?: number;
   @IsOptional() @Transform(trim) @IsString() @MaxLength(2000) notes?: string;
   @IsOptional() @IsBoolean() active?: boolean;
-  @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency!: string;
+  /** OD-02: optional; when sent it must equal the company currency. */
+  @IsOptional() @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency?: string;
   @IsString() @MaxLength(20) deliveryFee!: string;
   @IsString() @MaxLength(20) returnFee!: string;
   @IsOptional() @IsIn(['NONE', 'ON_MERCHANT_HANDOFF']) returnFeePolicy?: string;
@@ -256,7 +257,8 @@ export class CollectionDto extends MethodDto {
 }
 export class AdjustmentDto extends IdempotentDto {
   @IsUUID() merchantId!: string;
-  @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency!: string;
+  /** OD-02: optional; when sent it must equal the company currency. */
+  @IsOptional() @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency?: string;
   @IsString() @MaxLength(20) amount!: string;
   @Transform(trim) @IsString() @MinLength(3) @MaxLength(1000) reason!: string;
 }
@@ -265,7 +267,8 @@ export class ReversalDto extends IdempotentDto {
 }
 export class PreviewDto {
   @IsUUID() merchantId!: string;
-  @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency!: string;
+  /** OD-02: optional; when sent it must equal the company currency. */
+  @IsOptional() @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency?: string;
   @IsOptional() @IsDateString() from?: string;
   @IsOptional() @IsDateString() to?: string;
 }

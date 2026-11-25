@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import type { FleetDriver, Headquarters } from "./fleet.types";
 import { translate } from "@/lib/i18n";
 
-const user = { id: "fleet-admin", name: "مسؤول الشركة", email: null, role: "COMPANY_ADMIN", orgId: "fleet-company", company: { id: "fleet-company", name: "شركة الأسطول" } };
+const user = { id: "fleet-admin", name: "مسؤول الشركة", email: null, role: "COMPANY_ADMIN", orgId: "fleet-company", company: { id: "fleet-company", name: "شركة الأسطول", currency: "ILS" } };
 const driver = (id: string, name: string): FleetDriver => ({ id, name, phone: "+970599123456", vehicle: { id: `vehicle-${id}`, type: "VAN", manufacturer: "Ford", model: "Transit", plateNumber: `P-${id}` }, tracking: { revision: 0, sharing: false, sharingStartedAt: null, location: null } });
 let server: Server;
 let headquarters: Headquarters | null;

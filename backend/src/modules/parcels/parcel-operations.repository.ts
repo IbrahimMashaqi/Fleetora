@@ -30,6 +30,7 @@ import {
   RETURN_PARCEL_FIELDS,
 } from './parcel-store.js';
 import { ParcelLedger } from './parcel-ledger.js';
+import { companyCurrency } from './company-currency.js';
 import { MerchantPricingService } from '../merchant-pricing/merchant-pricing.service.js';
 import { lockLinkableWarehouse } from '../warehouses/warehouses.repository.js';
 import {
@@ -128,6 +129,7 @@ export class ParcelOperationsRepository {
       actor,
       'manageMerchants',
       async (tx, companyId) => {
+        const currency = await companyCurrency(tx, companyId, input.currency);
         const data = {
           name: input.name,
           contactName: input.contactName,
@@ -139,11 +141,11 @@ export class ParcelOperationsRepository {
           longitude: input.longitude ?? null,
           notes: input.notes ?? null,
           active: input.active ?? true,
-          currency: input.currency,
-          deliveryFeeMinor: money(input.deliveryFee, input.currency),
-          returnFeeMinor: money(input.returnFee, input.currency),
+          currency,
+          deliveryFeeMinor: money(input.deliveryFee, currency),
+          returnFeeMinor: money(input.returnFee, currency),
           returnFeePolicy: input.returnFeePolicy ?? 'ON_MERCHANT_HANDOFF',
-          serviceFeeMinor: money(input.serviceFee, input.currency),
+          serviceFeeMinor: money(input.serviceFee, currency),
           feePayer: input.feePayer,
           paymentNotes: input.paymentNotes ?? null,
         };

@@ -9,7 +9,7 @@ const user = {
   email: null,
   role: "COMPANY_ADMIN",
   orgId: companyId,
-  company: { id: companyId, name: "Fictional delivery company" },
+  company: { id: companyId, name: "Fictional delivery company", currency: "ILS" },
 };
 const capabilities = Object.fromEntries(
   [

@@ -3,13 +3,14 @@ import { expect, test } from "@playwright/test";
 import { NextRequest } from "next/server";
 import { handleSession } from "./session.route";
 import { revokeSession } from "@/lib/auth/session.server";
+import { isSessionUser } from "@/lib/auth/session.types";
 
 type Reply = { path: string; status?: number; body?: unknown; disconnect?: boolean; raw?: string };
 let server: Server;
 let replies: Reply[];
 let requests: { path: string | undefined; method: string | undefined }[];
 const originalApi = process.env.FLEETORA_API_URL;
-const user = { id: "fixture-user", name: "Fixture User", email: null, role: "COMPANY_ADMIN", orgId: "fixture-company", company: { id: "fixture-company", name: "Fixture Company" } };
+const user = { id: "fixture-user", name: "Fixture User", email: null, role: "COMPANY_ADMIN", orgId: "fixture-company", company: { id: "fixture-company", name: "Fixture Company", currency: "ILS" } };
 const rotated = { success: true, data: { accessToken: "fixture-rotated-access", refreshToken: "fixture-rotated-refresh" } };
 
 test.beforeAll(async () => {
@@ -208,4 +209,12 @@ test("confirms an already absent local session even when backend configuration i
     if (apiUrl === undefined) delete process.env.FLEETORA_API_URL;
     else process.env.FLEETORA_API_URL = apiUrl;
   }
+});
+
+test("OD-02/BR-066: a tenant session carries exactly one supported company currency", () => {
+  expect(isSessionUser(user)).toBe(true);
+  expect(isSessionUser({ ...user, company: { ...user.company, currency: "JOD" } })).toBe(true);
+  expect(isSessionUser({ ...user, company: { id: user.company.id, name: user.company.name } })).toBe(false);
+  for (const currency of ["GBP", "ils", 1, null])
+    expect(isSessionUser({ ...user, company: { ...user.company, currency } })).toBe(false);
 });

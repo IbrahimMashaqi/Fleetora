@@ -23,7 +23,8 @@ export class ZoneInputDto {
   @Transform(trim) @IsString() @MinLength(1) @MaxLength(150) name!: string;
   @Transform(trim) @IsString() @MinLength(1) @MaxLength(100) city!: string;
   @IsString() @Matches(/^\d{1,14}(?:\.\d{1,3})?$/) baseFee!: string;
-  @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency = 'ILS';
+  // OD-02: optional; when sent it must equal the company currency.
+  @IsOptional() @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency?: string;
   @IsOptional() @IsBoolean() active?: boolean;
 }
 export class ZoneEditDto extends ZoneInputDto {
@@ -31,7 +32,8 @@ export class ZoneEditDto extends ZoneInputDto {
 }
 export class PlanInputDto {
   @Transform(trim) @IsString() @MinLength(1) @MaxLength(150) name!: string;
-  @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency = 'ILS';
+  // OD-02: optional; when sent it must equal the company currency.
+  @IsOptional() @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency?: string;
   @IsOptional() @IsBoolean() active?: boolean;
 }
 export class PlanEditDto extends PlanInputDto {

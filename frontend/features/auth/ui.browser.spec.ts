@@ -18,7 +18,7 @@ test("workspace captions and dashboard supporting text remain readable on the pa
   for (const label of ["Fleetora workspace", "Your starting role"]) {
     expect(await contrastRatio(page.getByText(label, { exact: true }))).toBeGreaterThanOrEqual(4.5);
   }
-  let company: { id: string; name: string } | null = { id: "contrast-company", name: "Contrast Company" };
+  let company: { id: string; name: string; currency: string } | null = { id: "contrast-company", name: "Contrast Company", currency: "ILS" };
   await page.route("**/api/auth/session", route => route.fulfill({
     status: 200,
     contentType: "application/json",

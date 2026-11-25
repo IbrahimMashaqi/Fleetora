@@ -12,7 +12,7 @@ let values: Map<string, string>;
 let writes: { name: string; value: string; options: Parameters<CookieJar["set"]>[2] }[];
 let jar: CookieJar;
 const originalApi = process.env.FLEETORA_API_URL;
-const user = { id: "account-reader", name: "Account Reader", email: null, role: "COMPANY_ADMIN", orgId: "company-a", company: { id: "company-a", name: "Company A" } };
+const user = { id: "account-reader", name: "Account Reader", email: null, role: "COMPANY_ADMIN", orgId: "company-a", company: { id: "company-a", name: "Company A", currency: "ILS" } };
 const identity = { success: true, data: user };
 const success = { success: true, data: { success: true, message: "Password updated successfully" } };
 

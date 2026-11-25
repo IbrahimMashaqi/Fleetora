@@ -5,7 +5,7 @@ import type { SessionUser } from "@/lib/auth/session.types";
 const companyUser: SessionUser = {
   id: "account-reader", name: "Amina Hassan", email: "amina@example.invalid",
   role: "COMPANY_ADMIN", orgId: "account-company",
-  company: { id: "account-company", name: "Amina Logistics" },
+  company: { id: "account-company", name: "Amina Logistics", currency: "ILS" },
 };
 let server: Server;
 let user: SessionUser;
@@ -188,7 +188,7 @@ test("navigates between Overview and Account without duplicating the shell", asy
 });
 
 test("supports responsive account content and keyboard mobile navigation", async ({ page }) => {
-  user = { ...companyUser, name: "Account Reader with a long display name", company: { id: "account-company", name: "Regional Logistics and Distribution Company with a Long Name" } };
+  user = { ...companyUser, name: "Account Reader with a long display name", company: { id: "account-company", name: "Regional Logistics and Distribution Company with a Long Name", currency: "ILS" } };
   for (const width of [320, 375, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/app/account");
@@ -216,7 +216,7 @@ test("supports responsive account content and keyboard mobile navigation", async
 test("discards password drafts when verified identity changes and preserves logout", async ({ page }) => {
   await page.goto("/app/account");
   await fillPasswords(page);
-  user = { ...companyUser, id: "another-account", name: "Another Reader", orgId: "another-company", company: { id: "another-company", name: "Another Company" } };
+  user = { ...companyUser, id: "another-account", name: "Another Reader", orgId: "another-company", company: { id: "another-company", name: "Another Company", currency: "ILS" } };
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(page.getByRole("main").getByText("Another Reader", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Current password", { exact: true })).toHaveValue("");

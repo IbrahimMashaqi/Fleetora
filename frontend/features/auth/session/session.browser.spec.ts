@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 
-const user = { id: "lifecycle-user", name: "Lifecycle Reader", email: null, role: "COMPANY_ADMIN", orgId: "lifecycle-company", company: { id: "lifecycle-company", name: "Lifecycle Company" } };
+const user = { id: "lifecycle-user", name: "Lifecycle Reader", email: null, role: "COMPANY_ADMIN", orgId: "lifecycle-company", company: { id: "lifecycle-company", name: "Lifecycle Company", currency: "ILS" } };
 let backend: Server;
 
 // Browser session checks are controlled separately by each test. The Overview

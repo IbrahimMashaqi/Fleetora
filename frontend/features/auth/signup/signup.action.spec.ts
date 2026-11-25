@@ -75,9 +75,25 @@ test("posts only the verified signup fields and returns email confirmation witho
   expect(requests).toEqual([{
     method: "POST",
     path: "/auth/signup",
-    body: { name: "Amina Hassan", email: "amina@example.com", password: "Passw0rd" },
+    body: { name: "Amina Hassan", email: "amina@example.com", password: "Passw0rd", currency: "ILS" },
   }]);
   expect(JSON.stringify(result)).not.toContain("Passw0rd");
+});
+
+test("OD-02/BR-066: sends the chosen company currency and defaults to ILS", async () => {
+  await signupAction({ status: "idle" }, form({ currency: "JOD" }));
+  const data = form();
+  data.delete("currency");
+  await signupAction({ status: "idle" }, data);
+  expect(requests.map((request) => (request.body as { currency?: string }).currency)).toEqual(["JOD", "ILS"]);
+});
+
+test("OD-02/BR-066: rejects an unsupported currency before contacting the backend", async () => {
+  for (const currency of ["GBP", "ils", ""]) {
+    const result = await signupAction({ status: "idle" }, form({ currency }));
+    expect(result).toMatchObject({ status: "error", fieldErrors: { currency: expect.any(String) } });
+  }
+  expect(requests).toHaveLength(0);
 });
 
 test("rejects invalid form fields before contacting the backend", async () => {

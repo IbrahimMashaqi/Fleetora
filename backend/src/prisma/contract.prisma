@@ -106,18 +106,20 @@ model Company {
   merchantAccessEvents MerchantAccessEvent[]
   merchantMemberships MerchantMembership[]
   merchantInvitations MerchantInvitation[]
-  deliveryZones DeliveryZone[]
-  merchantPlans MerchantPlan[]
+  deliveryZones DeliveryZone[] @relation("DeliveryZoneCompany")
+  merchantPlans MerchantPlan[] @relation("MerchantPlanCompany")
   planZoneTariffs PlanZoneTariff[]
   pickupRequests PickupRequest[]
   merchantImports MerchantImport[]
-  merchantSettlementRequests MerchantSettlementRequest[]
+  merchantSettlementRequests MerchantSettlementRequest[] @relation("MerchantSettlementRequestCompany")
   staffInvitations StaffInvitation[]
 
   id        String   @id @default(uuid())
   name      String
   plan      Plan     @default(TRIAL)
   suspended Boolean  @default(false)
+  // OD-02/BR-066/FR-PL-06: one operating currency per company; no FX.
+  currency  String   @default("ILS")
   createdAt DateTime @default(now())
   updatedAt temporal.updatedAt()  
 
@@ -125,22 +127,33 @@ model Company {
   workers    Worker[]
   vehicles   Vehicle[]
   warehouses Warehouse[]
-  shipments  Shipment[]
+  shipments  Shipment[] @relation("ShipmentCompany")
   memberships CompanyMembership[]
   headquarters CompanyHeadquarters?
   trackingStates DriverTrackingState[]
-  businessMerchants Merchant[]
+  businessMerchants Merchant[] @relation("MerchantCompany")
   parcelAttempts ParcelAttempt[]
   parcelReturns ParcelReturn[]
-  collections CodCollection[]
-  ledgerEntries MerchantLedgerEntry[]
-  settlements MerchantSettlement[]
+  collections CodCollection[] @relation("CodCollectionCompany")
+  ledgerEntries MerchantLedgerEntry[] @relation("MerchantLedgerEntryCompany")
+  settlements MerchantSettlement[] @relation("MerchantSettlementCompany")
   settlementLines MerchantSettlementLine[]
   allocations SettlementAllocation[]
-  payments SettlementPayment[]
+  payments SettlementPayment[] @relation("SettlementPaymentCompany")
   monetaryRequests MonetaryRequest[]
 
   @@map("companies")
+  currencyCodCollections CodCollection[] @relation("CodCollectionCompanyCurrency")
+  currencyDeliveryZones DeliveryZone[] @relation("DeliveryZoneCompanyCurrency")
+  currencyLedgerEntries MerchantLedgerEntry[] @relation("MerchantLedgerEntryCompanyCurrency")
+  currencyMerchantPlans MerchantPlan[] @relation("MerchantPlanCompanyCurrency")
+  currencySettlementRequests MerchantSettlementRequest[] @relation("MerchantSettlementRequestCompanyCurrency")
+  currencySettlements MerchantSettlement[] @relation("MerchantSettlementCompanyCurrency")
+  currencyMerchants Merchant[] @relation("MerchantCompanyCurrency")
+  currencySettlementPayments SettlementPayment[] @relation("SettlementPaymentCompanyCurrency")
+  currencyShipments Shipment[] @relation("ShipmentCompanyCurrency")
+  @@unique([id,currency])
+  @@check(expression: "\"currency\" IN ('ILS','USD','EUR','JOD')", name:"company_currency")
 }
 
 model User {
@@ -365,7 +378,11 @@ model Shipment {
   createdAt    DateTime         @default(now())
   updatedAt temporal.updatedAt()  
 
-  company    Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company    Company           @relation("ShipmentCompany", fields: [companyId], references: [id], onDelete: Cascade)
+
+  // OD-02/BR-066: the currency must be the company currency.
+
+  companyCurrency Company @relation("ShipmentCompanyCurrency", fields:[companyId,currency], references:[id,currency], onDelete:Cascade)
   warehouse  Warehouse?        @relation(fields: [warehouseId, companyId], references: [id, companyId])
   requester  User              @relation("ShipmentRequestedBy", fields: [requestedBy], references: [id])
   worker     Worker?           @relation("ShipmentFulfilledBy", fields: [workerId, companyId], references: [id, companyId])
@@ -564,7 +581,9 @@ model Merchant {
   revision Int @default(1)
   createdAt DateTime @default(now())
   updatedAt temporal.updatedAt()
-  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  company Company @relation("MerchantCompany", fields:[companyId],references:[id],onDelete:Restrict)
+  // OD-02/BR-066: the currency must be the company currency.
+  companyCurrency Company @relation("MerchantCompanyCurrency", fields:[companyId,currency], references:[id,currency], onDelete:Restrict)
   shipments Shipment[]
   collections CodCollection[]
   ledgerEntries MerchantLedgerEntry[]
@@ -624,7 +643,9 @@ model CodCollection {
   collectedAt DateTime @default(now())
   remittance CashRemittance?
   ledgerEntries MerchantLedgerEntry[]
-  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  company Company @relation("CodCollectionCompany", fields:[companyId],references:[id],onDelete:Restrict)
+  // OD-02/BR-066: the currency must be the company currency.
+  companyCurrency Company @relation("CodCollectionCompanyCurrency", fields:[companyId,currency], references:[id,currency], onDelete:Restrict)
   shipment Shipment @relation(fields:[shipmentId,companyId],references:[id,companyId],onDelete:Restrict)
   merchant Merchant @relation(fields:[merchantId,companyId],references:[id,companyId],onDelete:Restrict)
   worker Worker? @relation(fields:[workerId,companyId],references:[id,companyId],onDelete:Restrict)
@@ -665,7 +686,9 @@ model MerchantLedgerEntry {
   actorId String
   postingKey String
   createdAt DateTime @default(now())
-  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  company Company @relation("MerchantLedgerEntryCompany", fields:[companyId],references:[id],onDelete:Restrict)
+  // OD-02/BR-066: the currency must be the company currency.
+  companyCurrency Company @relation("MerchantLedgerEntryCompanyCurrency", fields:[companyId,currency], references:[id,currency], onDelete:Restrict)
   merchant Merchant @relation(fields:[merchantId,companyId],references:[id,companyId],onDelete:Restrict)
   shipment Shipment? @relation(fields:[shipmentId,companyId],references:[id,companyId],onDelete:Restrict)
   collection CodCollection? @relation(fields:[collectionId,companyId],references:[id,companyId],onDelete:Restrict)
@@ -702,7 +725,9 @@ model MerchantSettlement {
   paidAt DateTime?
   from DateTime?
   to DateTime?
-  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  company Company @relation("MerchantSettlementCompany", fields:[companyId],references:[id],onDelete:Restrict)
+  // OD-02/BR-066: the currency must be the company currency.
+  companyCurrency Company @relation("MerchantSettlementCompanyCurrency", fields:[companyId,currency], references:[id,currency], onDelete:Restrict)
   merchant Merchant @relation(fields:[merchantId,companyId],references:[id,companyId],onDelete:Restrict)
   lines MerchantSettlementLine[]
   allocations SettlementAllocation[]
@@ -752,7 +777,9 @@ model SettlementPayment {
   paidAt DateTime
   recordedBy String
   createdAt DateTime @default(now())
-  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  company Company @relation("SettlementPaymentCompany", fields:[companyId],references:[id],onDelete:Restrict)
+  // OD-02/BR-066: the currency must be the company currency.
+  companyCurrency Company @relation("SettlementPaymentCompanyCurrency", fields:[companyId,currency], references:[id,currency], onDelete:Restrict)
   settlement MerchantSettlement @relation(fields:[settlementId,companyId],references:[id,companyId],onDelete:Restrict)
   @@index([companyId,createdAt], name:"parcel_ops_index_22")
   @@check(expression: "\"amountMinor\" > 0",name:"settlement_payment_amount")
@@ -878,7 +905,9 @@ model DeliveryZone {
   revision Int @default(1)
   createdAt DateTime @default(now())
   updatedAt temporal.updatedAt()
-  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  company Company @relation("DeliveryZoneCompany", fields:[companyId],references:[id],onDelete:Restrict)
+  // OD-02/BR-066: the currency must be the company currency.
+  companyCurrency Company @relation("DeliveryZoneCompanyCurrency", fields:[companyId,currency], references:[id,currency], onDelete:Restrict)
   tariffs PlanZoneTariff[]
   shipments Shipment[]
   @@unique([id,companyId])
@@ -896,7 +925,9 @@ model MerchantPlan {
   revision Int @default(1)
   createdAt DateTime @default(now())
   updatedAt temporal.updatedAt()
-  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  company Company @relation("MerchantPlanCompany", fields:[companyId],references:[id],onDelete:Restrict)
+  // OD-02/BR-066: the currency must be the company currency.
+  companyCurrency Company @relation("MerchantPlanCompanyCurrency", fields:[companyId,currency], references:[id,currency], onDelete:Restrict)
   tariffs PlanZoneTariff[]
   merchants Merchant[]
   shipments Shipment[]
@@ -1005,7 +1036,9 @@ model MerchantSettlementRequest {
   notes String?
   status String @default("REQUESTED")
   createdAt DateTime @default(now())
-  company Company @relation(fields:[companyId],references:[id],onDelete:Restrict)
+  company Company @relation("MerchantSettlementRequestCompany", fields:[companyId],references:[id],onDelete:Restrict)
+  // OD-02/BR-066: the currency must be the company currency.
+  companyCurrency Company @relation("MerchantSettlementRequestCompanyCurrency", fields:[companyId,currency], references:[id,currency], onDelete:Restrict)
   merchant Merchant @relation(fields:[merchantId,companyId],references:[id,companyId],onDelete:Restrict)
   @@index([companyId,merchantId,createdAt], name:"p1_merchantsettlementrequest_1")
   @@index([merchantId], name:"p1_merchantsettlementrequest_2")

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLocale, type TranslationKey } from "@/lib/i18n";
+import { useCompanyCurrency } from "@/features/auth/session/session-context";
 import { useOperations } from "../use-operations";
 import type {
   Data,
@@ -106,6 +107,7 @@ function Directory({
   permissions: Permissions;
 }) {
   const { t } = useLocale();
+  const companyCurrency = useCompanyCurrency();
   const router = useRouter();
   const request = { resource, query: { page: "1", pageSize: "25", ...query } };
   const { result, retry } = useOperations(scope, request);
@@ -332,7 +334,7 @@ function Directory({
               setDialog({
                 title: "Create merchant",
                 operation: { resource, action: "create" },
-                fields: merchantFields(),
+                fields: merchantFields(null, companyCurrency ?? ""),
               })
             }
           >

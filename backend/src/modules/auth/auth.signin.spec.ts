@@ -47,7 +47,7 @@ describe('AuthService signin', () => {
       ...user,
       refreshToken: currentRefreshVerifier,
       verificationToken: 'verification-secret',
-      company: { id: 'company-1', name: 'Amina Logistics', suspended: false },
+      company: { id: 'company-1', name: 'Amina Logistics', suspended: false, currency: 'JOD' },
     });
     repository.withRefreshTokenLock.mockImplementation(async (_id, operation) =>
       operation({ ...user, refreshToken: currentRefreshVerifier }, vi.fn().mockResolvedValue(undefined), true),
@@ -196,7 +196,7 @@ describe('AuthService signin', () => {
       email: user.email,
       role: user.role,
       orgId: user.companyId,
-      company: { id: 'company-1', name: 'Amina Logistics' },
+      company: { id: 'company-1', name: 'Amina Logistics', currency: 'JOD' },
     });
     expect(repository.findSessionContextById).toHaveBeenCalledWith(user.id);
   });

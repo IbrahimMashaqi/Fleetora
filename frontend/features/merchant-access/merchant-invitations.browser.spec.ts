@@ -20,7 +20,7 @@ test.beforeAll(async () => {
     let raw = ''; for await (const chunk of req) raw += chunk;
     res.setHeader('Content-Type', 'application/json');
     let data: unknown;
-    if (path === '/auth/session') data = { id: '10000000-0000-4000-8000-000000000002', name: 'Fixture admin', email: null, role, orgId: companyId, company: { id: companyId, name: 'Fixture company' } };
+    if (path === '/auth/session') data = { id: '10000000-0000-4000-8000-000000000002', name: 'Fixture admin', email: null, role, orgId: companyId, company: { id: companyId, name: 'Fixture company', currency: "ILS" } };
     else if (path === '/parcels/config') data = { companyId, capabilities: Object.fromEntries(['view','manageMerchants','manageParcels','manageReturns','viewFinance','collect','remit','createSettlements','approveSettlements','paySettlements'].map(key => [key,true])), transitions: {}, currencies: ['ILS'] };
     else if (path.startsWith(`/operations/merchants/${merchantId}/invitations`)) {
       if (req.method !== 'GET') writes.push({ method: req.method ?? '', body: raw ? JSON.parse(raw) : null });

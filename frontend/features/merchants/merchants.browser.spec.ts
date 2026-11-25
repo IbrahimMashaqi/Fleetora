@@ -2,7 +2,7 @@ import { createServer, type Server } from 'node:http';
 import { expect, test, type Page } from '@playwright/test';
 import type { SessionUser } from '@/lib/auth/session.types';
 
-const admin: SessionUser = { id: 'directory-admin', name: 'Directory Admin', email: null, role: 'COMPANY_ADMIN', orgId: 'company-a', company: { id: 'company-a', name: 'Directory Logistics' } };
+const admin: SessionUser = { id: 'directory-admin', name: 'Directory Admin', email: null, role: 'COMPANY_ADMIN', orgId: 'company-a', company: { id: 'company-a', name: 'Directory Logistics', currency: "ILS" } };
 const merchant = { id: '33333333-3333-4333-8333-333333333333', name: 'Alpha Supplies', email: 'alpha@example.invalid', isActive: true, isEmailVerified: true };
 let server: Server;
 let user: SessionUser;

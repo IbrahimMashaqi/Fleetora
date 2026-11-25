@@ -1,0 +1,907 @@
+[
+  {
+    "id": "guard.companies.single_currency",
+    "label": "Require at most one currency per company in existing data",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure no company already holds money rows in more than one currency (resolve manually before migrating)",
+        "sql": "SELECT NOT EXISTS (SELECT 1 FROM (SELECT \"companyId\", \"currency\" FROM \"public\".\"merchants\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_plans\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"delivery_zones\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"shipments\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"cod_collections\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_ledger_entries\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_settlements\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"settlement_payments\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_settlement_requests\") u GROUP BY \"companyId\" HAVING count(DISTINCT \"currency\") > 1) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [],
+    "postcheck": []
+  },
+  {
+    "id": "column.public.companies.currency",
+    "label": "Add column \"currency\" to \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "currency",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"currency\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "currency"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"currency\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD COLUMN \"currency\" text DEFAULT 'ILS' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"currency\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "currency"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data.companies.currency_backfill",
+    "label": "Set each company currency from its existing money rows",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "companies"
+      }
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "copy the single existing data currency onto each company",
+        "sql": "UPDATE \"public\".\"companies\" c SET \"currency\" = u.\"currency\" FROM (SELECT \"companyId\", min(\"currency\") AS \"currency\" FROM (SELECT \"companyId\", \"currency\" FROM \"public\".\"merchants\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_plans\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"delivery_zones\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"shipments\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"cod_collections\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_ledger_entries\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_settlements\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"settlement_payments\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_settlement_requests\") a GROUP BY \"companyId\") u WHERE u.\"companyId\" = c.\"id\"",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "ensure every money row now matches its company currency",
+        "sql": "SELECT NOT EXISTS (SELECT 1 FROM (SELECT \"companyId\", \"currency\" FROM \"public\".\"merchants\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_plans\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"delivery_zones\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"shipments\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"cod_collections\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_ledger_entries\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_settlements\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"settlement_payments\" UNION SELECT \"companyId\", \"currency\" FROM \"public\".\"merchant_settlement_requests\") u JOIN \"public\".\"companies\" c ON c.\"id\" = u.\"companyId\" WHERE c.\"currency\" <> u.\"currency\") AS \"result\"",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.companies.company_currency_de87c3c6",
+    "label": "Add check constraint \"company_currency_de87c3c6\" on \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "company_currency_de87c3c6",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"company_currency_de87c3c6\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_currency_de87c3c6",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"company_currency_de87c3c6\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD CONSTRAINT \"company_currency_de87c3c6\" CHECK (\"currency\" IN ('ILS','USD','EUR','JOD'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"company_currency_de87c3c6\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_currency_de87c3c6",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.companies.companies_id_currency_key",
+    "label": "Add unique constraint on \"companies\" (id, currency)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "companies_id_currency_key",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"companies_id_currency_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companies_id_currency_key",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"companies_id_currency_key\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD CONSTRAINT \"companies_id_currency_key\" UNIQUE (\"id\", \"currency\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"companies_id_currency_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companies_id_currency_key",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.cod_collections.cod_collections_companyId_currency_idx_00c76a95",
+    "label": "Create index \"cod_collections_companyId_currency_idx_00c76a95\" on \"cod_collections\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "cod_collections_companyId_currency_idx_00c76a95",
+        "table": "cod_collections"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"cod_collections_companyId_currency_idx_00c76a95\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cod_collections_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"cod_collections_companyId_currency_idx_00c76a95\"",
+        "sql": "CREATE INDEX \"cod_collections_companyId_currency_idx_00c76a95\" ON \"public\".\"cod_collections\" (\"companyId\", \"currency\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"cod_collections_companyId_currency_idx_00c76a95\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cod_collections_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.delivery_zones.delivery_zones_companyId_currency_idx_00c76a95",
+    "label": "Create index \"delivery_zones_companyId_currency_idx_00c76a95\" on \"delivery_zones\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "delivery_zones_companyId_currency_idx_00c76a95",
+        "table": "delivery_zones"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"delivery_zones_companyId_currency_idx_00c76a95\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_zones_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"delivery_zones_companyId_currency_idx_00c76a95\"",
+        "sql": "CREATE INDEX \"delivery_zones_companyId_currency_idx_00c76a95\" ON \"public\".\"delivery_zones\" (\"companyId\", \"currency\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"delivery_zones_companyId_currency_idx_00c76a95\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"delivery_zones_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_ledger_entries.merchant_ledger_entries_companyId_currency_idx_00c76a95",
+    "label": "Create index \"merchant_ledger_entries_companyId_currency_idx_00c76a95\" on \"merchant_ledger_entries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_ledger_entries_companyId_currency_idx_00c76a95",
+        "table": "merchant_ledger_entries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_ledger_entries_companyId_currency_idx_00c76a95\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_ledger_entries_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_ledger_entries_companyId_currency_idx_00c76a95\"",
+        "sql": "CREATE INDEX \"merchant_ledger_entries_companyId_currency_idx_00c76a95\" ON \"public\".\"merchant_ledger_entries\" (\"companyId\", \"currency\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_ledger_entries_companyId_currency_idx_00c76a95\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_ledger_entries_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_plans.merchant_plans_companyId_currency_idx_00c76a95",
+    "label": "Create index \"merchant_plans_companyId_currency_idx_00c76a95\" on \"merchant_plans\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_plans_companyId_currency_idx_00c76a95",
+        "table": "merchant_plans"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_plans_companyId_currency_idx_00c76a95\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_plans_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_plans_companyId_currency_idx_00c76a95\"",
+        "sql": "CREATE INDEX \"merchant_plans_companyId_currency_idx_00c76a95\" ON \"public\".\"merchant_plans\" (\"companyId\", \"currency\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_plans_companyId_currency_idx_00c76a95\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_plans_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_settlement_requests.merchant_settlement_requests_companyId_currency_idx_00c76a95",
+    "label": "Create index \"merchant_settlement_requests_companyId_currency_idx_00c76a95\" on \"merchant_settlement_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_settlement_requests_companyId_currency_idx_00c76a95",
+        "table": "merchant_settlement_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_settlement_requests_companyId_currency_idx_00c76a95\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_settlement_requests_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_settlement_requests_companyId_currency_idx_00c76a95\"",
+        "sql": "CREATE INDEX \"merchant_settlement_requests_companyId_currency_idx_00c76a95\" ON \"public\".\"merchant_settlement_requests\" (\"companyId\", \"currency\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_settlement_requests_companyId_currency_idx_00c76a95\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_settlement_requests_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchant_settlements.merchant_settlements_companyId_currency_idx_00c76a95",
+    "label": "Create index \"merchant_settlements_companyId_currency_idx_00c76a95\" on \"merchant_settlements\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchant_settlements_companyId_currency_idx_00c76a95",
+        "table": "merchant_settlements"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchant_settlements_companyId_currency_idx_00c76a95\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_settlements_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchant_settlements_companyId_currency_idx_00c76a95\"",
+        "sql": "CREATE INDEX \"merchant_settlements_companyId_currency_idx_00c76a95\" ON \"public\".\"merchant_settlements\" (\"companyId\", \"currency\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchant_settlements_companyId_currency_idx_00c76a95\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchant_settlements_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.merchants.merchants_companyId_currency_idx_00c76a95",
+    "label": "Create index \"merchants_companyId_currency_idx_00c76a95\" on \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "merchants_companyId_currency_idx_00c76a95",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"merchants_companyId_currency_idx_00c76a95\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchants_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"merchants_companyId_currency_idx_00c76a95\"",
+        "sql": "CREATE INDEX \"merchants_companyId_currency_idx_00c76a95\" ON \"public\".\"merchants\" (\"companyId\", \"currency\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"merchants_companyId_currency_idx_00c76a95\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"merchants_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.settlement_payments.settlement_payments_companyId_currency_idx_00c76a95",
+    "label": "Create index \"settlement_payments_companyId_currency_idx_00c76a95\" on \"settlement_payments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "settlement_payments_companyId_currency_idx_00c76a95",
+        "table": "settlement_payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"settlement_payments_companyId_currency_idx_00c76a95\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"settlement_payments_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"settlement_payments_companyId_currency_idx_00c76a95\"",
+        "sql": "CREATE INDEX \"settlement_payments_companyId_currency_idx_00c76a95\" ON \"public\".\"settlement_payments\" (\"companyId\", \"currency\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"settlement_payments_companyId_currency_idx_00c76a95\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"settlement_payments_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.shipments.shipments_companyId_currency_idx_00c76a95",
+    "label": "Create index \"shipments_companyId_currency_idx_00c76a95\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "shipments_companyId_currency_idx_00c76a95",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"shipments_companyId_currency_idx_00c76a95\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"shipments_companyId_currency_idx_00c76a95\"",
+        "sql": "CREATE INDEX \"shipments_companyId_currency_idx_00c76a95\" ON \"public\".\"shipments\" (\"companyId\", \"currency\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"shipments_companyId_currency_idx_00c76a95\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"shipments_companyId_currency_idx_00c76a95\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.cod_collections.cod_collections_companyId_currency_fkey",
+    "label": "Add foreign key \"cod_collections_companyId_currency_fkey\" on \"cod_collections\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "cod_collections_companyId_currency_fkey",
+        "table": "cod_collections"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"cod_collections_companyId_currency_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cod_collections_companyId_currency_fkey",
+          "public",
+          "\"public\".\"cod_collections\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"cod_collections_companyId_currency_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"cod_collections\"\nADD CONSTRAINT \"cod_collections_companyId_currency_fkey\"\nFOREIGN KEY (\"companyId\", \"currency\")\nREFERENCES \"public\".\"companies\" (\"id\", \"currency\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"cod_collections_companyId_currency_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cod_collections_companyId_currency_fkey",
+          "public",
+          "\"public\".\"cod_collections\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.delivery_zones.delivery_zones_companyId_currency_fkey",
+    "label": "Add foreign key \"delivery_zones_companyId_currency_fkey\" on \"delivery_zones\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "delivery_zones_companyId_currency_fkey",
+        "table": "delivery_zones"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"delivery_zones_companyId_currency_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "delivery_zones_companyId_currency_fkey",
+          "public",
+          "\"public\".\"delivery_zones\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"delivery_zones_companyId_currency_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"delivery_zones\"\nADD CONSTRAINT \"delivery_zones_companyId_currency_fkey\"\nFOREIGN KEY (\"companyId\", \"currency\")\nREFERENCES \"public\".\"companies\" (\"id\", \"currency\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"delivery_zones_companyId_currency_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "delivery_zones_companyId_currency_fkey",
+          "public",
+          "\"public\".\"delivery_zones\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_ledger_entries.merchant_ledger_entries_companyId_currency_fkey",
+    "label": "Add foreign key \"merchant_ledger_entries_companyId_currency_fkey\" on \"merchant_ledger_entries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_ledger_entries_companyId_currency_fkey",
+        "table": "merchant_ledger_entries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_ledger_entries_companyId_currency_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_ledger_entries_companyId_currency_fkey",
+          "public",
+          "\"public\".\"merchant_ledger_entries\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_ledger_entries_companyId_currency_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_ledger_entries\"\nADD CONSTRAINT \"merchant_ledger_entries_companyId_currency_fkey\"\nFOREIGN KEY (\"companyId\", \"currency\")\nREFERENCES \"public\".\"companies\" (\"id\", \"currency\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_ledger_entries_companyId_currency_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_ledger_entries_companyId_currency_fkey",
+          "public",
+          "\"public\".\"merchant_ledger_entries\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_plans.merchant_plans_companyId_currency_fkey",
+    "label": "Add foreign key \"merchant_plans_companyId_currency_fkey\" on \"merchant_plans\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_plans_companyId_currency_fkey",
+        "table": "merchant_plans"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_plans_companyId_currency_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_plans_companyId_currency_fkey",
+          "public",
+          "\"public\".\"merchant_plans\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_plans_companyId_currency_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_plans\"\nADD CONSTRAINT \"merchant_plans_companyId_currency_fkey\"\nFOREIGN KEY (\"companyId\", \"currency\")\nREFERENCES \"public\".\"companies\" (\"id\", \"currency\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_plans_companyId_currency_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_plans_companyId_currency_fkey",
+          "public",
+          "\"public\".\"merchant_plans\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_settlement_requests.merchant_settlement_requests_companyId_currency_fkey",
+    "label": "Add foreign key \"merchant_settlement_requests_companyId_currency_fkey\" on \"merchant_settlement_requests\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_settlement_requests_companyId_currency_fkey",
+        "table": "merchant_settlement_requests"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_settlement_requests_companyId_currency_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_settlement_requests_companyId_currency_fkey",
+          "public",
+          "\"public\".\"merchant_settlement_requests\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_settlement_requests_companyId_currency_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_settlement_requests\"\nADD CONSTRAINT \"merchant_settlement_requests_companyId_currency_fkey\"\nFOREIGN KEY (\"companyId\", \"currency\")\nREFERENCES \"public\".\"companies\" (\"id\", \"currency\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_settlement_requests_companyId_currency_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_settlement_requests_companyId_currency_fkey",
+          "public",
+          "\"public\".\"merchant_settlement_requests\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchant_settlements.merchant_settlements_companyId_currency_fkey",
+    "label": "Add foreign key \"merchant_settlements_companyId_currency_fkey\" on \"merchant_settlements\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchant_settlements_companyId_currency_fkey",
+        "table": "merchant_settlements"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchant_settlements_companyId_currency_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_settlements_companyId_currency_fkey",
+          "public",
+          "\"public\".\"merchant_settlements\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchant_settlements_companyId_currency_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchant_settlements\"\nADD CONSTRAINT \"merchant_settlements_companyId_currency_fkey\"\nFOREIGN KEY (\"companyId\", \"currency\")\nREFERENCES \"public\".\"companies\" (\"id\", \"currency\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchant_settlements_companyId_currency_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_settlements_companyId_currency_fkey",
+          "public",
+          "\"public\".\"merchant_settlements\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.merchants.merchants_companyId_currency_fkey",
+    "label": "Add foreign key \"merchants_companyId_currency_fkey\" on \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "merchants_companyId_currency_fkey",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"merchants_companyId_currency_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchants_companyId_currency_fkey",
+          "public",
+          "\"public\".\"merchants\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"merchants_companyId_currency_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"merchants\"\nADD CONSTRAINT \"merchants_companyId_currency_fkey\"\nFOREIGN KEY (\"companyId\", \"currency\")\nREFERENCES \"public\".\"companies\" (\"id\", \"currency\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"merchants_companyId_currency_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchants_companyId_currency_fkey",
+          "public",
+          "\"public\".\"merchants\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.settlement_payments.settlement_payments_companyId_currency_fkey",
+    "label": "Add foreign key \"settlement_payments_companyId_currency_fkey\" on \"settlement_payments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "settlement_payments_companyId_currency_fkey",
+        "table": "settlement_payments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"settlement_payments_companyId_currency_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "settlement_payments_companyId_currency_fkey",
+          "public",
+          "\"public\".\"settlement_payments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"settlement_payments_companyId_currency_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"settlement_payments\"\nADD CONSTRAINT \"settlement_payments_companyId_currency_fkey\"\nFOREIGN KEY (\"companyId\", \"currency\")\nREFERENCES \"public\".\"companies\" (\"id\", \"currency\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"settlement_payments_companyId_currency_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "settlement_payments_companyId_currency_fkey",
+          "public",
+          "\"public\".\"settlement_payments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.shipments.shipments_companyId_currency_fkey",
+    "label": "Add foreign key \"shipments_companyId_currency_fkey\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "shipments_companyId_currency_fkey",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"shipments_companyId_currency_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_companyId_currency_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"shipments_companyId_currency_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\"\nADD CONSTRAINT \"shipments_companyId_currency_fkey\"\nFOREIGN KEY (\"companyId\", \"currency\")\nREFERENCES \"public\".\"companies\" (\"id\", \"currency\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"shipments_companyId_currency_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_companyId_currency_fkey",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  }
+]

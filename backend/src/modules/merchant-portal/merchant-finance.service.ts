@@ -7,6 +7,7 @@ import {
 import type { TokenPayload } from '../auth/token/token.payload.js';
 import { MerchantPortalStore } from './merchant-portal.store.js';
 import { ParcelLedger } from '../parcels/parcel-ledger.js';
+import { companyCurrency } from '../parcels/company-currency.js';
 import { ParcelStore, wire } from '../parcels/parcel-store.js';
 import type {
   MerchantPageDto,
@@ -117,7 +118,11 @@ export class MerchantFinanceService {
               companyId: context.companyId,
               merchantId: context.merchantId,
               requestedBy: context.userId,
-              currency: input.currency,
+              currency: await companyCurrency(
+                tx,
+                context.companyId,
+                input.currency,
+              ),
               notes: input.notes ?? null,
             });
             await tx.orm.public.MerchantAccessEvent.create({

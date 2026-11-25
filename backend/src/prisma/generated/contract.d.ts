@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'f0ba33380248edd4599dfcbb3e7f84bff45cf5c9b67ffe362e8b073a1ef7aa0e'>;
+  StorageHashBase<'c8a9d6da8ad8dccf886dbbbdc8ef3564762b631b3fcc5c988586be2b5daa9a2c'>;
 export type ExecutionHash =
   ExecutionHashBase<'136efae69fcefa90706b18d368032752b32d01366a8d36768a8029e128deee87'>;
 export type ProfileHash =
@@ -286,6 +286,7 @@ export type FieldOutputTypes = {
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly plan: 'TRIAL' | 'BASIC' | 'PRO' | 'ENTERPRISE';
       readonly suspended: CodecTypes['pg/bool@1']['output'];
+      readonly currency: CodecTypes['pg/text@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
@@ -826,6 +827,7 @@ export type FieldInputTypes = {
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly plan: 'TRIAL' | 'BASIC' | 'PRO' | 'ENTERPRISE';
       readonly suspended: CodecTypes['pg/bool@1']['input'];
+      readonly currency: CodecTypes['pg/text@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
@@ -1363,6 +1365,7 @@ export type StorageColumnTypes = {
     };
     readonly companies: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly currency: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly plan: 'TRIAL' | 'BASIC' | 'PRO' | 'ENTERPRISE';
@@ -1903,6 +1906,7 @@ export type StorageColumnInputTypes = {
     };
     readonly companies: {
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly currency: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly plan: 'TRIAL' | 'BASIC' | 'PRO' | 'ENTERPRISE';
@@ -2407,11 +2411,21 @@ export namespace Models {
     name: CodecTypes['pg/text@1']['output'];
     plan: 'TRIAL' | 'BASIC' | 'PRO' | 'ENTERPRISE';
     suspended: CodecTypes['pg/bool@1']['output'];
+    currency: CodecTypes['pg/text@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     allocations: public_SettlementAllocation[];
     businessMerchants: public_Merchant[];
     collections: public_CodCollection[];
+    currencyCodCollections: public_CodCollection[];
+    currencyDeliveryZones: public_DeliveryZone[];
+    currencyLedgerEntries: public_MerchantLedgerEntry[];
+    currencyMerchantPlans: public_MerchantPlan[];
+    currencyMerchants: public_Merchant[];
+    currencySettlementPayments: public_SettlementPayment[];
+    currencySettlementRequests: public_MerchantSettlementRequest[];
+    currencySettlements: public_MerchantSettlement[];
+    currencyShipments: public_Shipment[];
     deliveryZones: public_DeliveryZone[];
     headquarters: public_CompanyHeadquarters | null;
     ledgerEntries: public_MerchantLedgerEntry[];
@@ -2442,6 +2456,15 @@ export namespace Models {
       | 'allocations'
       | 'businessMerchants'
       | 'collections'
+      | 'currencyCodCollections'
+      | 'currencyDeliveryZones'
+      | 'currencyLedgerEntries'
+      | 'currencyMerchantPlans'
+      | 'currencyMerchants'
+      | 'currencySettlementPayments'
+      | 'currencySettlementRequests'
+      | 'currencySettlements'
+      | 'currencyShipments'
       | 'deliveryZones'
       | 'headquarters'
       | 'ledgerEntries'
@@ -2664,6 +2687,7 @@ export namespace Models {
     attempts: public_ParcelAttempt[];
     collection: public_CodCollection | null;
     company: public_Company;
+    companyCurrency: public_Company;
     deliveryZone: public_DeliveryZone | null;
     executions: public_AIExecution[];
     history: public_ShipmentHistory[];
@@ -2681,6 +2705,7 @@ export namespace Models {
       | 'attempts'
       | 'collection'
       | 'company'
+      | 'companyCurrency'
       | 'deliveryZone'
       | 'executions'
       | 'history'
@@ -2823,6 +2848,7 @@ export namespace Models {
     accessEvents: public_MerchantAccessEvent[];
     collections: public_CodCollection[];
     company: public_Company;
+    companyCurrency: public_Company;
     imports: public_MerchantImport[];
     invitations: public_MerchantInvitation[];
     ledgerEntries: public_MerchantLedgerEntry[];
@@ -2837,6 +2863,7 @@ export namespace Models {
       | 'accessEvents'
       | 'collections'
       | 'company'
+      | 'companyCurrency'
       | 'imports'
       | 'invitations'
       | 'ledgerEntries'
@@ -2891,13 +2918,20 @@ export namespace Models {
     recordedBy: CodecTypes['pg/text@1']['output'];
     collectedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     company: public_Company;
+    companyCurrency: public_Company;
     ledgerEntries: public_MerchantLedgerEntry[];
     merchant: public_Merchant;
     remittance: public_CashRemittance | null;
     shipment: public_Shipment;
     worker: public_Worker | null;
     readonly [RelationKeys]?:
-      'company' | 'ledgerEntries' | 'merchant' | 'remittance' | 'shipment' | 'worker';
+      | 'company'
+      | 'companyCurrency'
+      | 'ledgerEntries'
+      | 'merchant'
+      | 'remittance'
+      | 'shipment'
+      | 'worker';
   };
   export type public_CashRemittance = {
     id: CodecTypes['pg/text@1']['output'];
@@ -2929,6 +2963,7 @@ export namespace Models {
     allocation: public_SettlementAllocation | null;
     collection: public_CodCollection | null;
     company: public_Company;
+    companyCurrency: public_Company;
     lines: public_MerchantSettlementLine[];
     merchant: public_Merchant;
     original: public_MerchantLedgerEntry | null;
@@ -2938,6 +2973,7 @@ export namespace Models {
       | 'allocation'
       | 'collection'
       | 'company'
+      | 'companyCurrency'
       | 'lines'
       | 'merchant'
       | 'original'
@@ -2968,10 +3004,12 @@ export namespace Models {
     to: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
     allocations: public_SettlementAllocation[];
     company: public_Company;
+    companyCurrency: public_Company;
     lines: public_MerchantSettlementLine[];
     merchant: public_Merchant;
     payments: public_SettlementPayment[];
-    readonly [RelationKeys]?: 'allocations' | 'company' | 'lines' | 'merchant' | 'payments';
+    readonly [RelationKeys]?:
+      'allocations' | 'company' | 'companyCurrency' | 'lines' | 'merchant' | 'payments';
   };
   export type public_MerchantSettlementLine = {
     id: CodecTypes['pg/text@1']['output'];
@@ -3009,8 +3047,9 @@ export namespace Models {
     recordedBy: CodecTypes['pg/text@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     company: public_Company;
+    companyCurrency: public_Company;
     settlement: public_MerchantSettlement;
-    readonly [RelationKeys]?: 'company' | 'settlement';
+    readonly [RelationKeys]?: 'company' | 'companyCurrency' | 'settlement';
   };
   export type public_MonetaryRequest = {
     id: CodecTypes['pg/text@1']['output'];
@@ -3095,9 +3134,10 @@ export namespace Models {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     company: public_Company;
+    companyCurrency: public_Company;
     shipments: public_Shipment[];
     tariffs: public_PlanZoneTariff[];
-    readonly [RelationKeys]?: 'company' | 'shipments' | 'tariffs';
+    readonly [RelationKeys]?: 'company' | 'companyCurrency' | 'shipments' | 'tariffs';
   };
   export type public_MerchantPlan = {
     id: CodecTypes['pg/text@1']['output'];
@@ -3109,10 +3149,11 @@ export namespace Models {
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     company: public_Company;
+    companyCurrency: public_Company;
     merchants: public_Merchant[];
     shipments: public_Shipment[];
     tariffs: public_PlanZoneTariff[];
-    readonly [RelationKeys]?: 'company' | 'merchants' | 'shipments' | 'tariffs';
+    readonly [RelationKeys]?: 'company' | 'companyCurrency' | 'merchants' | 'shipments' | 'tariffs';
   };
   export type public_PlanZoneTariff = {
     id: CodecTypes['pg/text@1']['output'];
@@ -3198,8 +3239,9 @@ export namespace Models {
     status: CodecTypes['pg/text@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     company: public_Company;
+    companyCurrency: public_Company;
     merchant: public_Merchant;
-    readonly [RelationKeys]?: 'company' | 'merchant';
+    readonly [RelationKeys]?: 'company' | 'companyCurrency' | 'merchant';
   };
   export type public_MerchantParcelRequest = {
     id: CodecTypes['pg/text@1']['output'];
@@ -3559,6 +3601,12 @@ type ContractBase = Omit<
                   readonly unique: false;
                 },
                 {
+                  readonly name: 'cod_collections_companyId_currency_idx_00c76a95';
+                  readonly prefix: 'cod_collections_companyId_currency_idx';
+                  readonly columns: readonly ['companyId', 'currency'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'cod_collections_merchantId_companyId_idx_dee0f13b';
                   readonly prefix: 'cod_collections_merchantId_companyId_idx';
                   readonly columns: readonly ['merchantId', 'companyId'];
@@ -3582,6 +3630,18 @@ type ContractBase = Omit<
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'companies';
                     readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'cod_collections';
+                    readonly columns: readonly ['companyId', 'currency'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companies';
+                    readonly columns: readonly ['id', 'currency'];
                   };
                 },
                 {
@@ -3652,6 +3712,15 @@ type ContractBase = Omit<
                     readonly value: DefaultLiteralValue<'pg/bool@1', false>;
                   };
                 };
+                readonly currency: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'ILS'>;
+                  };
+                };
                 readonly createdAt: {
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-temporal@1';
@@ -3665,7 +3734,7 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [];
+              uniques: readonly [{ readonly columns: readonly ['id', 'currency'] }];
               indexes: readonly [];
               foreignKeys: readonly [];
             };
@@ -3905,6 +3974,12 @@ type ContractBase = Omit<
                   readonly columns: readonly ['companyId'];
                   readonly unique: false;
                 },
+                {
+                  readonly name: 'delivery_zones_companyId_currency_idx_00c76a95';
+                  readonly prefix: 'delivery_zones_companyId_currency_idx';
+                  readonly columns: readonly ['companyId', 'currency'];
+                  readonly unique: false;
+                },
               ];
               foreignKeys: readonly [
                 {
@@ -3917,6 +3992,18 @@ type ContractBase = Omit<
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'companies';
                     readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'delivery_zones';
+                    readonly columns: readonly ['companyId', 'currency'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companies';
+                    readonly columns: readonly ['id', 'currency'];
                   };
                 },
               ];
@@ -4504,6 +4591,12 @@ type ContractBase = Omit<
                   readonly unique: false;
                 },
                 {
+                  readonly name: 'merchant_ledger_entries_companyId_currency_idx_00c76a95';
+                  readonly prefix: 'merchant_ledger_entries_companyId_currency_idx';
+                  readonly columns: readonly ['companyId', 'currency'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'merchant_ledger_entries_merchantId_companyId_idx_dee0f13b';
                   readonly prefix: 'merchant_ledger_entries_merchantId_companyId_idx';
                   readonly columns: readonly ['merchantId', 'companyId'];
@@ -4533,6 +4626,18 @@ type ContractBase = Omit<
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'companies';
                     readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'merchant_ledger_entries';
+                    readonly columns: readonly ['companyId', 'currency'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companies';
+                    readonly columns: readonly ['id', 'currency'];
                   };
                 },
                 {
@@ -4943,6 +5048,12 @@ type ContractBase = Omit<
                   readonly columns: readonly ['companyId'];
                   readonly unique: false;
                 },
+                {
+                  readonly name: 'merchant_plans_companyId_currency_idx_00c76a95';
+                  readonly prefix: 'merchant_plans_companyId_currency_idx';
+                  readonly columns: readonly ['companyId', 'currency'];
+                  readonly unique: false;
+                },
               ];
               foreignKeys: readonly [
                 {
@@ -4955,6 +5066,18 @@ type ContractBase = Omit<
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'companies';
                     readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'merchant_plans';
+                    readonly columns: readonly ['companyId', 'currency'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companies';
+                    readonly columns: readonly ['id', 'currency'];
                   };
                 },
               ];
@@ -5143,6 +5266,12 @@ type ContractBase = Omit<
                   readonly unique: false;
                 },
                 {
+                  readonly name: 'merchant_settlement_requests_companyId_currency_idx_00c76a95';
+                  readonly prefix: 'merchant_settlement_requests_companyId_currency_idx';
+                  readonly columns: readonly ['companyId', 'currency'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'merchant_settlement_requests_merchantId_companyId_idx_dee0f13b';
                   readonly prefix: 'merchant_settlement_requests_merchantId_companyId_idx';
                   readonly columns: readonly ['merchantId', 'companyId'];
@@ -5160,6 +5289,18 @@ type ContractBase = Omit<
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'companies';
                     readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'merchant_settlement_requests';
+                    readonly columns: readonly ['companyId', 'currency'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companies';
+                    readonly columns: readonly ['id', 'currency'];
                   };
                 },
                 {
@@ -5309,6 +5450,12 @@ type ContractBase = Omit<
                   readonly unique: false;
                 },
                 {
+                  readonly name: 'merchant_settlements_companyId_currency_idx_00c76a95';
+                  readonly prefix: 'merchant_settlements_companyId_currency_idx';
+                  readonly columns: readonly ['companyId', 'currency'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'merchant_settlements_merchantId_companyId_idx_dee0f13b';
                   readonly prefix: 'merchant_settlements_merchantId_companyId_idx';
                   readonly columns: readonly ['merchantId', 'companyId'];
@@ -5326,6 +5473,18 @@ type ContractBase = Omit<
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'companies';
                     readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'merchant_settlements';
+                    readonly columns: readonly ['companyId', 'currency'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companies';
+                    readonly columns: readonly ['id', 'currency'];
                   };
                 },
                 {
@@ -5507,6 +5666,12 @@ type ContractBase = Omit<
                   readonly columns: readonly ['companyId'];
                   readonly unique: false;
                 },
+                {
+                  readonly name: 'merchants_companyId_currency_idx_00c76a95';
+                  readonly prefix: 'merchants_companyId_currency_idx';
+                  readonly columns: readonly ['companyId', 'currency'];
+                  readonly unique: false;
+                },
               ];
               foreignKeys: readonly [
                 {
@@ -5531,6 +5696,18 @@ type ContractBase = Omit<
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'companies';
                     readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'merchants';
+                    readonly columns: readonly ['companyId', 'currency'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companies';
+                    readonly columns: readonly ['id', 'currency'];
                   };
                 },
               ];
@@ -6634,6 +6811,12 @@ type ContractBase = Omit<
                   readonly unique: false;
                 },
                 {
+                  readonly name: 'settlement_payments_companyId_currency_idx_00c76a95';
+                  readonly prefix: 'settlement_payments_companyId_currency_idx';
+                  readonly columns: readonly ['companyId', 'currency'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'settlement_payments_settlementId_companyId_idx_1d53ae2b';
                   readonly prefix: 'settlement_payments_settlementId_companyId_idx';
                   readonly columns: readonly ['settlementId', 'companyId'];
@@ -6651,6 +6834,18 @@ type ContractBase = Omit<
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'companies';
                     readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'settlement_payments';
+                    readonly columns: readonly ['companyId', 'currency'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companies';
+                    readonly columns: readonly ['id', 'currency'];
                   };
                 },
                 {
@@ -7152,6 +7347,12 @@ type ContractBase = Omit<
                   readonly unique: false;
                 },
                 {
+                  readonly name: 'shipments_companyId_currency_idx_00c76a95';
+                  readonly prefix: 'shipments_companyId_currency_idx';
+                  readonly columns: readonly ['companyId', 'currency'];
+                  readonly unique: false;
+                },
+                {
                   readonly name: 'shipments_warehouseId_companyId_idx_51e6a2af';
                   readonly prefix: 'shipments_warehouseId_companyId_idx';
                   readonly columns: readonly ['warehouseId', 'companyId'];
@@ -7205,6 +7406,18 @@ type ContractBase = Omit<
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'companies';
                     readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'shipments';
+                    readonly columns: readonly ['companyId', 'currency'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companies';
+                    readonly columns: readonly ['id', 'currency'];
                   };
                 },
                 {
@@ -8211,6 +8424,18 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly companyCurrency: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['companyId', 'currency'];
+                  readonly targetFields: readonly ['id', 'currency'];
+                };
+              };
               readonly ledgerEntries: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -8309,6 +8534,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
+              readonly currency: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly createdAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -8356,6 +8585,105 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['id'];
                   readonly targetFields: readonly ['companyId'];
+                };
+              };
+              readonly currencyCodCollections: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'CodCollection';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id', 'currency'];
+                  readonly targetFields: readonly ['companyId', 'currency'];
+                };
+              };
+              readonly currencyDeliveryZones: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'DeliveryZone';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id', 'currency'];
+                  readonly targetFields: readonly ['companyId', 'currency'];
+                };
+              };
+              readonly currencyLedgerEntries: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'MerchantLedgerEntry';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id', 'currency'];
+                  readonly targetFields: readonly ['companyId', 'currency'];
+                };
+              };
+              readonly currencyMerchantPlans: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'MerchantPlan';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id', 'currency'];
+                  readonly targetFields: readonly ['companyId', 'currency'];
+                };
+              };
+              readonly currencyMerchants: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Merchant';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id', 'currency'];
+                  readonly targetFields: readonly ['companyId', 'currency'];
+                };
+              };
+              readonly currencySettlementPayments: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'SettlementPayment';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id', 'currency'];
+                  readonly targetFields: readonly ['companyId', 'currency'];
+                };
+              };
+              readonly currencySettlementRequests: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'MerchantSettlementRequest';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id', 'currency'];
+                  readonly targetFields: readonly ['companyId', 'currency'];
+                };
+              };
+              readonly currencySettlements: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'MerchantSettlement';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id', 'currency'];
+                  readonly targetFields: readonly ['companyId', 'currency'];
+                };
+              };
+              readonly currencyShipments: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Shipment';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id', 'currency'];
+                  readonly targetFields: readonly ['companyId', 'currency'];
                 };
               };
               readonly deliveryZones: {
@@ -8651,6 +8979,7 @@ type ContractBase = Omit<
                 readonly name: { readonly column: 'name' };
                 readonly plan: { readonly column: 'plan' };
                 readonly suspended: { readonly column: 'suspended' };
+                readonly currency: { readonly column: 'currency' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
@@ -8847,6 +9176,18 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['companyId'];
                   readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly companyCurrency: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['companyId', 'currency'];
+                  readonly targetFields: readonly ['id', 'currency'];
                 };
               };
               readonly shipments: {
@@ -9194,6 +9535,18 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['companyId'];
                   readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly companyCurrency: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['companyId', 'currency'];
+                  readonly targetFields: readonly ['id', 'currency'];
                 };
               };
               readonly imports: {
@@ -9716,6 +10069,18 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly companyCurrency: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['companyId', 'currency'];
+                  readonly targetFields: readonly ['id', 'currency'];
+                };
+              };
               readonly lines: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -10075,6 +10440,18 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly companyCurrency: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['companyId', 'currency'];
+                  readonly targetFields: readonly ['id', 'currency'];
+                };
+              };
               readonly merchants: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -10251,6 +10628,18 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['companyId'];
                   readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly companyCurrency: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['companyId', 'currency'];
+                  readonly targetFields: readonly ['id', 'currency'];
                 };
               };
               readonly lines: {
@@ -10453,6 +10842,18 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['companyId'];
                   readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly companyCurrency: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['companyId', 'currency'];
+                  readonly targetFields: readonly ['id', 'currency'];
                 };
               };
               readonly merchant: {
@@ -11447,6 +11848,18 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly companyCurrency: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['companyId', 'currency'];
+                  readonly targetFields: readonly ['id', 'currency'];
+                };
+              };
               readonly settlement: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -11740,6 +12153,18 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['companyId'];
                   readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly companyCurrency: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['companyId', 'currency'];
+                  readonly targetFields: readonly ['id', 'currency'];
                 };
               };
               readonly deliveryZone: {

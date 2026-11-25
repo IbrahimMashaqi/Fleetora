@@ -11,6 +11,7 @@ import {
 import { useOperations } from "@/features/operations/use-operations";
 import type { Row } from "@/features/operations/operations-contract";
 import { useLocale } from "@/lib/i18n";
+import { useCompanyCurrency } from "@/features/auth/session/session-context";
 import { pricingArabic, pricingEnglish } from "./pricing-copy";
 import { PricingDialog, PricingField, controlStyle } from "./pricing-dialog";
 import {
@@ -102,6 +103,8 @@ export function EditPricing({
   const { locale } = useLocale();
   const c = locale === "ar" ? pricingArabic : pricingEnglish;
   const row = zone ?? plan;
+  // OD-02: zones and plans always use the single company currency.
+  const companyCurrency = useCompanyCurrency() ?? "";
   const title =
     kind === "zone"
       ? row
@@ -161,17 +164,13 @@ export function EditPricing({
         <select
           id="pricing-currency"
           name="currency"
-          defaultValue={row?.currency ?? "ILS"}
+          defaultValue={row?.currency ?? companyCurrency}
           className={controlStyle}
-          aria-readonly={!!row}
+          aria-readonly="true"
         >
-          {row ? (
-            <option value={row.currency}>{row.currency}</option>
-          ) : (
-            ["ILS", "USD", "EUR", "JOD"].map((value) => (
-              <option key={value}>{value}</option>
-            ))
-          )}
+          <option value={row?.currency ?? companyCurrency}>
+            {row?.currency ?? companyCurrency}
+          </option>
         </select>
         {row && (
           <p className="text-xs text-muted-foreground">{c.currencyFixed}</p>

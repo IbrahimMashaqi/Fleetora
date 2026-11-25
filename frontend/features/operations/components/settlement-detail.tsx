@@ -26,6 +26,7 @@ import {
   type Field,
 } from "./operations-ui";
 import { paymentFields } from "./operation-forms";
+import { useCompanyCurrency } from "@/features/auth/session/session-context";
 
 export function SettlementTotals({ row }: { row: Row }) {
   return (
@@ -130,6 +131,7 @@ function PreviewContent({
   merchantId?: string;
 }) {
   const { t } = useLocale();
+  const companyCurrency = useCompanyCurrency() ?? "";
   const router = useRouter();
   const [editing, setEditing] = useState(true);
   const [confirming, setConfirming] = useState(false);
@@ -204,12 +206,10 @@ function PreviewContent({
               name: "currency",
               label: "Currency",
               required: true,
-              value: "ILS",
-              options: ["ILS", "USD", "EUR", "JOD"].map((value) => ({
-                value,
-                label: value,
-                literal: true,
-              })),
+              value: companyCurrency,
+              options: [
+                { value: companyCurrency, label: companyCurrency, literal: true },
+              ],
             },
             { name: "from", label: "From date", type: "date" },
             { name: "to", label: "To date", type: "date" },
