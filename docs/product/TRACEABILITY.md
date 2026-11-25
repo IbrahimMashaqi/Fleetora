@@ -1,0 +1,188 @@
+# Fleetora — Traceability
+
+Maps each rule / functional requirement to its implementation and tests. Initial fill from [RECONCILIATION.md](RECONCILIATION.md) (2026-11-25, read-only audit; tests were not executed for that audit). Update this file for every rule implemented.
+
+- **Status:** `done` = matches the approved sources · `partial` = exists but incomplete, or conflicts with an owner decision in [DECISIONS.md](DECISIONS.md) · `missing` = not built.
+- **Paths:** `be/` = `backend/src/modules/`, `it/` = `backend/test/` (disposable-PostgreSQL integration suites), `fe/` = `frontend/`, `app/` = `apps/merchant_app/lib/`. Unit specs sit next to their source in `be/`.
+- Test names are quoted as `file › "test name"`; `…` marks a name shortened in the audit.
+
+## Identity / RBAC
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| FR-SE-01 (login, rate limits, sessions, verification, reset) | done | `be/auth/*` (`signin-rate-limiter.ts`, `recovery-rate-limiter.ts`, `token/refresh-token-verifier.ts`) | `auth.signin.spec.ts`, `signin-rate-limiter.spec.ts`, `recovery-rate-limiter.spec.ts`, `auth-refresh.spec.ts`, `it/auth-concurrency.auth-integration.spec.ts` |
+| §3.1 / NFR Tenant security (identity from persisted server state) | done | `be/parcels/parcel-domain.ts#company()`, store `write()` | `it/parcel-http.auth-integration.spec.ts` › "returns scoped 404 for foreign merchants, parcels, drivers, returns and settlements", "rejects a persisted inactive identity even when its JWT is correctly signed"; `it/parcel-operations.auth-integration.spec.ts` › "rejects cross-company merchants, parcels, drivers…" |
+| Company staff onboarding / deactivation, never zero admins | done | `be/staff/*`, `StaffInvitation` | `it/staff.auth-integration.spec.ts` › "never leaves a company without an active administrator under concurrent mutual deactivation" |
+| AM-05 (merchant owner + limited employees) | done | `MerchantMembership`, `be/merchant-access/merchant-access.types.ts`, `app/features/merchant_users/*`, `fe/features/merchant-access` | `it/merchant-access.auth-integration.spec.ts` › "separates employee financial grants and enforces revocation on the next request", "allows only one of two concurrent owner acceptances"; `it/merchant-portal.auth-integration.spec.ts` › "supports individual employee permissions without granting finances…" |
+| §3.1 staff roles (Operations, Warehouse, customizable) | partial | `UserRole` enum; `capabilities()` in `be/parcels/parcel-domain.ts` | — |
+| BR-009, BR-012 (maker-checker, OD-12) | partial | `capabilities()` in `be/parcels/parcel-domain.ts` | — |
+| FR-SE-04 (audit / forensic log) | partial | `ShipmentHistory`, `MerchantAccessEvent` | — |
+| Membership foundation (`CompanyMembership`, `PlatformAdminGrant`) | partial | `AuthorizationContextService` (not wired) | `it/authorization-persistence.auth-integration.spec.ts` |
+| Driver login identity | missing | `UnconfiguredDriverIdentityVerifier` in `be/fleet/driver-telemetry.service.ts` (seam only) | — |
+| §3.1 temporary delegation; FR-PL-04 platform RBAC | missing | — | — |
+
+## Merchants + agreements
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| FR-ME-01 (company-owned merchant, invitation activation) | partial | `Merchant`, `MerchantInvitation`, `be/merchants/business-merchants.controller.ts`, `be/merchant-access/*` | `it/merchant-access.auth-integration.spec.ts` › "activates an owner and denies token replay…", "rejects company staff and foreign merchant identifiers on invitation paths" |
+| FR-ME-01 (one active company per merchant user) | done | `MerchantMembership.userId @unique` | `it/merchant-access.auth-integration.spec.ts` › "denies cross-company existing identity attachment and merchant reassignment" |
+| BR-002, BR-093 (mutual acceptance before ACTIVE, OD-13) | partial | `be/parcels/parcel-operations.repository.ts#saveMerchant` (active on creation) | — |
+| FR-ME-01 reciprocal acceptance, pause/resume | missing | — | — |
+| FR-ME-04 (collection modes COD / PREPAID) | partial | `Shipment.collectionMode`, `shipment_collection_mode` check | `it/merchant-pricing.auth-integration.spec.ts` › "preserves a prepaid zero collection and the merchant delivery charge" |
+| FR-ME-04 (per-merchant service flags) | missing | — | — |
+| FR-ME-05 (saved named addresses) | partial | `Merchant.pickupAddress` | — |
+| FR-ME-06 (termination) | partial | `Merchant.active` | — |
+| BR-001, BR-092, BR-126, FR-ME-07, AC-12, S-09 (company switch + history, OD-07) | missing | — | — |
+| FR-ME-08 (credit / debt limits) | missing | — | — |
+
+## Pricing
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| FR-ME-02 (zone tariffs, discount, promotion) | done | `DeliveryZone`, `MerchantPlan`, `PlanZoneTariff`, `be/merchant-pricing/pricing-engine.ts` | `pricing-engine.spec.ts`, `merchant-pricing.service.spec.ts`; `it/merchant-pricing.auth-integration.spec.ts` › "applies explicit tariff, merchant discount and named promotion without floating point" |
+| FR-ME-02, AC-01 (immutable price snapshot) | done | `Shipment.pricingPlanVersion/baseDeliveryFeeMinor/…`, `shipment_pricing_snapshot` check | `it/merchant-pricing.auth-integration.spec.ts` › "persists final150/fee15 … with an immutable fee snapshot"; `it/merchant-portal.auth-integration.spec.ts` › "…never changes historical terms after plan edits"; `it/phase-a-correctness.auth-integration.spec.ts` › "keeps legacy snapshots…" |
+| Stale quote / concurrent tariff edit | done | company lock + revision checks | `it/merchant-pricing.auth-integration.spec.ts` › "serializes quote confirmation and concurrent tariff edits on the company lock"; `it/phase-a-correctness.auth-integration.spec.ts` › "rejects a stale quote, a merchant without a plan and a foreign zone" |
+| BR-094, FR-ME-03 (two-party approval, effective date, versions, OD-01) | partial | `be/merchant-pricing/*` (in-place edit, `revision` counter) | — |
+| BR-066, FR-PL-06 (one currency per company, OD-02) | partial | `merchant_terms_policy`, `shipment_fee_policy` checks (4 currencies per merchant/shipment) | — |
+
+## Shipments + states
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| FR-SH-01 (merchant/staff creation, actor kept) | done | `Shipment.requestedBy`, `be/merchant-portal/merchant-parcels.service.ts#create`, `be/parcels/parcel-operations.repository.ts#saveParcel` | `it/merchant-portal.auth-integration.spec.ts` › "accepts an invitation, signs in … and persists final150/fee15…"; `it/parcel-http.auth-integration.spec.ts` › "completes merchant, parcel, delivery…" |
+| FR-SH-02 (city + address, GPS optional) | done | `Shipment.city/destination`, `shipment_coordinates` check | `parcel.dto.spec.ts`; `it/merchant-portal.auth-integration.spec.ts` › "…blocks zone/city mismatch…" |
+| FR-SH-05 (tracking ID, QR label, details) | done | `trackingNumber @unique`, `GET /merchant/parcels/:id/label`, `app/features/labels/label_pdf.dart` | `apps/merchant_app/test` |
+| BR-083, FR-SH-05 (priority `NORMAL \| HIGH \| URGENT`, `LOW` → `NORMAL` migration, OD-10, Phase 1) | partial | `ShipmentPriority` enum (still has `LOW`) | — |
+| FR-SH-04 (Excel import, preview, idempotency) | partial | `MerchantImport`, `be/merchant-portal/merchant-imports.service.ts` | `merchant-imports.spec.ts`; `it/merchant-portal.auth-integration.spec.ts` › "previews Excel row errors, imports valid rows exactly once…" |
+| BR-077 (saved import column mappings) | missing | — | — |
+| FR-SH-06 (event history / timeline) | partial | `ShipmentHistory`, `GET /parcels/:id/events` | `parcel-store.spec.ts`, `parcel-query.spec.ts` |
+| FR-SH-08 (corrections via request + review) | partial | `MerchantParcelRequest`, `be/merchant-portal/merchant-requests.*`, `fe/features/merchant-requests` | `it/merchant-portal.auth-integration.spec.ts` › "requires an auditable company pricing approval after receipt and routes cancellation through controlled return", "allows rejecting an unpriceable amendment…" |
+| BR-086 (authorized status correction) | missing | — | — |
+| FR-SH-09 (server-side search/filters) | partial | `be/parcels/parcel-filters.ts` | `parcel-query.spec.ts`, `fe/features/operations/operations.*.spec.ts` |
+| Guarded transitions, optimistic revision | done | `TRANSITIONS`, `assertTransition`, `assertRevision` in `be/parcels/parcel-domain.ts` | `parcel-domain.spec.ts` |
+| BR-074 (instructions / notes with author) | partial | `Shipment.instructions/notes/customerNotes` | — |
+| BR-087 (duplicate prevention) | partial | `MerchantImport.digest`; `Shipment.merchantReference` not unique | `merchant-imports.spec.ts` |
+| BR-070 (labels) | partial | `app/features/labels/label_pdf.dart` | `apps/merchant_app/test` |
+| FR-SH-07 (customer tracking link) | missing | — | — |
+| FR-SH-10 (archive) | missing | — | — |
+
+## Custody + tasks
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| Custody separate from status (column) | done | `Shipment.custody/locationLabel/locationSource`, `ShipmentHistory.custody` | `it/parcel-operations.auth-integration.spec.ts` › "records structured failure, return custody…" |
+| AC-03 (assignment alone does not move custody) | done | `parcel-operations.repository.ts#assignment` | `it/phase-a-correctness.auth-integration.spec.ts` › "suspended drivers … rejected for pickups and assignment" |
+| FR-OP-10 (reassignment cannot clear driver custody) | done | `assignment()` handback guard | `it/parcel-operations.auth-integration.spec.ts` (cross-company / driver cases) |
+| FR-OP-04 (direct delivery without warehouse) | done | `TRANSITIONS` `RECEIVED_FROM_MERCHANT → ASSIGNED → OUT_FOR_DELIVERY → DELIVERED` | `it/merchant-portal.auth-integration.spec.ts` › "groups pickup preferences, requires actual receipt, delivers directly without warehouse…" |
+| BR-036 (warehouses, optional) | partial | `Warehouse.archivedAt`, `receivingWarehouse()`; no transfer | `it/phase-a-correctness.auth-integration.spec.ts` › "requires an active own warehouse…"; `it/warehouses.auth-integration.spec.ts` |
+| BR-018, BR-020, BR-120, BR-122, FR-OP-03, §6 (confirmed custody handover, OD-03) | partial | `OUT_FOR_DELIVERY` sets `custody = 'DRIVER'`; `POST /parcels/:id/location` | — |
+| BR-120, FR-OP-06 (assignment ≠ status, OD-09) | partial | `ShipmentStatus.ASSIGNED` | — |
+| FR-DR-01 (driver custody box) | missing | — | — |
+| FR-OP-06/07 (task accept/reject, policy) | missing | — | — |
+| FR-OP-04 (driver-to-driver transfer) | missing | — | — |
+| FR-OP-05, AM-03 (nearby suggestions) | missing | — | — |
+| FR-DR-03 (absence impact) | missing | — | — |
+| BR-027, BR-035 (service-zone visibility / filtering) | missing | — | — |
+
+## Pickups
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| FR-OP-01 (pickup requests, window, batching) | done | `PickupRequest`, `PickupParcel`, `be/merchant-portal/merchant-pickups.service.ts`, `app/features/pickups/*`, `fe/features/pickups` | `it/merchant-portal.auth-integration.spec.ts` › "groups pickup preferences, requires actual receipt…"; `fe/features/pickups/workflows.*.spec.ts` |
+| Per-parcel receipt (RECEIVED/MISSING/DISCREPANT) | done | `PickupParcel.receipt`, `pickup_parcel_receipt` check | `it/merchant-portal.auth-integration.spec.ts` › "keeps warehouse drop-off pending until authorized staff confirm each actual arrival" |
+| FR-OP-01 (one active pickup claim per parcel) | done | `one_active_pickup_per_parcel` index | `parcel-contract.spec.ts` |
+| Warehouse drop-off | done | `method IN ('COMPANY_PICKUP','WAREHOUSE_DROPOFF')` | as above |
+| FR-OP-03 (driver receipt, scan) | partial | staff confirmation in dashboard | — |
+| BR-082 (pickup failure reasons, reschedule, fees) | partial | `PickupParcel.receipt` | — |
+| FR-OP-02, FR-OP-07 (scheduled pickups, driver-added parcels) | missing | — | — |
+
+## Returns / exchange
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| Return record, reason, staged handoff, fee once | done | `ParcelReturn`, `be/parcels/returns.controller.ts`, `parcel-ledger.ts` | `it/parcel-operations.auth-integration.spec.ts` › "records structured failure, return custody, and exactly one merchant handoff fee…"; `it/parcel-http.auth-integration.spec.ts` › "records a failed attempt and both return handoff stages…" |
+| FR-EX-01 (failed attempt ≠ automatic return) | done | explicit `POST /returns` | `parcel-attempts.spec.ts` |
+| FR-EX-05 (cancellation after pickup via return) | done | merchant `CANCEL` request → review → return | `parcel-cancellation.spec.ts`; `it/merchant-portal.auth-integration.spec.ts` › "…routes cancellation through controlled return" |
+| BR-023, BR-096, BR-104, §6 (direct/warehouse, merchant confirms, one active, OD-08, Phase 9) | partial | `TRANSITIONS` (warehouse stage forced), `ParcelReturn.shipmentId @unique` | — |
+| FR-EX-06/07 (post-delivery return, exchange) | missing | — | — |
+| FR-EX-08 (damage / loss incidents) | missing | — | — |
+| S-05 (reattempt-limit policy) | missing | — | — |
+
+## Obstacles
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| Failed attempt with reason, actor, time | done | `ParcelAttempt`, `parcel-operations.repository.ts#recordAttempt` | `parcel-attempts.spec.ts` |
+| FR-EX-04 (explicit reattempt) | done | `FAILED_DELIVERY → OUT_FOR_DELIVERY` | `parcel-domain.spec.ts` |
+| FR-EX-01 (standard + custom failure reasons) | partial | free text | — |
+| AM-04, S-02, AC-05 (Obstacles queue, merchant resolution) | missing | — | — |
+
+## COD + cashboxes
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| BR-088 (exact full COD incl. customer-paid fees) | done | `CodCollection`, `collectionTotal()`, `assertFullAmount()` | `it/parcel-operations.auth-integration.spec.ts` › "credits only goods when customer pays company delivery and service charges", "requires collection of customer-paid charges even when the goods COD is zero" |
+| NFR Consistency (idempotent money commands) | done | `MonetaryRequest` | `it/parcel-operations.auth-integration.spec.ts` › "retries monetary actions exactly once and rejects payload changes and duplicate collection keys" |
+| Atomic posting with rollback | done | store transactions | `it/parcel-operations.auth-integration.spec.ts` › "rolls back a collection and leaves its retry key usable when goods posting fails" |
+| BR-098, BR-021, FR-SH-03, AC-04 (delivery + COD one action, OD-04) | partial | `DELIVERED` before `POST /collections` | — |
+| BR-033, BR-108, BR-109, FR-FI-03 (partial handover, driver balance, OD-05) | partial | `CashRemittance` (full amount, `collectionId @unique`) | `it/parcel-operations.auth-integration.spec.ts` › "rejects partial collection, remittance and payment" |
+| FR-FI-04 (handover disputes) | missing | — | — |
+| AM-01, FR-FI-01/02, S-04, AC-06 (accountant cashboxes, transfers) | missing | — | — |
+| AM-02, FR-FI-05..08, S-03, AC-07/08 (delegated payee tasks) | missing | — | — |
+| FR-FI-09 (expenses, period close) | missing | — | — |
+| BR-061 (COD reconciliation, investigations) | missing | — | — |
+
+## Merchant settlements
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| FR-ST-01 (proceeds from snapshots) | done | `MerchantLedgerEntry`, `settlementTotals()` | `it/phase-a-correctness.auth-integration.spec.ts` › "quotes and stores 150 final / 15 fee, collects 150 and settles 135"; `it/merchant-portal.auth-integration.spec.ts` › "…exposes135 for settlement only after company remittance" |
+| FR-ST-02/04, BR-090 (approval separate from payment, proof) | done | `MerchantSettlement` `DRAFT → FINALIZED → PAID`, `SettlementPayment` | `it/parcel-operations.auth-integration.spec.ts` › "completes the full delivery, separate cash remittance, admin approval and actual payout…"; `it/parcel-http.auth-integration.spec.ts` › "permits accountant reads while refusing … settlement approval despite forged administrator claims" |
+| BR-012 (append-only adjustments + reversal) | partial | `POST /financial/adjustments`, `…/reversal` (no second approver, OD-12) | `it/parcel-operations.auth-integration.spec.ts`; `fe/features/operations/money.action.spec.ts` |
+| Merchant statement + settlement requests | done | `GET /merchant/statement`, `MerchantSettlementRequest`, `app/features/settlements`, `app/features/accounting` | `it/merchant-portal.auth-integration.spec.ts` › "isolates settlement request history…", "requires current FINANCE_VIEW membership…" |
+| BR-010, FR-ST-03 (partial payments, carry-forward, OD-06) | partial | `SettlementPayment.settlementId @unique`, `assertFullAmount` | — |
+| FR-ST-02 (schedules) | partial | on-demand only | — |
+| FR-ST-01/04 (merchant debt, invoices) | partial | `settlement_amount` check (`netPayableMinor > 0`) | — |
+| BR-060 (merchant financial disputes) | missing | — | — |
+
+## Driver finance
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| FR-CP-01..06, FR-DR-07, S-07, AC-09 | missing | — | — |
+
+## Driver app + GPS
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| FR-DR-02 (driver records, suspend/reactivate) | partial | `Worker`, `be/drivers/*`, `fe/features/drivers` | `it/driver-records.auth-integration.spec.ts` › "suspends idempotently and reactivates to offline"; `drivers.*.spec.ts` |
+| FR-DR-04 (one vehicle per driver) | done | `Worker.vehicleId @unique`, `be/vehicles/*` | `vehicles*.spec.ts`, `it/vehicle-deletion.auth-integration.spec.ts` |
+| BR-032 (vehicle status / breakdowns) | partial | `Vehicle` | — |
+| FR-GP-01/02 (consented live location, validation) | partial | `DriverTrackingState`, `be/fleet/telemetry-policy.ts`, `fleet.gateway.ts`, `fe/app/app/live-map` | `it/fleet-tracking.auth-integration.spec.ts` › "rejects duplicates/out of order/frequency/jumps…", "stops sharing without erasing last known coordinates…", "denies all driver ingestion until a trusted auth adapter is configured"; `telemetry-policy.spec.ts`; `fe/features/fleet/*.spec.ts` |
+| FR-GP-03 (live view restricted) | partial | socket tickets, persisted role check | `it/fleet-tracking.auth-integration.spec.ts` › "enforces persisted role and company rather than stale token claims" |
+| FR-DR-05 (driver availability) | partial | `WorkerStatus` (staff-set) | — |
+| FR-OP-08 (POD), FR-OP-09, FR-DR-06, driver app | missing | `ProofOfDelivery` model unused | — |
+
+## Partners
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| FR-OP-04 (partner part), FR-ST-05 | missing | — | — |
+
+## AI
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| FR-AI-01..07, S-08, AC-10 | missing | `AIExecution` legacy model, unused, no `companyId` | — |
+
+## Platform admin / subscriptions
+
+| Rule / FR | Status | Code path | Test |
+| --- | --- | --- | --- |
+| FR-PL-01 (main admin mandatory, never zero admins) | done | signup creates `COMPANY_ADMIN`; staff last-admin guard | `auth.service.spec.ts`; `it/staff.auth-integration.spec.ts` › "refuses self-deactivation, including for the only active administrator" |
+| Suspended company blocks access | done | `Company.suspended` | `it/staff.auth-integration.spec.ts` › "refuses acceptance for a suspended company…"; `it/fleet-tracking.auth-integration.spec.ts` › "rejects inactive, unverified and suspended principals" |
+| BR-045, FR-PL-01 (PENDING until platform approval, OD-11) | partial | `auth.repository.ts#createUserWithDefaultCompany` (active TRIAL) | — |
+| FR-PL-02..05 (plans, billing, support access, audit) | partial | `Company.plan`, `PlatformAdminGrant` (unused) | — |
+| BR-048 (support access with company approval) | missing | — | — |
+| BR-068 (company profile editing) | missing | headquarters location only | — |

@@ -6,7 +6,7 @@ This file applies to the entire project. Read it before working, then read the `
 
 Fleetora is a multi-tenant logistics platform with a web frontend, a NestJS backend, and an AI service. The logistics core must work independently of AI.
 
-- Read `docs/Fleetora_Master_Project_Document.md` before product, architecture, or domain changes. If unavailable, report the missing reference instead of inventing requirements.
+- Read `docs/product/` (start with `docs/product/README.md`) before product, architecture, or domain changes. It is the only product source; `docs/archive/` is superseded and must not be used. If a needed rule is missing, report it instead of inventing requirements.
 - Distinguish approved requirements, current implementation, conceptual examples, and future plans. Do not implement roadmap features merely because the document mentions them.
 - Inspect code to understand what exists; do not assume documented modules, versions, paths, or integrations are already implemented.
 - Apply the user's explicit task within the approved scope. If it changes an established requirement or security boundary, identify the conflict instead of silently choosing.
@@ -123,3 +123,14 @@ Never claim that something works or passes without evidence. State what passed, 
 Use the user's language for explanations and existing project conventions for code. End with a concise account of what changed, why, relevant verification results, and material unresolved issues.
 
 ## Do not change any md document unless i tell you
+
+## Product contract
+
+- Read `docs/product/README.md` first. Obey its authority order and the owner decisions in `docs/product/DECISIONS.md`.
+- Never invent, extend or simplify business rules. If a rule is ambiguous or missing, stop and output `BLOCKED — DECISION REQUIRED` with the affected rule IDs.
+- Work only inside the approved task scope (see `docs/product/IMPLEMENTATION_PLAN.md`).
+- Plan first: rule IDs, files, migrations, tests, risks. Wait for approval before implementing, unless the prompt says "approved, implement".
+- Test-first. For money and custody, include rejection, permission, cross-tenant and concurrency cases.
+- Never start or stop servers. Never touch Neon unless the task says so. Migrations are additive-only.
+- Report in max 10 lines, by rule ID, with real test counts and minimal test output.
+- Update `docs/product/TRACEABILITY.md` for every rule implemented.

@@ -41,7 +41,9 @@ Fleetora currently contains separate areas such as:
 │   ├── AGENTS.md
 │   └── DESIGN_SYSTEM.md
 └── docs/
-    ├── Fleetora_Master_Project_Document.md
+    ├── README.md
+    ├── product/
+    ├── archive/
     └── CODEX_WORKFLOW.md
 ```
 

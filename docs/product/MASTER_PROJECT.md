@@ -3683,3 +3683,26 @@ Add Controlled Automation
 ```
 
 This keeps Fleetora a real software system first and an AI system second—while allowing the AI layer to become a genuine operational differentiator.
+
+
+---
+
+# Approved Post-BR-137 Requirements Amendments — 2026-11-25
+
+**Status: APPROVED product requirements**, not proof of implemented functionality. This section supersedes older conflicting planning statements in this master document; see `Fleetora_Architecture_Database_Implementation_Blueprint.md` for the proposed architecture, entities, validations and rollout dependencies. No new BR questions were opened.
+
+## AM-01 — Separate accountant cashboxes (supersedes BR-065 operational single-box design)
+
+Each accountant has a separately accountable cashbox with own balance and transactions. Authorized company admin sees every accountant cashbox and a consolidated total. Accountant access is limited to assigned cashbox unless expressly authorized. Cashbox-to-cashbox transfers need approvals under financial roles, traceable sending/receiving records and confirmation; a transfer is not revenue and does not inflate the aggregate balance. The consolidated admin balance is a *view*, not a second cash reserve. This preserves company single-currency policy (BR-066) and does not add full banking/ERP.
+
+## AM-02 — Driver parcel box and delegated invoice payment tasks
+
+Each driver has a logical **shipment box** for parcels confirmed in their physical custody, distinct from assignments not physically received. Admin or authorized accountant may send a driver a payment instruction/invoice to pay a merchant or other authorized payee. The funding source is **either** an amount handed over from an accountant cashbox **or** an explicitly approved allocation of available COD already held by that driver. Record instruction approval, authorized source, cash handover/amount reservation, actual payee payment and evidence, reconciliation, reversals/disputes and unique transaction identifiers. Merely sending the task is neither cash received by driver nor payment completed. COD liability must be reconciled with the corresponding merchant/third-party settlement, never silently booked as company revenue; prohibit double spending and duplicate payouts. This is distinct from paying driver wages.
+
+## AM-03 — Direct delivery after pickup, with nearby suggestions
+
+After physically collecting new parcels from a merchant, the driver may deliver eligible nearby parcels directly without returning to the warehouse. The system can suggest nearby deliveries based on the driver's currently confirmed custody, authorized service coverage and valid parcel status. Suggestions are nonbinding: the driver controls route/order under BR-029; no automatic rerouting or skipping required custody confirmation. This elaborates existing BR-019 (direct delivery allowed) rather than superseding it.
+
+## AM-04 — Obstacle and merchant-resolution workflow
+
+When a driver encounters an obstacle (for example customer unanswered), the driver records the reason; the parcel appears in an **Obstacles** queue visible to appropriate company staff and merchant for their own parcels. When the merchant contacts the customer or otherwise handles the obstacle, the merchant records a resolution note (e.g. 'retry the call', corrected contact). The obstacle moves to **Resolved / Ready for Retry** for driver/operations follow-up. This is **not** a delivered state, does not transfer custody or automatically schedule/succeed a retry. Record actor/time/history; corrections to phone/address preserve prior values and honor BR-074 and BR-101, including approval for changes affecting destination/pricing. Multiple attempts/obstacles remain traceable. This is a parcel-specific issue workflow, **not** a general ticket/helpdesk system (BR-105) or shipment chat (BR-103).

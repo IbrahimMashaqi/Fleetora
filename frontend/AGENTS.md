@@ -7,10 +7,10 @@ Applies inside `frontend/`. Read the root `../AGENTS.md` and any more specific i
 Fleetora is a multi-tenant logistics platform. The frontend owns presentation, interaction, client state, and API consumption. The backend owns authorization, company isolation, domain rules, and operational writes.
 
 - Inspect the affected route, feature, shared components, API layer, and relevant tests before editing.
-- Read `../docs/Fleetora_Master_Project_Document.md` for product or workflow changes. Distinguish approved requirements from conceptual examples and future plans.
+- Product rules: see /AGENTS.md and docs/product/
 - Check `package.json`, actual installed versions, and configuration before assuming dependencies or commands.
 - The expected stack is Next.js, React, TypeScript, and Tailwind CSS. Use shadcn/ui, TanStack Query, React Hook Form, Zod, or other libraries only when present and appropriate, or when the task justifies adding them.
-- Do not invent backend capabilities, roles, status transitions, or product requirements.
+- Do not invent backend capabilities, roles, or status transitions in the UI or API layer.
 - State a brief plan, implement the authorized change, verify it, and report results. Follow the root workflow without adding unnecessary approval checkpoints.
 
 ## 2. Follow the installed Next.js version
