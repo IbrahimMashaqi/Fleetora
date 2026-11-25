@@ -81,11 +81,20 @@ describe('parcel persistence compatibility and invariants', () => {
         (fk) => fk.source.columns.includes('requestedBy'),
       );
     expect(tables.shipments.foreignKeys).toContainEqual(requester);
+    const oldWarehouses =
+      previous.storage.namespaces.public.entries.table.warehouses;
     expect({
       ...tables.warehouses,
-      uniques:
-        previous.storage.namespaces.public.entries.table.warehouses.uniques,
-    }).toEqual(previous.storage.namespaces.public.entries.table.warehouses);
+      columns: oldWarehouses.columns,
+      uniques: oldWarehouses.uniques,
+    }).toEqual(oldWarehouses);
+    for (const [name, column] of Object.entries(oldWarehouses.columns))
+      expect(tables.warehouses.columns).toHaveProperty(name, column);
+    // Later additions (archivedAt) must stay nullable so existing rows remain valid.
+    for (const [name, column] of Object.entries(tables.warehouses.columns))
+      if (!(name in oldWarehouses.columns))
+        expect(column.nullable, name).toBe(true);
+    expect(tables.warehouses.columns).toHaveProperty('archivedAt');
     expect(tables.warehouses.uniques).toContainEqual({
       columns: ['id', 'companyId'],
     });

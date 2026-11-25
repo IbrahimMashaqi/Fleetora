@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'f3715185aafae91ad66bca609d42540daa21b5b2aeef17f6a8e7688711482eac'>;
+  StorageHashBase<'0328f315880d04eab0a0ce5d8b2efc6fdffcf52118257626b22e32c21907ef67'>;
 export type ExecutionHash =
   ExecutionHashBase<'9497188ee7d619ac6f30460364a958537274b9c6a36cd62b69d7d5ef30263eae'>;
 export type ProfileHash =
@@ -743,6 +743,7 @@ export type FieldOutputTypes = {
       readonly companyId: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly address: CodecTypes['pg/text@1']['output'];
+      readonly archivedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
@@ -1268,6 +1269,7 @@ export type FieldInputTypes = {
       readonly companyId: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly address: CodecTypes['pg/text@1']['input'];
+      readonly archivedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
@@ -1790,6 +1792,7 @@ export type StorageColumnTypes = {
     };
     readonly warehouses: {
       readonly address: CodecTypes['pg/text@1']['output'];
+      readonly archivedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly companyId: CodecTypes['pg/text@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
@@ -2315,6 +2318,7 @@ export type StorageColumnInputTypes = {
     };
     readonly warehouses: {
       readonly address: CodecTypes['pg/text@1']['input'];
+      readonly archivedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly companyId: CodecTypes['pg/text@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
@@ -2513,6 +2517,7 @@ export namespace Models {
     companyId: CodecTypes['pg/text@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
     address: CodecTypes['pg/text@1']['output'];
+    archivedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     company: public_Company;
@@ -7379,6 +7384,11 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                 };
+                readonly archivedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
                 readonly createdAt: {
                   readonly nativeType: 'timestamptz';
                   readonly codecId: 'pg/timestamptz-temporal@1';
@@ -12142,6 +12152,13 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly archivedAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
               readonly createdAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -12209,6 +12226,7 @@ type ContractBase = Omit<
                 readonly companyId: { readonly column: 'companyId' };
                 readonly name: { readonly column: 'name' };
                 readonly address: { readonly column: 'address' };
+                readonly archivedAt: { readonly column: 'archivedAt' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
