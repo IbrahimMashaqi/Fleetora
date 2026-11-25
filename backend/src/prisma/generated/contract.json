@@ -136,6 +136,10 @@
       "model": "Shipment",
       "namespace": "public"
     },
+    "staff_invitations": {
+      "model": "StaffInvitation",
+      "namespace": "public"
+    },
     "users": {
       "model": "User",
       "namespace": "public"
@@ -1373,6 +1377,21 @@
                 },
                 "to": {
                   "model": "Shipment",
+                  "namespace": "public"
+                }
+              },
+              "staffInvitations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "StaffInvitation",
                   "namespace": "public"
                 }
               },
@@ -6994,6 +7013,154 @@
               },
               "namespaceId": "public",
               "table": "shipment_history"
+            }
+          },
+          "StaffInvitation": {
+            "fields": {
+              "acceptedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "acceptedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "companyId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "email": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "expiresAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "issuedById": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "revokedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "revokedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "role": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "tokenHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "company": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "acceptedAt": {
+                  "column": "acceptedAt"
+                },
+                "acceptedById": {
+                  "column": "acceptedById"
+                },
+                "companyId": {
+                  "column": "companyId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "email": {
+                  "column": "email"
+                },
+                "expiresAt": {
+                  "column": "expiresAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "issuedById": {
+                  "column": "issuedById"
+                },
+                "revokedAt": {
+                  "column": "revokedAt"
+                },
+                "revokedById": {
+                  "column": "revokedById"
+                },
+                "role": {
+                  "column": "role"
+                },
+                "tokenHash": {
+                  "column": "tokenHash"
+                }
+              },
+              "namespaceId": "public",
+              "table": "staff_invitations"
             }
           },
           "User": {
@@ -13289,6 +13456,131 @@
                 }
               ]
             },
+            "staff_invitations": {
+              "checks": [
+                {
+                  "expression": "\"role\" IN ('COMPANY_ADMIN','ACCOUNTANT') AND NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL) AND ((\"acceptedAt\" IS NULL AND \"acceptedById\" IS NULL) OR (\"acceptedAt\" IS NOT NULL AND \"acceptedById\" IS NOT NULL)) AND ((\"revokedAt\" IS NULL AND \"revokedById\" IS NULL) OR (\"revokedAt\" IS NOT NULL AND \"revokedById\" IS NOT NULL))",
+                  "name": "staff_invitation_state_ad4af2ce",
+                  "prefix": "staff_invitation_state"
+                }
+              ],
+              "columns": {
+                "acceptedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "acceptedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "companyId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "email": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "expiresAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "issuedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "revokedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "revokedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "role": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "tokenHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "staff_invitations"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "companyId"
+                  ],
+                  "name": "staff_invitations_companyId_idx_33acc5ed",
+                  "prefix": "staff_invitations_companyId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "companyId",
+                    "createdAt"
+                  ],
+                  "name": "staff_invitations_company_created_5377e5d5",
+                  "prefix": "staff_invitations_company_created",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "tokenHash"
+                  ]
+                }
+              ]
+            },
             "users": {
               "checks": [
                 {
@@ -13950,10 +14242,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "0328f315880d04eab0a0ce5d8b2efc6fdffcf52118257626b22e32c21907ef67"
+    "storageHash": "8faca95d054b124a36c5a93ca6fef78946a8653f5f978d2dfb92f881caffe1f3"
   },
   "execution": {
-    "executionHash": "9497188ee7d619ac6f30460364a958537274b9c6a36cd62b69d7d5ef30263eae",
+    "executionHash": "136efae69fcefa90706b18d368032752b32d01366a8d36768a8029e128deee87",
     "mutations": {
       "defaults": [
         {
@@ -14445,6 +14737,17 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "shipments"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "staff_invitations"
           }
         },
         {

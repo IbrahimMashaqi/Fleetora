@@ -34,9 +34,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'0328f315880d04eab0a0ce5d8b2efc6fdffcf52118257626b22e32c21907ef67'>;
+  StorageHashBase<'8faca95d054b124a36c5a93ca6fef78946a8653f5f978d2dfb92f881caffe1f3'>;
 export type ExecutionHash =
-  ExecutionHashBase<'9497188ee7d619ac6f30460364a958537274b9c6a36cd62b69d7d5ef30263eae'>;
+  ExecutionHashBase<'136efae69fcefa90706b18d368032752b32d01366a8d36768a8029e128deee87'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -713,6 +713,20 @@ export type FieldOutputTypes = {
       readonly locationLabel: CodecTypes['pg/text@1']['output'] | null;
       readonly occurredAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
+    readonly StaffInvitation: {
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly companyId: CodecTypes['pg/text@1']['output'];
+      readonly email: CodecTypes['pg/text@1']['output'];
+      readonly role: CodecTypes['pg/text@1']['output'];
+      readonly tokenHash: CodecTypes['pg/text@1']['output'];
+      readonly issuedById: CodecTypes['pg/text@1']['output'];
+      readonly acceptedById: CodecTypes['pg/text@1']['output'] | null;
+      readonly revokedById: CodecTypes['pg/text@1']['output'] | null;
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly revokedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    };
     readonly User: {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly email: CodecTypes['pg/text@1']['output'] | null;
@@ -1238,6 +1252,20 @@ export type FieldInputTypes = {
       readonly custody: CodecTypes['pg/text@1']['input'] | null;
       readonly locationLabel: CodecTypes['pg/text@1']['input'] | null;
       readonly occurredAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+    };
+    readonly StaffInvitation: {
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly companyId: CodecTypes['pg/text@1']['input'];
+      readonly email: CodecTypes['pg/text@1']['input'];
+      readonly role: CodecTypes['pg/text@1']['input'];
+      readonly tokenHash: CodecTypes['pg/text@1']['input'];
+      readonly issuedById: CodecTypes['pg/text@1']['input'];
+      readonly acceptedById: CodecTypes['pg/text@1']['input'] | null;
+      readonly revokedById: CodecTypes['pg/text@1']['input'] | null;
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly revokedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
     readonly User: {
       readonly id: CodecTypes['pg/text@1']['input'];
@@ -1765,6 +1793,20 @@ export type StorageColumnTypes = {
       readonly weight: CodecTypes['pg/float8@1']['output'] | null;
       readonly workerId: CodecTypes['pg/text@1']['output'] | null;
     };
+    readonly staff_invitations: {
+      readonly acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly acceptedById: CodecTypes['pg/text@1']['output'] | null;
+      readonly companyId: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly email: CodecTypes['pg/text@1']['output'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly issuedById: CodecTypes['pg/text@1']['output'];
+      readonly revokedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly revokedById: CodecTypes['pg/text@1']['output'] | null;
+      readonly role: CodecTypes['pg/text@1']['output'];
+      readonly tokenHash: CodecTypes['pg/text@1']['output'];
+    };
     readonly users: {
       readonly companyId: CodecTypes['pg/text@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
@@ -2291,6 +2333,20 @@ export type StorageColumnInputTypes = {
       readonly weight: CodecTypes['pg/float8@1']['input'] | null;
       readonly workerId: CodecTypes['pg/text@1']['input'] | null;
     };
+    readonly staff_invitations: {
+      readonly acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly acceptedById: CodecTypes['pg/text@1']['input'] | null;
+      readonly companyId: CodecTypes['pg/text@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly email: CodecTypes['pg/text@1']['input'];
+      readonly expiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly issuedById: CodecTypes['pg/text@1']['input'];
+      readonly revokedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly revokedById: CodecTypes['pg/text@1']['input'] | null;
+      readonly role: CodecTypes['pg/text@1']['input'];
+      readonly tokenHash: CodecTypes['pg/text@1']['input'];
+    };
     readonly users: {
       readonly companyId: CodecTypes['pg/text@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
@@ -2376,6 +2432,7 @@ export namespace Models {
     settlementLines: public_MerchantSettlementLine[];
     settlements: public_MerchantSettlement[];
     shipments: public_Shipment[];
+    staffInvitations: public_StaffInvitation[];
     trackingStates: public_DriverTrackingState[];
     users: public_User[];
     vehicles: public_Vehicle[];
@@ -2405,6 +2462,7 @@ export namespace Models {
       | 'settlementLines'
       | 'settlements'
       | 'shipments'
+      | 'staffInvitations'
       | 'trackingStates'
       | 'users'
       | 'vehicles'
@@ -2997,6 +3055,22 @@ export namespace Models {
     merchant: public_Merchant;
     readonly [RelationKeys]?: 'company' | 'merchant';
   };
+  export type public_StaffInvitation = {
+    id: CodecTypes['pg/text@1']['output'];
+    companyId: CodecTypes['pg/text@1']['output'];
+    email: CodecTypes['pg/text@1']['output'];
+    role: CodecTypes['pg/text@1']['output'];
+    tokenHash: CodecTypes['pg/text@1']['output'];
+    issuedById: CodecTypes['pg/text@1']['output'];
+    acceptedById: CodecTypes['pg/text@1']['output'] | null;
+    revokedById: CodecTypes['pg/text@1']['output'] | null;
+    expiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+    revokedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+    createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    company: public_Company;
+    readonly [RelationKeys]?: 'company';
+  };
   export type public_MerchantAccessEvent = {
     id: CodecTypes['pg/text@1']['output'];
     companyId: CodecTypes['pg/text@1']['output'];
@@ -3181,6 +3255,7 @@ export declare const models: {
     MonetaryRequest: Models.public_MonetaryRequest;
     MerchantMembership: Models.public_MerchantMembership;
     MerchantInvitation: Models.public_MerchantInvitation;
+    StaffInvitation: Models.public_StaffInvitation;
     MerchantAccessEvent: Models.public_MerchantAccessEvent;
     DeliveryZone: Models.public_DeliveryZone;
     MerchantPlan: Models.public_MerchantPlan;
@@ -7182,6 +7257,101 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly staff_invitations: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly companyId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly email: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly role: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly tokenHash: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly issuedById: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly acceptedById: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly revokedById: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly expiresAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                };
+                readonly acceptedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
+                readonly revokedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['tokenHash'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'staff_invitations_company_created_5377e5d5';
+                  readonly prefix: 'staff_invitations_company_created';
+                  readonly columns: readonly ['companyId', 'createdAt'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'staff_invitations_companyId_idx_33acc5ed';
+                  readonly prefix: 'staff_invitations_companyId_idx';
+                  readonly columns: readonly ['companyId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'staff_invitations';
+                    readonly columns: readonly ['companyId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companies';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly users: {
               columns: {
                 readonly id: {
@@ -7763,6 +7933,10 @@ type ContractBase = Omit<
     readonly merchant_invitations: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'MerchantInvitation';
+    };
+    readonly staff_invitations: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'StaffInvitation';
     };
     readonly merchant_access_events: {
       readonly namespace: 'public' & NamespaceId;
@@ -8398,6 +8572,17 @@ type ContractBase = Omit<
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
                   readonly model: 'Shipment';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['companyId'];
+                };
+              };
+              readonly staffInvitations: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'StaffInvitation';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -11862,6 +12047,102 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly StaffInvitation: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly companyId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly email: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly role: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly tokenHash: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly issuedById: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly acceptedById: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly revokedById: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly expiresAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly acceptedAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly revokedAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly company: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['companyId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'staff_invitations';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly companyId: { readonly column: 'companyId' };
+                readonly email: { readonly column: 'email' };
+                readonly role: { readonly column: 'role' };
+                readonly tokenHash: { readonly column: 'tokenHash' };
+                readonly issuedById: { readonly column: 'issuedById' };
+                readonly acceptedById: { readonly column: 'acceptedById' };
+                readonly revokedById: { readonly column: 'revokedById' };
+                readonly expiresAt: { readonly column: 'expiresAt' };
+                readonly acceptedAt: { readonly column: 'acceptedAt' };
+                readonly revokedAt: { readonly column: 'revokedAt' };
+                readonly createdAt: { readonly column: 'createdAt' };
+              };
+            };
+          };
           readonly User: {
             readonly fields: {
               readonly id: {
@@ -12917,6 +13198,14 @@ type ContractBase = Omit<
           };
           readonly onCreate: { readonly kind: 'generator'; readonly id: 'instantNow' };
           readonly onUpdate: { readonly kind: 'generator'; readonly id: 'instantNow' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'staff_invitations';
+            readonly column: 'id';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'uuidv4' };
         },
         {
           readonly ref: {
