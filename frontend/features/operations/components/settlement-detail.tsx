@@ -141,7 +141,7 @@ function PreviewContent({
     <>
       <PageIntro
         title="Preview settlement"
-        description="Draft lines reserve eligible funds until approval or cancellation."
+        description="A draft holds these amounts for this settlement until you approve or cancel it."
       >
         <Button asChild variant="outline">
           <Link href="/app/settlements">{t("Back")}</Link>
@@ -163,8 +163,22 @@ function PreviewContent({
               currency={valueText(preview.data.preview, "currency")}
             />
           </Panel>
+          {!preview.data.lines.length && (
+            <p
+              id="settlement-empty-reason"
+              role="status"
+              className="text-sm text-muted-foreground"
+            >
+              {t(
+                "Nothing to settle yet. Delivered and collected parcels appear here once the cash is remitted.",
+              )}
+            </p>
+          )}
           <Button
             disabled={!preview.data.lines.length}
+            aria-describedby={
+              preview.data.lines.length ? undefined : "settlement-empty-reason"
+            }
             onClick={() => setConfirming(true)}
           >
             {t("Create settlement draft")}
@@ -225,7 +239,7 @@ function PreviewContent({
               ),
             },
           }}
-          description="Draft lines reserve eligible funds until approval or cancellation."
+          description="A draft holds these amounts for this settlement until you approve or cancel it."
           onClose={() => setConfirming(false)}
           onSaved={(data) => {
             if (data.kind === "saved" && data.id)
@@ -353,7 +367,7 @@ function DetailContent({
                             title: "Approve settlement",
                             action: "finalize",
                             description:
-                              "Approving a settlement does not record a payment.",
+                              "Approving a settlement doesn't pay it. Record the payment separately.",
                             fields: [],
                           })
                         }

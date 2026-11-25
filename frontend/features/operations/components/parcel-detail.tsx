@@ -363,7 +363,7 @@ function ParcelContent({
                             title: "Record COD collection",
                             financial: true,
                             description:
-                              "Full amounts only; partial collections, remittances and payouts are not supported.",
+                              "Record the full amount collected from the customer. Partial amounts aren't supported.",
                             operation: {
                               resource: "collections",
                               action: "create",

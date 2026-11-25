@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import { expect, test } from "@playwright/test";
 
@@ -24,7 +25,10 @@ let status: string,
   changed: boolean;
 let writes: { path: string; body: Record<string, unknown> }[];
 let sessionRole: string;
-let requested: string[];
+// Requests are tagged with the bearer that sent them: server-side calls still in
+// flight from a previous test's page must not be attributed to the current one.
+let requested: { path: string; bearer: string }[];
+let accessToken: string;
 function pickup() {
   return {
     id,
@@ -68,7 +72,10 @@ test.beforeAll(async () => {
   server = createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     const url = new URL(req.url ?? "/", "http://fixture.invalid");
-    requested.push(url.pathname);
+    requested.push({
+      path: url.pathname,
+      bearer: String(req.headers.authorization ?? "").replace(/^Bearer /, ""),
+    });
     const end = (data: unknown) =>
       res.end(JSON.stringify({ success: true, data }));
     if (url.pathname === "/auth/session")
@@ -166,6 +173,7 @@ test.afterAll(async () => {
 test.beforeEach(async ({ context }) => {
   sessionRole = "COMPANY_ADMIN";
   requested = [];
+  accessToken = `workflow-fixture-${randomUUID()}`;
   status = "REQUESTED";
   error = false;
   delay = false;
@@ -177,7 +185,7 @@ test.beforeEach(async ({ context }) => {
   await context.addCookies([
     {
       name: "fleetora_access",
-      value: "workflow-fixture",
+      value: accessToken,
       url: "http://localhost:3100",
       httpOnly: true,
     },
@@ -409,7 +417,10 @@ test("accountant sees only the settlement-request queue without errors or parcel
   ).toHaveCount(0);
   await expect(page.getByText(/not permitted|access required|forbidden/i)).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Merchant requests", exact: true })).toBeVisible();
-  expect(requested).toContain("/merchant-settlement-requests");
-  expect(requested.filter((path) => path.startsWith("/parcel-requests"))).toEqual([]);
+  const own = requested
+    .filter((request) => request.bearer === accessToken)
+    .map((request) => request.path);
+  expect(own).toContain("/merchant-settlement-requests");
+  expect(own.filter((path) => path.startsWith("/parcel-requests"))).toEqual([]);
   expect(runtimeErrors).toEqual([]);
 });

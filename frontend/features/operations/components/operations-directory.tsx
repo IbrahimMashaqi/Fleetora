@@ -319,7 +319,7 @@ function Directory({
             : resource === "collections"
               ? "Collection and remittance are separate recorded events."
               : resource === "settlements"
-                ? "Approving a settlement does not record a payment."
+                ? "Approving a settlement doesn't pay it. Record the payment separately."
                 : undefined
         }
       >
@@ -364,7 +364,7 @@ function Directory({
               setDialog({
                 title: "Record COD collection",
                 description:
-                  "Full amounts only; partial collections, remittances and payouts are not supported.",
+                  "Record the full amount collected from the customer. Partial amounts aren't supported.",
                 financial: true,
                 messages: {
                   conflict:
@@ -434,7 +434,7 @@ function Directory({
                               title: "Record cash remittance",
                               financial: true,
                               description:
-                                "Full amounts only; partial collections, remittances and payouts are not supported.",
+                                "Record the full amount collected from the customer. Partial amounts aren't supported.",
                               operation: {
                                 resource,
                                 id: row.id,

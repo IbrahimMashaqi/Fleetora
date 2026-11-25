@@ -213,6 +213,8 @@ export function Pager({
   onPage: (page: number) => void;
 }) {
   const { t, locale } = useLocale();
+  // A single page needs no paging controls.
+  if (data.page <= 1 && !data.hasNext) return null;
   return (
     <nav
       aria-label={t("Pagination")}
