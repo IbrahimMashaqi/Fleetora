@@ -58,6 +58,8 @@ export function PricingPager({
 }) {
   const { locale } = useLocale();
   const c = locale === "ar" ? pricingArabic : pricingEnglish;
+  // A single page needs no paging controls.
+  if (page.page <= 1 && !page.hasNext) return null;
   return (
     <div className="flex items-center justify-end gap-3">
       <Button

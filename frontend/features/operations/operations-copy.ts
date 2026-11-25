@@ -1,5 +1,8 @@
 // Feature vocabulary extends the existing shared locale provider.
 export const operationsArabic = {
+  "Business profile": "ملف النشاط التجاري",
+  "Nothing to settle yet. Delivered and collected parcels appear here once the cash is remitted.":
+    "لا يوجد ما يمكن تسويته بعد. تظهر هنا الطرود المسلّمة والمحصّلة بعد توريد النقد.",
   "Destination zone": "منطقة التوصيل",
   "Final amount to collect": "المبلغ النهائي المطلوب تحصيله",
   "Delivery fee (merchant pays)": "رسوم التوصيل (يتحملها التاجر)",
@@ -205,8 +208,8 @@ export const operationsArabic = {
   "Collection recorded": "سُجّل التحصيل",
   "Collection and remittance are separate recorded events.":
     "التحصيل من العميل والتوريد للشركة حدثان منفصلان يتم تسجيلهما.",
-  "Full amounts only; partial collections, remittances and payouts are not supported.":
-    "تُسجّل المبالغ كاملة فقط؛ التحصيل والتوريد والدفع الجزئي غير مدعوم.",
+  "Record the full amount collected from the customer. Partial amounts aren't supported.":
+    "سجّل المبلغ الكامل المحصّل من العميل. لا يُدعم التحصيل الجزئي.",
   "No collections yet.": "لم يُسجّل تحصيل بعد.",
   "Record adjustment": "تسجيل تسوية محاسبية",
   "Adjustment amount": "قيمة التعديل",
@@ -231,12 +234,12 @@ export const operationsArabic = {
   "Settlement lines": "بنود التسوية",
   Payments: "الدفعات",
   "No settlements yet.": "لا توجد تسويات بعد.",
-  "Approving a settlement does not record a payment.":
-    "اعتماد التسوية لا يعني دفع المبلغ.",
+  "Approving a settlement doesn't pay it. Record the payment separately.":
+    "اعتماد التسوية لا يعني دفعها. سجّل الدفعة بشكل منفصل.",
   "Confirm the actual payment before recording it.":
     "تأكد من تنفيذ الدفع الفعلي قبل تسجيله.",
-  "Draft lines reserve eligible funds until approval or cancellation.":
-    "تحجز بنود المسودة الأموال المؤهلة حتى اعتماد المسودة أو إلغائها.",
+  "A draft holds these amounts for this settlement until you approve or cancel it.":
+    "تحجز المسودة هذه المبالغ لهذه التسوية حتى تعتمدها أو تلغيها.",
   Goods: "البضاعة",
   Adjustment: "تعديل محاسبي",
   Reversal: "عكس محاسبي",

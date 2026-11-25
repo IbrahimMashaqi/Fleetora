@@ -5,8 +5,11 @@ import type { DriverVehicle } from "../drivers.types";
 
 export function DriverVehicleSummary({
   vehicle,
+  compact = false,
 }: {
   vehicle: DriverVehicle | null;
+  /** Directory cards show only "No vehicle assigned", not the explanatory hint. */
+  compact?: boolean;
 }) {
   const { t } = useLocale();
   const typeLabel = (type: NonNullable<DriverVehicle>["type"]) => t(vehicleTypeTranslationKey(type));
@@ -39,9 +42,11 @@ export function DriverVehicleSummary({
         ) : (
           <>
             <p className="font-medium">{t("No vehicle assigned")}</p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              {t("Vehicle details will appear here.")}
-            </p>
+            {!compact && (
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {t("Vehicle details will appear here.")}
+              </p>
+            )}
           </>
         )}
       </div>

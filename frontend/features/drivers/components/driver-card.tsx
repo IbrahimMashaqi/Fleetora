@@ -48,7 +48,7 @@ export function DriverCard({
           </div>
         </div>
         <div className="border-y border-border bg-surface-secondary/60 px-5 py-4">
-          <DriverVehicleSummary vehicle={driver.vehicle} />
+          <DriverVehicleSummary vehicle={driver.vehicle} compact />
         </div>
         <div className="px-3 py-2">
           <Button

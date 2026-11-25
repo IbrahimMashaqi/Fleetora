@@ -20,6 +20,7 @@ import type {
   Receipts,
   Scope,
 } from "./pickups.types";
+import { formatPickupWindow } from "./pickup-format";
 const control =
   "min-h-10 w-full rounded-md border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 function useCopy() {
@@ -64,9 +65,7 @@ function usePickups(scope: Scope, operation: PickupOperation, version: number) {
   }, [key, scope, operation]);
   return value?.key === key ? value.result : null;
 }
-function date(value: string | null) {
-  return value ? new Date(value).toLocaleString() : "—";
-}
+
 function Status({ value }: { value: Pickup["status"] }) {
   const c = useCopy();
   const copy = {
@@ -95,6 +94,7 @@ export function PickupsWorkspace() {
 }
 function PickupDirectory({ scope }: { scope: Scope }) {
   const c = useCopy();
+  const { locale } = useLocale();
   const [page, setPage] = useState(1),
     [version, setVersion] = useState(0),
     [selected, setSelected] = useState<string | null>(null);
@@ -166,8 +166,7 @@ function PickupDirectory({ scope }: { scope: Scope }) {
                         : c("Warehouse drop-off", "تسليم المستودع")}
                     </td>
                     <td className="p-4">
-                      <p>{date(p.preferredFrom)}</p>
-                      <p>{date(p.preferredTo)}</p>
+                      <p>{formatPickupWindow(p.preferredFrom, p.preferredTo, locale)}</p>
                     </td>
                     <td className="p-4">
                       <Status value={p.status} />
@@ -239,6 +238,7 @@ function PickupDialog({
   close(): void;
 }) {
   const c = useCopy();
+  const { locale } = useLocale();
   const ref = useRef<HTMLDialogElement>(null),
     locked = useRef(false);
   const [version, setVersion] = useState(0),
@@ -374,11 +374,7 @@ function PickupDialog({
             ].map(([label, from, to]) => (
               <div key={label}>
                 <dt className="font-medium">{label}</dt>
-                <dd>
-                  {date(from ?? null)}
-                  <br />
-                  {date(to ?? null)}
-                </dd>
+                <dd>{formatPickupWindow(from, to, locale)}</dd>
               </div>
             ))}
           </dl>
@@ -499,15 +495,18 @@ function PickupDialog({
                       />
                     </div>
                   </div>
-                  <EntityPicker
-                    scope={scope}
-                    field={{
-                      name: "workerId",
-                      label: "Drivers",
-                      lookup: "drivers",
-                      lookupQuery: { active: "true" },
-                    }}
-                  />
+                  {/* Drop-offs come to the warehouse; no driver is dispatched. */}
+                  {result.pickup.method !== "WAREHOUSE_DROPOFF" && (
+                    <EntityPicker
+                      scope={scope}
+                      field={{
+                        name: "workerId",
+                        label: "Drivers",
+                        lookup: "drivers",
+                        lookupQuery: { active: "true" },
+                      }}
+                    />
+                  )}
                 </>
               ) : (
                 <div>

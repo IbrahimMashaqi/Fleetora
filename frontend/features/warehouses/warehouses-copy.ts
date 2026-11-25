@@ -4,6 +4,7 @@ export const warehousesEnglish = {
   "Find, add, and manage your company's warehouses.":
     "Find, add, and manage your company's warehouses.",
   "Add warehouse": "Add warehouse",
+  "Warehouse changes saved.": "Warehouse changes saved.",
   "Edit warehouse": "Edit warehouse",
   "Warehouse name": "Warehouse name",
   "Use 2 to 120 characters.": "Use 2 to 120 characters.",
@@ -58,6 +59,7 @@ export const warehousesArabic: Record<keyof typeof warehousesEnglish, string> = 
   "Find, add, and manage your company's warehouses.":
     "ابحث عن مستودعات شركتك وأضفها وأدرها.",
   "Add warehouse": "إضافة مستودع",
+  "Warehouse changes saved.": "تم حفظ تغييرات المستودع.",
   "Edit warehouse": "تعديل المستودع",
   "Warehouse name": "اسم المستودع",
   "Use 2 to 120 characters.": "استخدم من 2 إلى 120 حرفًا.",

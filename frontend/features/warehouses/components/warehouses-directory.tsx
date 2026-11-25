@@ -53,6 +53,7 @@ function WarehouseList({
   const router = useRouter();
   const { result, retry } = useWarehouseRead(query, scope);
   const [editing, setEditing] = useState<Warehouse | "new" | null>(null);
+  const [saved, setSaved] = useState(false);
   const data = result?.status === "list" ? result.data : null;
   const archived = query.status === "ARCHIVED";
   return (
@@ -78,6 +79,14 @@ function WarehouseList({
         </div>
       </div>
 
+      {saved && (
+        <p
+          role="status"
+          className="mt-4 rounded-md border border-success-border bg-success-subtle p-3 text-sm"
+        >
+          {t("Warehouse changes saved.")}
+        </p>
+      )}
       <nav
         aria-label={t("Warehouse status")}
         className="mt-6 inline-flex rounded-lg border border-border bg-surface p-1"
@@ -191,7 +200,10 @@ function WarehouseList({
                   warehouse={warehouse}
                   scope={scope}
                   onEdit={() => setEditing(warehouse)}
-                  onChanged={retry}
+                  onChanged={() => {
+                    setSaved(true);
+                    retry();
+                  }}
                 />
               ))}
             </ul>
@@ -236,6 +248,7 @@ function WarehouseList({
           scope={scope}
           onClose={() => setEditing(null)}
           onSaved={() => {
+            setSaved(true);
             setEditing(null);
             retry();
           }}

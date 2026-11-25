@@ -47,13 +47,13 @@ export const pricingEnglish = {
   assignmentHelp:
     "Choose a merchant and an active plan in the same currency. Any merchant discount is added to the configured plan discount.",
   confirmation: "I confirm these commercial terms for future parcels.",
-  future: "Existing parcel fee snapshots will remain unchanged.",
+  future: "Parcels already created keep their current price.",
   selectZone: "Select an active destination zone in the plan currency.",
   selectPlan: "Select an active plan in the merchant currency.",
   currencyFixed: "The currency of an existing zone or plan cannot change.",
   currentMerchant: "Selected merchant",
   review: "Review the current record before changing its terms.",
-  updateTariff: "Save zone tariff",
+  updateTariff: "Add zone tariff",
   emptyOptions: "No matching active records on this page.",
   refresh: "Refresh records",
 };
@@ -112,7 +112,7 @@ export const pricingArabic: typeof pricingEnglish = {
   currencyFixed: "لا يمكن تغيير عملة منطقة أو خطة موجودة.",
   currentMerchant: "التاجر المحدد",
   review: "راجع السجل الحالي قبل تعديل شروطه.",
-  updateTariff: "حفظ تعرفة المنطقة",
+  updateTariff: "إضافة تعرفة منطقة",
   emptyOptions: "لا توجد سجلات نشطة مطابقة في هذه الصفحة.",
   refresh: "تحديث السجلات",
 };
