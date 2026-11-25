@@ -7,7 +7,14 @@ import {
   ParcelInputDto,
   PaymentDto,
   ReturnInputDto,
+  TransitionDto,
 } from './parcel.dto.js';
+import {
+  BUCKETS,
+  STATUS_BUCKETS,
+  TRANSITIONS,
+  statusBuckets,
+} from './parcel-domain.js';
 import { parcelValidation, expectedCompany } from './parcel-http.js';
 import type { TokenPayload } from '../auth/token/token.payload.js';
 const merchant = {
@@ -119,5 +126,113 @@ describe('parcel input contracts', () => {
     expect(() => expectedCompany(actor, undefined)).toThrow();
     expect(() => expectedCompany(actor, 'tenant-b')).toThrow();
     expect(() => expectedCompany(actor, 'tenant-a')).not.toThrow();
+  });
+  describe('D1 staff parcel contract', () => {
+    const priced = {
+      merchantId: '71111111-1111-4111-8111-111111111111',
+      zoneId: '72222222-2222-4222-8222-222222222222',
+      finalCustomerAmount: '150.00',
+      pricingVersion: 'a'.repeat(64),
+      collectionMode: 'COD',
+      recipientName: 'Recipient',
+      recipientPhone: '0000000',
+      destination: 'Address',
+      description: 'Goods',
+      pieces: 1,
+    };
+    it('accepts a zone-priced body and never a staff-typed fee or city', async () => {
+      const result = await parcelValidation.transform(priced, {
+        type: 'body',
+        metatype: ParcelInputDto,
+      });
+      expect(result).toMatchObject({ zoneId: priced.zoneId, collectionMode: 'COD' });
+      for (const field of ['codAmount', 'city', 'deliveryFee', 'feePayer'])
+        await expect(
+          parcelValidation.transform(
+            { ...priced, [field]: '10.00' },
+            { type: 'body', metatype: ParcelInputDto },
+          ),
+        ).rejects.toMatchObject({ status: 400 });
+    });
+    it.each(['zoneId', 'finalCustomerAmount', 'pricingVersion', 'collectionMode'])(
+      'requires %s, so no legacy-shaped parcel can be created',
+      async (field) => {
+        const body: Record<string, unknown> = { ...priced };
+        delete body[field];
+        await expect(
+          parcelValidation.transform(body, { type: 'body', metatype: ParcelInputDto }),
+        ).rejects.toMatchObject({ status: 400 });
+      },
+    );
+    it('rejects malformed amounts and pricing versions', async () => {
+      for (const patch of [
+        { finalCustomerAmount: 150 },
+        { finalCustomerAmount: '-1.00' },
+        { pricingVersion: 'stale' },
+        { collectionMode: 'LATER' },
+      ])
+        await expect(
+          parcelValidation.transform(
+            { ...priced, ...patch },
+            { type: 'body', metatype: ParcelInputDto },
+          ),
+        ).rejects.toMatchObject({ status: 400 });
+    });
+  });
+  describe('receiving transitions', () => {
+    it.each(['RECEIVED_FROM_MERCHANT', 'AT_WAREHOUSE'])(
+      'require a warehouse UUID for %s',
+      async (status) => {
+        expect(
+          await validate(plainToInstance(TransitionDto, { revision: 1, status })),
+        ).not.toHaveLength(0);
+        expect(
+          await validate(
+            plainToInstance(TransitionDto, { revision: 1, status, warehouseId: 'x' }),
+          ),
+        ).not.toHaveLength(0);
+        expect(
+          await validate(
+            plainToInstance(TransitionDto, {
+              revision: 1,
+              status,
+              warehouseId: '73333333-3333-4333-8333-333333333333',
+            }),
+          ),
+        ).toHaveLength(0);
+      },
+    );
+    it('does not ask for a warehouse on other transitions', async () => {
+      expect(
+        await validate(
+          plainToInstance(TransitionDto, { revision: 1, status: 'CANCELLED' }),
+        ),
+      ).toHaveLength(0);
+    });
+  });
+  describe('dashboard buckets', () => {
+    it('place every parcel status in exactly one bucket', () => {
+      for (const status of Object.keys(TRANSITIONS))
+        expect(
+          BUCKETS.filter((bucket) => STATUS_BUCKETS[bucket].includes(status)),
+          status,
+        ).toHaveLength(1);
+    });
+    it('add up to the total for any distribution', () => {
+      const distribution = Object.keys(TRANSITIONS).map((status, index) => ({
+        status,
+        count: index + 1,
+      }));
+      const total = distribution.reduce((sum, row) => sum + row.count, 0);
+      const buckets = statusBuckets(distribution);
+      expect(Object.values(buckets).reduce((sum, n) => sum + n, 0)).toBe(total);
+      expect(
+        statusBuckets([
+          { status: 'CREATED', count: 6 },
+          { status: 'RECEIVED_FROM_MERCHANT', count: 1 },
+          { status: 'CANCELLED', count: 2 },
+        ]),
+      ).toMatchObject({ new: 6, atWarehouse: 1, cancelled: 2, delivered: 0 });
+    });
   });
 });

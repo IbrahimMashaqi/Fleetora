@@ -1,5 +1,28 @@
 // Feature vocabulary extends the existing shared locale provider.
 export const operationsArabic = {
+  "Destination zone": "منطقة التوصيل",
+  "Final amount to collect": "المبلغ النهائي المطلوب تحصيله",
+  "Delivery fee (merchant pays)": "رسوم التوصيل (يتحملها التاجر)",
+  "Merchant receives": "صافي التاجر",
+  "Collection mode": "طريقة التحصيل",
+  "Cash on delivery": "الدفع عند الاستلام",
+  "Prepaid (nothing to collect)": "مدفوع مسبقًا (لا يوجد تحصيل)",
+  "Price quote": "عرض السعر",
+  "Choose a merchant, zone and amount to see the price.":
+    "اختر التاجر والمنطقة والمبلغ لعرض السعر.",
+  "Calculating price...": "جارٍ حساب السعر...",
+  "No price is available for this merchant and zone. Check the merchant's plan.":
+    "لا يتوفر سعر لهذا التاجر وهذه المنطقة. تحقق من خطة التاجر.",
+  "Price is calculated from the merchant's plan and the destination zone.":
+    "يُحسب السعر من خطة التاجر ومنطقة الوجهة.",
+  "The price changed. Review the updated quote and save again.":
+    "تغيّر السعر. راجع العرض المحدّث ثم احفظ مجددًا.",
+  "Receiving warehouse": "المستودع المستلِم",
+  "No active warehouses. Add one under Warehouses first.":
+    "لا توجد مستودعات نشطة. أضف مستودعًا من صفحة المستودعات أولًا.",
+  "Only delivered parcels that have not been collected yet can be recorded.":
+    "يمكن تسجيل التحصيل فقط للطرود المسلّمة التي لم يُسجَّل تحصيلها بعد.",
+  "Cancelled parcels": "الطرود الملغاة",
   "Customer notes": "ملاحظات العميل",
   "Merchant ID": "رقم التاجر",
   "Record warehouse handback before assigning a different driver.":

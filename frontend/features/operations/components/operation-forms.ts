@@ -114,7 +114,31 @@ export function parcelFields(
     text("recipientName", "Recipient name", row, true),
     { ...text("recipientPhone", "Recipient phone", row, true), type: "tel" },
     { ...text("secondaryPhone", "Secondary phone", row), type: "tel" },
-    text("city", "City / region", row, true),
+    {
+      name: "finalCustomerAmount",
+      label: "Final amount to collect",
+      type: "money",
+      required: true,
+      value: row?.codAmount ?? "",
+    },
+    {
+      name: "collectionMode",
+      label: "Collection mode",
+      required: true,
+      value: row?.collectionMode ?? "COD",
+      options: [
+        { value: "COD", label: "Cash on delivery" },
+        { value: "PREPAID", label: "Prepaid (nothing to collect)" },
+      ],
+    },
+    {
+      name: "zoneId",
+      label: "Destination zone",
+      type: "pricing",
+      required: true,
+      value: row?.deliveryZoneId ?? "",
+      span: true,
+    },
     {
       ...text("destination", "Delivery address", row, true),
       type: "textarea",
@@ -135,13 +159,6 @@ export function parcelFields(
       type: "number",
       min: 0.001,
       max: 10000,
-    },
-    {
-      name: "codAmount",
-      label: "COD goods amount",
-      type: "money",
-      required: true,
-      value: row?.codAmount ?? "0.00",
     },
     { ...text("declaredValue", "Declared value", row), type: "money" },
     {

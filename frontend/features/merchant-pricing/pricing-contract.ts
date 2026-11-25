@@ -56,11 +56,31 @@ export type PricingOperation =
       kind: "assignment";
       id: string;
       input: { planId: string; revision: number; discountAmount: string };
+    }
+  | {
+      kind: "quote";
+      merchantId: string;
+      zoneId: string;
+      finalCustomerAmount: string;
     };
+export type Quote = {
+  deliveryZoneId: string;
+  zoneName: string;
+  city: string;
+  currency: Currency;
+  pricingVersion: string;
+  finalCustomerAmount: string;
+  baseDeliveryFee: string;
+  discount: string;
+  promotionDiscount: string;
+  deliveryFee: string;
+  expectedMerchantProceeds: string;
+};
 export type PricingData =
   | { kind: "zones"; page: PricingPage<Zone> }
   | { kind: "plans"; page: PricingPage<Plan> }
-  | { kind: "plan"; plan: Plan; tariffs: Tariff[] };
+  | { kind: "plan"; plan: Plan; tariffs: Tariff[] }
+  | { kind: "quote"; quote: Quote };
 export type PricingResult =
   | { status: Failure }
   | { status: "saved" }
@@ -85,8 +105,26 @@ export function preparePricingOperation(
   path: string;
   method: "GET" | "POST" | "PATCH" | "PUT";
   body?: unknown;
+  readOnly?: boolean;
 } | null {
   if (!object(value)) return null;
+  if (
+    value.kind === "quote" &&
+    only(value, ["kind", "merchantId", "zoneId", "finalCustomerAmount"]) &&
+    pricingId(value.merchantId) &&
+    pricingId(value.zoneId) &&
+    decimal(value.finalCustomerAmount)
+  )
+    return {
+      path: "parcels/quote",
+      method: "POST",
+      body: {
+        merchantId: value.merchantId,
+        zoneId: value.zoneId,
+        finalCustomerAmount: value.finalCustomerAmount,
+      },
+      readOnly: true,
+    };
   if (
     (value.kind === "zones" || value.kind === "plans") &&
     only(value, ["kind", "page"]) &&
@@ -289,6 +327,67 @@ export function parsePricingData(
       tariffs.push(tariff);
     }
     return { kind: "plan", plan, tariffs };
+  }
+  if (operation.kind === "quote") {
+    const quote = value.quote;
+    if (
+      !object(quote) ||
+      quote.deliveryZoneId !== operation.zoneId ||
+      typeof quote.zoneName !== "string" ||
+      typeof quote.city !== "string" ||
+      !currency(quote.currency) ||
+      typeof quote.pricingVersion !== "string" ||
+      !/^[a-f0-9]{64}$/.test(quote.pricingVersion)
+    )
+      return null;
+    const money = [
+      "finalCustomerAmount",
+      "baseDeliveryFee",
+      "discount",
+      "promotionDiscount",
+      "deliveryFee",
+      "expectedMerchantProceeds",
+    ] as const;
+    const amounts: Partial<Record<(typeof money)[number], string>> = {};
+    for (const field of money) {
+      const amount = quote[field];
+      if (typeof amount !== "string" || !validMoneyInput(amount, quote.currency))
+        return null;
+      amounts[field] = amount;
+    }
+    const {
+      finalCustomerAmount,
+      baseDeliveryFee,
+      discount,
+      promotionDiscount,
+      deliveryFee,
+      expectedMerchantProceeds,
+    } = amounts;
+    if (
+      !finalCustomerAmount ||
+      !baseDeliveryFee ||
+      !discount ||
+      !promotionDiscount ||
+      !deliveryFee ||
+      !expectedMerchantProceeds
+    )
+      return null;
+    return {
+      kind: "quote",
+      quote: {
+        deliveryZoneId: quote.deliveryZoneId,
+        zoneName: quote.zoneName,
+        city: quote.city,
+        currency: quote.currency,
+        pricingVersion: quote.pricingVersion,
+        finalCustomerAmount,
+        baseDeliveryFee,
+        discount,
+        promotionDiscount,
+        deliveryFee,
+        expectedMerchantProceeds,
+      },
+    };
   }
   return null;
 }

@@ -16,6 +16,7 @@ let disconnect: boolean;
 let sessionStatus: number;
 let requests: {
   path: string;
+  search?: string;
   method: string;
   context: string | undefined;
   body: unknown;
@@ -31,9 +32,11 @@ test.beforeAll(async () => {
   backend = createServer(async (req, res) => {
     let body = "";
     for await (const chunk of req) body += chunk;
-    const path = new URL(req.url ?? "/", "http://fixture.invalid").pathname;
+    const url = new URL(req.url ?? "/", "http://fixture.invalid");
+    const path = url.pathname;
     requests.push({
       path,
+      search: url.search,
       method: req.method ?? "",
       context:
         typeof req.headers["x-fleetora-company-context"] === "string"
@@ -214,4 +217,68 @@ test("session service failure never dispatches an operational request", async ()
     await operationsForSession(jar, scope, { resource: "parcels" }),
   ).toEqual({ status: "unavailable" });
   expect(requests).toHaveLength(1);
+});
+
+test("staff parcel create sends only zone pricing fields, never a typed fee or free city", async () => {
+  await operationsForSession(jar, scope, {
+    resource: "parcels",
+    action: "create",
+    input: {
+      merchantId: parcelId,
+      zoneId: parcelId,
+      finalCustomerAmount: "150.00",
+      pricingVersion: "c".repeat(64),
+      collectionMode: "COD",
+      recipientName: "Fixture recipient",
+      recipientPhone: "+000000000",
+      destination: "Fixture destination",
+      description: "Fixture goods",
+      pieces: 1,
+      codAmount: "999.00",
+      city: "Typed city",
+      deliveryFee: "1.00",
+    },
+  });
+  expect(requests[1]).toMatchObject({
+    path: "/parcels",
+    method: "POST",
+    body: {
+      zoneId: parcelId,
+      finalCustomerAmount: "150.00",
+      pricingVersion: "c".repeat(64),
+      collectionMode: "COD",
+    },
+  });
+  for (const field of ["codAmount", "city", "deliveryFee"])
+    expect(requests[1].body).not.toHaveProperty(field);
+});
+test("receiving a parcel forwards the chosen warehouse with the transition", async () => {
+  await operationsForSession(jar, scope, {
+    resource: "parcels",
+    id: parcelId,
+    action: "transition",
+    input: { revision: 1, status: "RECEIVED_FROM_MERCHANT", warehouseId: parcelId },
+  });
+  expect(requests[1]).toMatchObject({
+    path: `/parcels/${parcelId}/transition`,
+    body: { revision: 1, status: "RECEIVED_FROM_MERCHANT", warehouseId: parcelId },
+  });
+});
+test("lookups can ask for collectable parcels and eligible drivers only", async () => {
+  await operationsForSession(jar, scope, {
+    resource: "parcels",
+    query: { collectable: "true", page: "1", pageSize: "25" },
+  });
+  await operationsForSession(jar, scope, {
+    resource: "drivers",
+    query: { active: "true", page: "1", pageSize: "25" },
+  });
+  expect(requests[1].search).toContain("collectable=true");
+  expect(requests[3].search).toContain("active=true");
+  expect(
+    await operationsForSession(jar, scope, {
+      resource: "parcels",
+      query: { includeLegacyPricing: "true" },
+    }),
+  ).toEqual({ status: "invalid" });
 });

@@ -31,6 +31,7 @@ import {
   PageDto,
   ParcelEditDto,
   ParcelInputDto,
+  ParcelQuoteDto,
   TransitionDto,
 } from './parcel.dto.js';
 import { ParcelOperationsRepository } from './parcel-operations.repository.js';
@@ -79,6 +80,12 @@ export class ParcelsController {
     @Query() q: PageDto,
   ) {
     return this.operations.events(actor, id, q);
+  }
+  @Post('quote') @Header('Cache-Control', 'private, no-store') quote(
+    @GetCurrentUser() actor: TokenPayload,
+    @Body() input: ParcelQuoteDto,
+  ) {
+    return this.operations.quote(actor, input);
   }
   @Post() create(
     @GetCurrentUser() actor: TokenPayload,

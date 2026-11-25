@@ -55,6 +55,7 @@ const queryFields = new Set([
   "sort",
   "direction",
   "reason",
+  "collectable",
 ]);
 function valid(operation: Operation): boolean {
   if (

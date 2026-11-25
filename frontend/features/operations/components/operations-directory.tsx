@@ -7,7 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLocale, type TranslationKey } from "@/lib/i18n";
 import { useOperations } from "../use-operations";
-import type { Data, Operation, Resource, Scope } from "../operations-contract";
+import type {
+  Data,
+  Failure,
+  Operation,
+  Resource,
+  Scope,
+} from "../operations-contract";
 import {
   OperationsWorkspace,
   PageIntro,
@@ -64,6 +70,7 @@ type Dialog = {
   fields: Field[];
   description?: TranslationKey;
   financial?: boolean;
+  messages?: Partial<Record<Failure, TranslationKey>>;
 };
 
 export function OperationsDirectory({
@@ -338,9 +345,13 @@ function Directory({
               setDialog({
                 title: "Create parcel",
                 description:
-                  "Delivery terms are snapshotted from the selected merchant.",
+                  "Price is calculated from the merchant's plan and the destination zone.",
                 operation: { resource, action: "create" },
                 fields: parcelFields(),
+                messages: {
+                  conflict:
+                    "The price changed. Review the updated quote and save again.",
+                },
               })
             }
           >
@@ -355,12 +366,17 @@ function Directory({
                 description:
                   "Full amounts only; partial collections, remittances and payouts are not supported.",
                 financial: true,
+                messages: {
+                  conflict:
+                    "Only delivered parcels that have not been collected yet can be recorded.",
+                },
                 operation: { resource, action: "create" },
                 fields: [
                   {
                     name: "parcelId",
                     label: "Parcels",
                     lookup: "parcels",
+                    lookupQuery: { collectable: "true" },
                     required: true,
                     span: true,
                   },

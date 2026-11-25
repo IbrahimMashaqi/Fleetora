@@ -185,6 +185,18 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
       idempotencyKey: randomUUID(),
     };
   }
+  let warehouseId: string | undefined;
+  /** Receipt must name an active company warehouse (Phase A). */
+  async function receivingWarehouse() {
+    warehouseId ??= (
+      await prisma.Warehouse.create({
+        companyId,
+        name: 'Fixture receiving hub',
+        address: 'Fixture receiving road',
+      })
+    ).id;
+    return warehouseId;
+  }
   async function createParcel(amount = '150.00') {
     return entity(
       await post('/merchant/parcels')
@@ -223,6 +235,7 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
     const own = await company(),
       foreign = await company();
     companyId = own.id;
+    warehouseId = undefined;
     admin = own.token;
     foreignAdmin = foreign.token;
     merchantId = await merchant();
@@ -606,7 +619,11 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
     let row = await createParcel();
     row = entity(
       await post(`/parcels/${text(row.id)}/transition`, admin)
-        .send({ revision: row.revision, status: 'RECEIVED_FROM_MERCHANT' })
+        .send({
+          revision: row.revision,
+          status: 'RECEIVED_FROM_MERCHANT',
+          warehouseId: await receivingWarehouse(),
+        })
         .expect(201),
       'parcel',
     );
@@ -743,7 +760,11 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
     let row = await createParcel();
     row = entity(
       await post(`/parcels/${text(row.id)}/transition`, admin)
-        .send({ revision: row.revision, status: 'RECEIVED_FROM_MERCHANT' })
+        .send({
+          revision: row.revision,
+          status: 'RECEIVED_FROM_MERCHANT',
+          warehouseId: await receivingWarehouse(),
+        })
         .expect(201),
       'parcel',
     );
@@ -859,7 +880,11 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
     let row = await createParcel();
     row = entity(
       await post(`/parcels/${text(row.id)}/transition`, admin)
-        .send({ revision: row.revision, status: 'RECEIVED_FROM_MERCHANT' })
+        .send({
+          revision: row.revision,
+          status: 'RECEIVED_FROM_MERCHANT',
+          warehouseId: await receivingWarehouse(),
+        })
         .expect(201),
       'parcel',
     );
