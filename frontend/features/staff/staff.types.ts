@@ -21,7 +21,8 @@ export type StaffReadResult =
   | { status: "unauthenticated" | "forbidden" | "changed" | "unavailable" };
 export type StaffWrite =
   | { action: "issue"; email: string; role: StaffRole }
-  | { action: "revoke"; id: string };
+  | { action: "revoke"; id: string }
+  | { action: "setActive"; id: string; active: boolean };
 export type StaffWriteFailure =
   | "unauthenticated"
   | "forbidden"
@@ -34,6 +35,7 @@ export type StaffWriteFailure =
 export type StaffWriteResult =
   | { status: "issued"; invitation: StaffInvitation; token: string }
   | { status: "revoked" }
+  | { status: "updated"; member: StaffMember }
   | { status: StaffWriteFailure };
 
 export type AcceptInvitationField = "name" | "password" | "confirmPassword";

@@ -12,6 +12,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -29,6 +30,7 @@ import type { TokenPayload } from '../auth/token/token.payload.js';
 import {
   AcceptStaffInvitationDto,
   StaffInvitationDto,
+  StaffMemberStatusDto,
 } from './staff.dto.js';
 import { StaffService, hashStaffToken } from './staff.service.js';
 
@@ -77,6 +79,17 @@ export class StaffController {
   ) {
     this.context(actor, expected);
     return this.staff.revoke(actor, id);
+  }
+
+  @Put('members/:id/active')
+  setActive(
+    @GetCurrentUser() actor: TokenPayload,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() input: StaffMemberStatusDto,
+    @Headers('x-fleetora-company-context') expected: string | undefined,
+  ) {
+    this.context(actor, expected);
+    return this.staff.setActive(actor, id, input.active);
   }
 
   @Public()

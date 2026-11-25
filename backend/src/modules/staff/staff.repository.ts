@@ -161,6 +161,54 @@ export class StaffRepository {
     );
   }
 
+  // Returns null when the member is not a staff user of the actor's company.
+  // The company row lock taken by lockedFleetWrite serializes every staff
+  // status change, so the active-administrator count cannot race.
+  setActive(actor: TokenPayload, memberId: string, active: boolean) {
+    return guarded(() =>
+      lockedFleetWrite(this.prisma, actor, async (tx, companyId) => {
+        await tx.execute(
+          this.prisma.db.raw
+            .sql`SELECT "id" FROM "users" WHERE "id"=${memberId} AND "companyId"=${companyId} FOR UPDATE`
+            .affectedCount()
+            .build(),
+        );
+        const member = await tx.orm.public.User.where({
+          id: memberId,
+          companyId,
+        })
+          .select('id', 'fullName', 'email', 'role', 'isActive')
+          .first();
+        if (!member || !isStaffRole(member.role)) return null;
+        if (!active) {
+          if (member.id === actor.sub)
+            throw new ConflictException('You cannot deactivate your own account');
+          if (member.role === 'COMPANY_ADMIN' && member.isActive) {
+            const others = await tx.orm.public.User.where({
+              companyId,
+              role: 'COMPANY_ADMIN',
+              isActive: true,
+            })
+              .where((u) => u.id.neq(member.id))
+              .select('id')
+              .first();
+            if (!others)
+              throw new ConflictException(
+                'A company must keep at least one active administrator',
+              );
+          }
+        }
+        if (member.isActive !== active)
+          await tx.orm.public.User.where({ id: memberId, companyId }).update(
+            // Deactivation also revokes the refresh session; reactivation
+            // requires a fresh sign-in.
+            active ? { isActive: true } : { isActive: false, refreshToken: null },
+          );
+        return { ...member, isActive: active };
+      }),
+    );
+  }
+
   // Returns null when the token is not a usable invitation for an active company.
   accept(
     invitationId: string,

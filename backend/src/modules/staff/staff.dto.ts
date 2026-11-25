@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
+  IsBoolean,
   IsEmail,
   IsIn,
   IsInt,
@@ -53,4 +54,9 @@ export class AcceptStaffInvitationDto {
     message: 'Password must contain at least one uppercase letter (A-Z)',
   })
   password!: string;
+}
+
+export class StaffMemberStatusDto {
+  @IsBoolean()
+  active!: boolean;
 }

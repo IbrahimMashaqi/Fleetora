@@ -76,6 +76,11 @@ test.beforeAll(async () => {
               }
             : req.method === "DELETE"
               ? { companyId: responseCompany, revoked: true }
+              : req.method === "PUT"
+                ? {
+                    companyId: responseCompany,
+                    member: { id: invitationId, fullName: "Fixture Accountant", email: "a@example.com", role: "ACCOUNTANT", active: JSON.parse(raw).active, password: "private" },
+                  }
               : {
                   companyId: responseCompany,
                   members: [
@@ -228,4 +233,35 @@ test("maps conflicts and dropped connections without claiming success", async ()
     await writeStaffForSession(jar, scope, { action: "issue", email: "x@example.com", role: "ACCOUNTANT" }),
   ).toEqual({ status: "uncertain" });
   expect(await readStaffForSession(jar, scope)).toEqual({ status: "unavailable" });
+});
+
+test("deactivates and reactivates a member with the company context", async () => {
+  const result = await writeStaffForSession(jar, scope, { action: "setActive", id: invitationId, active: false });
+  expect(result).toEqual({
+    status: "updated",
+    member: { id: invitationId, fullName: "Fixture Accountant", email: "a@example.com", role: "ACCOUNTANT", active: false },
+  });
+  expect(requests[1]).toMatchObject({
+    path: `/company/staff/members/${invitationId}/active`,
+    method: "PUT",
+    body: { active: false },
+    context: companyId,
+  });
+  expect(JSON.stringify(result)).not.toContain("private");
+  status = 409;
+  expect(await writeStaffForSession(jar, scope, { action: "setActive", id: invitationId, active: false })).toEqual({
+    status: "conflict",
+  });
+});
+
+test("rejects malformed member status writes without dispatch", async () => {
+  for (const operation of [
+    { action: "setActive", id: "../x", active: false },
+    { action: "setActive", id: invitationId, active: "no" },
+    { action: "setActive", id: invitationId, active: false, role: "COMPANY_ADMIN" },
+  ])
+    expect(
+      await writeStaffForSession(jar, scope, operation as Parameters<typeof writeStaffForSession>[2]),
+    ).toEqual({ status: "invalid" });
+  expect(requests).toHaveLength(0);
 });

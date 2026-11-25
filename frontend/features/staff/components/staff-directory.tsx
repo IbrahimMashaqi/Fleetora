@@ -76,6 +76,16 @@ const words = {
     forbidden: "Only company administrators can manage the team.",
     unauthenticated: "Your session ended. Sign in again.",
     reload: "Reload page",
+    deactivate: "Deactivate",
+    reactivate: "Reactivate",
+    deactivateLabel: "Deactivate {name}",
+    reactivateLabel: "Reactivate {name}",
+    confirmDeactivate: "Deactivate {name}? They are signed out and cannot sign in until reactivated.",
+    confirm: "Confirm deactivation",
+    keep: "Keep active",
+    memberDeactivated: "Team member deactivated.",
+    memberReactivated: "Team member reactivated. They need to sign in again.",
+    memberConflict: "You can't deactivate your own account or the last active administrator.",
   },
   ar: {
     title: "الفريق",
@@ -126,6 +136,16 @@ const words = {
     forbidden: "إدارة الفريق متاحة لمسؤولي الشركة فقط.",
     unauthenticated: "انتهت جلستك. سجّل الدخول مجدداً.",
     reload: "إعادة تحميل الصفحة",
+    deactivate: "تعطيل",
+    reactivate: "إعادة التفعيل",
+    deactivateLabel: "تعطيل {name}",
+    reactivateLabel: "إعادة تفعيل {name}",
+    confirmDeactivate: "تعطيل {name}؟ سيتم تسجيل خروجه ولن يستطيع الدخول حتى إعادة التفعيل.",
+    confirm: "تأكيد التعطيل",
+    keep: "إبقاء الحساب نشطاً",
+    memberDeactivated: "تم تعطيل عضو الفريق.",
+    memberReactivated: "تمت إعادة تفعيل عضو الفريق. عليه تسجيل الدخول مجدداً.",
+    memberConflict: "لا يمكنك تعطيل حسابك أو آخر مسؤول نشط في الشركة.",
   },
 };
 type Copy = (typeof words)["en"];
@@ -158,7 +178,11 @@ function TeamWorkspace({ scope }: { scope: StaffScope }) {
   const [role, setRole] = useState<StaffRole>("ACCOUNTANT");
   const [issued, setIssued] = useState<{ invitation: StaffInvitation; link: string }>();
   const [failure, setFailure] = useState<StaffWriteFailure>();
-  const [feedback, setFeedback] = useState<"copied" | "copyFailed" | "revokedSuccess">();
+  const [feedback, setFeedback] = useState<
+    "copied" | "copyFailed" | "revokedSuccess" | "memberDeactivated" | "memberReactivated"
+  >();
+  const [confirming, setConfirming] = useState<string>();
+  const [memberFailure, setMemberFailure] = useState(false);
   const [busy, startTransition] = useTransition();
   const [, startReadTransition] = useTransition();
   const result = response?.attempt === attempt ? response.result : undefined;
@@ -199,7 +223,8 @@ function TeamWorkspace({ scope }: { scope: StaffScope }) {
           });
           setEmail("");
           refresh();
-        } else if (result.status !== "revoked") setFailure(result.status);
+        } else if (result.status !== "revoked" && result.status !== "updated")
+          setFailure(result.status);
       } catch (error) {
         unstable_rethrow(error);
         setFailure("uncertain");
@@ -220,7 +245,32 @@ function TeamWorkspace({ scope }: { scope: StaffScope }) {
           if (issued?.invitation.id === invitationId) setIssued(undefined);
           setFeedback("revokedSuccess");
           refresh();
-        } else if (result.status !== "issued") setFailure(result.status);
+        } else if (result.status !== "issued" && result.status !== "updated")
+          setFailure(result.status);
+      } catch (error) {
+        unstable_rethrow(error);
+        setFailure("uncertain");
+      }
+    });
+  }
+
+  function setMemberActive(memberId: string, active: boolean) {
+    if (busy) return;
+    setFailure(undefined);
+    setFeedback(undefined);
+    setMemberFailure(false);
+    startTransition(async () => {
+      try {
+        const result = await withSessionLock(() =>
+          writeStaffAction(scope, { action: "setActive", id: memberId, active }),
+        );
+        setConfirming(undefined);
+        if (result.status === "updated") {
+          setFeedback(active ? "memberReactivated" : "memberDeactivated");
+          refresh();
+        } else if (result.status === "conflict") setMemberFailure(true);
+        else if (result.status !== "issued" && result.status !== "revoked")
+          setFailure(result.status);
       } catch (error) {
         unstable_rethrow(error);
         setFailure("uncertain");
@@ -314,7 +364,7 @@ function TeamWorkspace({ scope }: { scope: StaffScope }) {
               {failure === "unauthenticated" ? copy.unauthenticated : copy[failure]}
             </p>
           )}
-          {feedback && (
+          {feedback && feedback !== "memberDeactivated" && feedback !== "memberReactivated" && (
             <p role="status" className="mt-4 text-sm">
               {copy[feedback]}
             </p>
@@ -362,6 +412,15 @@ function TeamWorkspace({ scope }: { scope: StaffScope }) {
                 className="rounded-lg border border-border bg-surface p-5 sm:p-6"
               >
                 <h3 id={`${id}-members`} className="font-semibold">{copy.membersTitle}</h3>
+                {memberFailure && (
+                  <p role="alert" className="mt-3 flex items-start gap-2 text-sm text-danger-foreground">
+                    <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                    {copy.memberConflict}
+                  </p>
+                )}
+                {(feedback === "memberDeactivated" || feedback === "memberReactivated") && (
+                  <p role="status" className="mt-3 text-sm">{copy[feedback]}</p>
+                )}
                 <ul className="mt-3 divide-y divide-border">
                   {result.members.map((member) => (
                     <li key={member.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
@@ -376,10 +435,39 @@ function TeamWorkspace({ scope }: { scope: StaffScope }) {
                           {member.email ? <bdi dir="ltr">{member.email}</bdi> : copy.noEmail}
                         </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {copy[member.role]}
-                        {!member.active && ` · ${copy.inactive}`}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <p className="text-sm text-muted-foreground">
+                          {copy[member.role]}
+                          {!member.active && ` · ${copy.inactive}`}
+                        </p>
+                        {member.id !== scope.userId && confirming !== member.id && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={busy}
+                            aria-label={(member.active ? copy.deactivateLabel : copy.reactivateLabel).replace("{name}", member.fullName)}
+                            onClick={() =>
+                              member.active ? setConfirming(member.id) : setMemberActive(member.id, true)
+                            }
+                          >
+                            {member.active ? copy.deactivate : copy.reactivate}
+                          </Button>
+                        )}
+                      </div>
+                      {confirming === member.id && (
+                        <div role="group" aria-label={copy.confirm} className="w-full space-y-3 rounded-md border border-border bg-surface-secondary p-3">
+                          <p className="text-sm">{copy.confirmDeactivate.replace("{name}", member.fullName)}</p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="button" variant="destructive" size="sm" disabled={busy} onClick={() => setMemberActive(member.id, false)}>
+                              {busy ? copy.working : copy.confirm}
+                            </Button>
+                            <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => setConfirming(undefined)}>
+                              {copy.keep}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>

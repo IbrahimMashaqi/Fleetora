@@ -65,6 +65,7 @@ describe('Company staff invitations API (isolated fixtures)', () => {
   const issue = vi.fn();
   const revoke = vi.fn();
   const accept = vi.fn();
+  const setActive = vi.fn();
   const secret = 'isolated-staff-api-test-secret';
   const jwt = new JwtService({ secret });
 
@@ -96,6 +97,7 @@ describe('Company staff invitations API (isolated fixtures)', () => {
         issue,
         revoke,
         accept,
+        setActive,
       })
       .compile();
     app = module.createNestApplication();
@@ -133,6 +135,14 @@ describe('Company staff invitations API (isolated fixtures)', () => {
     issue.mockResolvedValue({ companyId: companyA, id: invitationId });
     revoke.mockResolvedValue(true);
     findByTokenHash.mockResolvedValue({ id: invitationId, companyId: companyA });
+    setActive.mockResolvedValue({
+      id: '88888888-8888-4888-8888-888888888888',
+      fullName: 'Fixture Accountant',
+      email: 'accountant@example.invalid',
+      role: 'ACCOUNTANT',
+      isActive: false,
+      password: 'private-hash',
+    });
     accept.mockResolvedValue({
       companyId: companyA,
       role: 'ACCOUNTANT',
@@ -392,5 +402,59 @@ describe('Company staff invitations API (isolated fixtures)', () => {
         ).status,
       );
     expect(statuses).toContain(429);
+  });
+  describe('member status', () => {
+    const memberId = '88888888-8888-4888-8888-888888888888';
+    const put = (body: unknown, context: string | null = companyA) => {
+      const call = server()
+        .put(`/company/staff/members/${memberId}/active`)
+        .set('Authorization', `Bearer ${bearer()}`);
+      if (context) call.set('X-Fleetora-Company-Context', context);
+      return call.send(body as object);
+    };
+
+    it('deactivates with the trusted actor and returns only public fields', async () => {
+      const response = await put({ active: false }).expect(200);
+      expect(response.body.data).toEqual({
+        companyId: companyA,
+        member: {
+          id: memberId,
+          fullName: 'Fixture Accountant',
+          email: 'accountant@example.invalid',
+          role: 'ACCOUNTANT',
+          active: false,
+        },
+      });
+      expect(setActive).toHaveBeenCalledWith(
+        expect.objectContaining({ sub: actor.id, orgId: companyA }),
+        memberId,
+        false,
+      );
+      expect(JSON.stringify(response.body)).not.toContain('private');
+    });
+
+    it('fences context, validates input and maps guards', async () => {
+      await put({ active: false }, null).expect(403);
+      await put({ active: 'no' }).expect(400);
+      await server()
+        .put('/company/staff/members/not-a-uuid/active')
+        .set('Authorization', `Bearer ${bearer()}`)
+        .set('X-Fleetora-Company-Context', companyA)
+        .send({ active: false })
+        .expect(400);
+      expect(setActive).not.toHaveBeenCalled();
+      setActive.mockRejectedValueOnce(
+        new ConflictException('You cannot deactivate your own account'),
+      );
+      await put({ active: false }).expect(409);
+      setActive.mockResolvedValueOnce(null);
+      await put({ active: false }).expect(404);
+    });
+
+    it('denies accountants', async () => {
+      actor.role = 'ACCOUNTANT';
+      await put({ active: false }).expect(403);
+      expect(setActive).not.toHaveBeenCalled();
+    });
   });
 });

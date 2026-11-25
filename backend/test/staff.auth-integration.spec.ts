@@ -8,8 +8,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { Temporal } from 'temporal-polyfill';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthRepository } from '../src/modules/auth/auth.repository.js';
+import { AuthService } from '../src/modules/auth/auth.service.js';
+import { TokenService } from '../src/modules/auth/token/token.service.js';
+import { createRefreshTokenVerifier } from '../src/modules/auth/token/refresh-token-verifier.js';
+import { MailService } from '../src/modules/mail/mail.service.js';
 import { PrismaService } from '../src/modules/prisma/prisma.service.js';
 import { StaffRepository } from '../src/modules/staff/staff.repository.js';
 import { StaffService } from '../src/modules/staff/staff.service.js';
@@ -42,6 +49,9 @@ describe('staff invitations against disposable PostgreSQL', () => {
   const guard = new AuthPostgresTestGuard();
   let prisma: PrismaService;
   let service: StaffService;
+  let module: TestingModule;
+  let auth: AuthService;
+  let tokens: TokenService;
 
   async function cleanup() {
     guard.assertVerified();
@@ -71,6 +81,30 @@ describe('staff invitations against disposable PostgreSQL', () => {
       new StaffRepository(prisma),
       new ConfigService({ SALT_ROUNDS: 4 }),
     );
+    module = await Test.createTestingModule({
+      imports: [JwtModule.register({})],
+      providers: [
+        { provide: PrismaService, useValue: prisma },
+        AuthRepository,
+        AuthService,
+        TokenService,
+        {
+          provide: MailService,
+          useValue: { sendVerificationEmail: vi.fn(), sendResetPasswordEmail: vi.fn() },
+        },
+        {
+          provide: ConfigService,
+          useValue: new ConfigService({
+            ACCESS_TOKEN_SECRET: 'staff-integration-access-secret',
+            REFRESH_TOKEN_SECRET: 'staff-integration-refresh-secret',
+            SALT_ROUNDS: 4,
+            FRONTEND_URL: 'http://localhost:3000',
+          }),
+        },
+      ],
+    }).compile();
+    auth = module.get(AuthService);
+    tokens = module.get(TokenService);
     await guard.verify(() => readAuthPostgresIdentity(prisma));
   });
 
@@ -104,7 +138,11 @@ describe('staff invitations against disposable PostgreSQL', () => {
         await cleanup();
       },
       async () => {
-        await prisma?.db.close();
+        try {
+          await prisma?.db.close();
+        } finally {
+          await module?.close();
+        }
       },
     );
   });
@@ -288,5 +326,108 @@ describe('staff invitations against disposable PostgreSQL', () => {
         revokedAt: Temporal.Now.instant(),
       }),
     ).rejects.toThrow();
+  });
+  const accountantId = 'a5555555-5555-4555-8555-555555555555';
+  const secondAdminId = 'a6666666-6666-4666-8666-666666666666';
+  async function seedStaff(id: string, role: StaffRole, company = companyId) {
+    const refresh = await tokens.generateRefreshToken({
+      sub: id,
+      email: `${id}@staff-invite.example.invalid`,
+      role,
+      orgId: company,
+    });
+    await prisma.User.create({
+      id,
+      companyId: company,
+      role,
+      fullName: `Fictional ${role}`,
+      email: `${id}@staff-invite.example.invalid`,
+      password: await bcrypt.hash(randomBytes(16).toString('hex'), 4),
+      refreshToken: createRefreshTokenVerifier(refresh),
+      isActive: true,
+      isEmailVerified: true,
+    });
+    return refresh;
+  }
+  const member = (id: string) =>
+    prisma.User.where({ id }).select('isActive', 'refreshToken').first();
+
+  it('deactivates a staff user, clears their session and blocks refresh; reactivation restores access', async () => {
+    const refresh = await seedStaff(accountantId, 'ACCOUNTANT');
+    expect(await service.setActive(actor, accountantId, false)).toMatchObject({
+      companyId,
+      member: { id: accountantId, active: false, role: 'ACCOUNTANT' },
+    });
+    expect(await member(accountantId)).toEqual({ isActive: false, refreshToken: null });
+    await expect(auth.refreshTokens(accountantId, refresh)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+    // Idempotent and visible in the team list.
+    await service.setActive(actor, accountantId, false);
+    const listed = (await service.overview(actor)).members.find((m) => m.id === accountantId);
+    expect(listed?.active).toBe(false);
+
+    await service.setActive(actor, accountantId, true);
+    expect(await member(accountantId)).toEqual({ isActive: true, refreshToken: null });
+    // The old session stays revoked; the user must sign in again.
+    await expect(auth.refreshTokens(accountantId, refresh)).rejects.toBeDefined();
+  });
+
+  it('can deactivate another administrator while one active admin remains', async () => {
+    await seedStaff(secondAdminId, 'COMPANY_ADMIN');
+    await service.setActive(actor, secondAdminId, false);
+    expect((await member(secondAdminId))?.isActive).toBe(false);
+  });
+
+  it('refuses self-deactivation, including for the only active administrator', async () => {
+    await expect(service.setActive(actor, adminId, false)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    await seedStaff(secondAdminId, 'COMPANY_ADMIN');
+    await expect(service.setActive(actor, adminId, false)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect((await member(adminId))?.isActive).toBe(true);
+  });
+
+  it('never leaves a company without an active administrator under concurrent mutual deactivation', async () => {
+    await seedStaff(secondAdminId, 'COMPANY_ADMIN');
+    const second: TokenPayload = { ...actor, sub: secondAdminId };
+    const results = await Promise.allSettled([
+      service.setActive(actor, secondAdminId, false),
+      service.setActive(second, adminId, false),
+    ]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    const active = await prisma.User.where({ companyId, role: 'COMPANY_ADMIN', isActive: true }).all();
+    expect(active).toHaveLength(1);
+  });
+
+  it('denies non-admin actors', async () => {
+    await seedStaff(accountantId, 'ACCOUNTANT');
+    await seedStaff(secondAdminId, 'COMPANY_ADMIN');
+    const accountant: TokenPayload = { ...actor, sub: accountantId, role: 'ACCOUNTANT' };
+    await expect(service.setActive(accountant, secondAdminId, false)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    // A forged admin claim is rejected against the persisted role.
+    await expect(
+      service.setActive({ ...accountant, role: 'COMPANY_ADMIN' }, secondAdminId, false),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect((await member(secondAdminId))?.isActive).toBe(true);
+  });
+
+  it('cannot touch users of another company or non-staff users', async () => {
+    await seedStaff(accountantId, 'ACCOUNTANT', otherCompanyId);
+    await expect(service.setActive(actor, accountantId, false)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(service.setActive(actor, otherAdminId, false)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    await expect(
+      service.setActive({ ...actor, orgId: otherCompanyId }, accountantId, false),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect((await member(accountantId))?.isActive).toBe(true);
+    expect((await member(otherAdminId))?.isActive).toBe(true);
   });
 });

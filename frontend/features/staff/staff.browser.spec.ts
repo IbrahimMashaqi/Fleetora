@@ -11,6 +11,9 @@ let issued: { email: string; role: string } | false;
 let revoked: boolean;
 let readsFail: boolean;
 let acceptStatus: number;
+let memberActive: boolean;
+let memberStatus: number;
+const memberId = "10000000-0000-4000-8000-000000000009";
 let writes: { path: string; method: string; body: unknown; context?: string | string[] }[];
 
 test.beforeAll(async () => {
@@ -32,6 +35,11 @@ test.beforeAll(async () => {
         writes.push({ path, method: req.method ?? "", body: raw ? JSON.parse(raw) : null, context: req.headers["x-fleetora-company-context"] });
       if (req.method === "POST") issued = JSON.parse(raw);
       if (req.method === "DELETE") revoked = true;
+      if (req.method === "PUT") {
+        res.statusCode = memberStatus;
+        if (memberStatus !== 200) return res.end(JSON.stringify({ success: false, message: "conflict" }));
+        memberActive = JSON.parse(raw).active;
+      }
       if (readsFail && req.method === "GET") {
         res.statusCode = 503;
         return res.end(JSON.stringify({ success: false }));
@@ -42,9 +50,14 @@ test.beforeAll(async () => {
           ? { companyId, invitation, token, delivery: "MANUAL" }
           : req.method === "DELETE"
             ? { companyId, revoked: true }
+            : req.method === "PUT"
+              ? { companyId, member: { id: memberId, fullName: "Fixture Accountant", email: "acc@example.com", role: "ACCOUNTANT", active: memberActive } }
             : {
                 companyId,
-                members: [{ id: userId, fullName: "Fixture admin", email: "admin@example.com", role: "COMPANY_ADMIN", active: true }],
+                members: [
+                  { id: userId, fullName: "Fixture admin", email: "admin@example.com", role: "COMPANY_ADMIN", active: true },
+                  { id: memberId, fullName: "Fixture Accountant", email: "acc@example.com", role: "ACCOUNTANT", active: memberActive },
+                ],
                 invitations: issued ? [invitation] : [],
               };
     } else data = { companyId, items: [], page: 1, pageSize: 25, hasNext: false };
@@ -62,6 +75,8 @@ test.beforeEach(async ({ context }) => {
   revoked = false;
   readsFail = false;
   acceptStatus = 201;
+  memberActive = true;
+  memberStatus = 200;
   writes = [];
   await context.addCookies([{ name: "fleetora_access", value: "isolated-staff-fixture", url: "http://localhost:3100", httpOnly: true }]);
 });
@@ -168,4 +183,32 @@ test("accept page explains invalid links and rejected tokens", async ({ page, co
   await page.getByLabel("Confirm password").fill("Secret12");
   await page.getByRole("button", { name: "Activate account" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "already used" })).toBeVisible();
+});
+
+test("admin deactivates after confirming and reactivates a member, but never themself", async ({ page }) => {
+  await page.goto("/app/team");
+  await expect(page.getByRole("button", { name: "Deactivate Fixture admin" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Deactivate Fixture Accountant" }).click();
+  await expect(page.getByText(/They are signed out/)).toBeVisible();
+  await page.getByRole("button", { name: "Keep active" }).click();
+  expect(writes).toEqual([]);
+  await page.getByRole("button", { name: "Deactivate Fixture Accountant" }).click();
+  await page.getByRole("button", { name: "Confirm deactivation" }).click();
+  await expect(page.getByText("Team member deactivated.")).toBeVisible();
+  await expect(page.getByText("Accountant · Inactive")).toBeVisible();
+  await page.getByRole("button", { name: "Reactivate Fixture Accountant" }).click();
+  await expect(page.getByText(/Team member reactivated/)).toBeVisible();
+  expect(writes).toEqual([
+    { path: `/company/staff/members/${memberId}/active`, method: "PUT", body: { active: false }, context: companyId },
+    { path: `/company/staff/members/${memberId}/active`, method: "PUT", body: { active: true }, context: companyId },
+  ]);
+});
+
+test("guard refusals explain the self and last-administrator rules", async ({ page }) => {
+  memberStatus = 409;
+  await page.goto("/app/team");
+  await page.getByRole("button", { name: "Deactivate Fixture Accountant" }).click();
+  await page.getByRole("button", { name: "Confirm deactivation" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "last active administrator" })).toBeVisible();
+  await expect(page.getByText("Accountant · Inactive")).toHaveCount(0);
 });

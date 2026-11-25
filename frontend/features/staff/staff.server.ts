@@ -180,6 +180,14 @@ function validWrite(operation: StaffWrite): StaffWrite | null {
     uuid.test(operation.id)
   )
     return { action: "revoke", id: operation.id };
+  if (
+    operation.action === "setActive" &&
+    Object.keys(operation).every((key) => ["action", "id", "active"].includes(key)) &&
+    typeof operation.id === "string" &&
+    uuid.test(operation.id) &&
+    typeof operation.active === "boolean"
+  )
+    return { action: "setActive", id: operation.id, active: operation.active };
   return null;
 }
 
@@ -198,16 +206,25 @@ export async function writeStaffForSession(
     const endpoint = getBackendEndpoint(
       operation.action === "issue"
         ? "company/staff/invitations"
-        : `company/staff/invitations/${operation.id}`,
+        : operation.action === "revoke"
+          ? `company/staff/invitations/${operation.id}`
+          : `company/staff/members/${operation.id}/active`,
     );
     if (!endpoint) return { status: "unavailable" };
     dispatched = true;
     const response = await requestBackend(endpoint, {
-      method: operation.action === "issue" ? "POST" : "DELETE",
+      method:
+        operation.action === "issue"
+          ? "POST"
+          : operation.action === "revoke"
+            ? "DELETE"
+            : "PUT",
       body:
         operation.action === "issue"
           ? { email: operation.email, role: operation.role }
-          : undefined,
+          : operation.action === "setActive"
+            ? { active: operation.active }
+            : undefined,
       bearer,
       expectedCompany: companyId,
     });
@@ -224,6 +241,12 @@ export async function writeStaffForSession(
     if (!object(body) || body.success !== true || !object(body.data))
       return { status: "uncertain" };
     if (body.data.companyId !== companyId) return { status: "changed" };
+    if (operation.action === "setActive") {
+      const member = parseMember(body.data.member);
+      return member && member.id === operation.id && member.active === operation.active
+        ? { status: "updated", member }
+        : { status: "uncertain" };
+    }
     if (operation.action === "revoke")
       return body.data.revoked === true
         ? { status: "revoked" }
