@@ -19,6 +19,7 @@ import { AccessTokenGuard } from '../src/modules/auth/guards/access-token.guard.
 import { ParcelsModule } from '../src/modules/parcels/parcels.module.js';
 import { BusinessMerchantsController } from '../src/modules/merchants/business-merchants.controller.js';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor.js';
+import { now } from '../src/modules/parcels/parcel-store.js';
 import {
   AuthPostgresTestGuard,
   readAuthPostgresIdentity,
@@ -103,11 +104,86 @@ describe('parcel HTTP with persisted JWT identity and disposable PostgreSQL', ()
       'merchant',
     );
   }
+  /** Seeds a parcel exactly as the pre-D1 staff path stored it (LEGACY snapshot). */
   async function parcel(merchantId: string, client: Client = own) {
-    return entity(
-      await post('/parcels', client).send(parcelInput(merchantId)).expect(201),
-      'parcel',
+    const merchant = await prisma.db.orm.public.Merchant.where({
+      id: merchantId,
+      companyId: client.companyId,
+    }).first();
+    if (!merchant) throw new Error('Fixture merchant not found');
+    const row = await prisma.Shipment.create({
+      companyId: client.companyId,
+      merchantId,
+      requestedBy: client.userId,
+      trackingNumber: `FL-${randomUUID().replaceAll('-', '').toUpperCase()}`,
+      recipientName: 'Fictional HTTP recipient',
+      recipientPhone: '+000000001',
+      city: 'Fictional city',
+      destination: 'Fictional destination',
+      description: 'Fictional goods',
+      customerNotes: 'Call at the entrance',
+      codMinor: 10000n,
+      deliveryFeeMinor: merchant.deliveryFeeMinor,
+      returnFeeMinor: merchant.returnFeeMinor,
+      returnFeePolicy: merchant.returnFeePolicy,
+      serviceFeeMinor: merchant.serviceFeeMinor,
+      currency: merchant.currency,
+      feePayer: merchant.feePayer,
+      responsibleActorId: client.userId,
+      locationLabel: merchant.pickupAddress,
+      locationSource: 'MERCHANT_ADDRESS',
+      locationUpdatedAt: now(),
+    });
+    return entity(await get(`/parcels/${row.id}`, client).expect(200), 'parcel');
+  }
+  /** Puts the merchant on a plan (15.00 tariff) and returns a quoted staff body. */
+  async function pricedInput(merchantId: string, client: Client = own) {
+    const orm = prisma.db.orm.public;
+    const zone = await orm.DeliveryZone.create({
+      companyId: client.companyId,
+      name: 'Fictional HTTP zone',
+      city: 'Fictional city',
+      baseFeeMinor: 1500n,
+      currency: 'ILS',
+    });
+    const plan = await orm.MerchantPlan.create({
+      companyId: client.companyId,
+      name: 'Fictional HTTP plan',
+      currency: 'ILS',
+    });
+    await orm.Merchant.where({ id: merchantId, companyId: client.companyId }).update({
+      planId: plan.id,
+    });
+    const quote = data(
+      await post('/parcels/quote', client)
+        .send({ merchantId, zoneId: zone.id, finalCustomerAmount: '100.00' })
+        .expect(201),
     );
+    return {
+      merchantId,
+      zoneId: zone.id,
+      finalCustomerAmount: '100.00',
+      pricingVersion: text(record(quote.quote).pricingVersion),
+      collectionMode: 'COD',
+      recipientName: 'Fictional HTTP recipient',
+      recipientPhone: '+000000001',
+      destination: 'Fictional destination',
+      description: 'Fictional goods',
+      pieces: 1,
+      customerNotes: 'Call at the entrance',
+    };
+  }
+  const warehouses = new Map<string, string>();
+  async function warehouseFor(client: Client) {
+    const known = warehouses.get(client.companyId);
+    if (known) return known;
+    const created = await prisma.Warehouse.create({
+      companyId: client.companyId,
+      name: 'Fictional HTTP hub',
+      address: 'Fictional hub road',
+    });
+    warehouses.set(client.companyId, created.id);
+    return created.id;
   }
   async function transition(
     row: Record<string, unknown>,
@@ -121,6 +197,9 @@ describe('parcel HTTP with persisted JWT identity and disposable PostgreSQL', ()
           revision: integer(row.revision),
           status,
           ...(note ? { note } : {}),
+          ...(['RECEIVED_FROM_MERCHANT', 'AT_WAREHOUSE'].includes(status)
+            ? { warehouseId: await warehouseFor(client) }
+            : {}),
         })
         .expect(201),
       'parcel',
@@ -164,6 +243,10 @@ describe('parcel HTTP with persisted JWT identity and disposable PostgreSQL', ()
       await prisma.Shipment.where({ companyId }).deleteAll();
       await orm.Merchant.where({ companyId }).deleteAll();
       await orm.MonetaryRequest.where({ companyId }).deleteAll();
+      await orm.PlanZoneTariff.where({ companyId }).deleteAll();
+      await orm.MerchantPlan.where({ companyId }).deleteAll();
+      await orm.DeliveryZone.where({ companyId }).deleteAll();
+      await prisma.Warehouse.where({ companyId }).deleteAll();
       await prisma.Worker.where({ companyId }).deleteAll();
       await prisma.User.where({ companyId }).deleteAll();
       await prisma.Company.where({ id: companyId }).delete();
@@ -524,7 +607,10 @@ describe('parcel HTTP with persisted JWT identity and disposable PostgreSQL', ()
     const foreignParcelId = text(foreignParcel.id);
     await get(`/merchants/business/${foreignMerchant}`).expect(404);
     await get(`/parcels/${foreignParcelId}`).expect(404);
-    await post('/parcels').send(parcelInput(foreignMerchant)).expect(404);
+    const ownPriced = await pricedInput(text((await merchant()).id));
+    await post('/parcels')
+      .send({ ...ownPriced, merchantId: foreignMerchant })
+      .expect(404);
     foreignParcel = await transition(
       foreignParcel,
       'RECEIVED_FROM_MERCHANT',
@@ -610,18 +696,23 @@ describe('parcel HTTP with persisted JWT identity and disposable PostgreSQL', ()
       .send({ ...merchantInput(), deliveryFee: '0.001' })
       .expect(400);
     const merchantId = text((await merchant()).id);
+    const priced = await pricedInput(merchantId);
     await post('/parcels')
-      .send({ ...parcelInput(merchantId), codAmount: '0.001' })
+      .send({ ...priced, finalCustomerAmount: '0.001' })
       .expect(400);
     await post('/parcels')
-      .send({ ...parcelInput(merchantId), codAmount: 100 })
+      .send({ ...priced, finalCustomerAmount: 100 })
+      .expect(400);
+    // Staff can no longer create legacy parcels: the old free-fee body is rejected.
+    await post('/parcels')
+      .send({ ...parcelInput(merchantId) })
       .expect(400);
     // The application's global whitelist removes non-writable fields before
     // controller validation. Assert the protected persisted values explicitly.
     const created = entity(
       await post('/parcels')
         .send({
-          ...parcelInput(merchantId),
+          ...priced,
           companyId: foreign.companyId,
           requestedBy: foreign.userId,
           workerId: foreignDriverId,

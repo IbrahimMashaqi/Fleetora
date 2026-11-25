@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocale, type TranslationKey } from "@/lib/i18n";
 import { useOperations } from "../use-operations";
-import type { Operation, Scope } from "../operations-contract";
+import type { Failure, Operation, Scope } from "../operations-contract";
 import {
   OperationsWorkspace,
   PageIntro,
@@ -51,6 +51,7 @@ type Dialog = {
   fields: Field[];
   financial?: boolean;
   description?: TranslationKey;
+  messages?: Partial<Record<Failure, TranslationKey>>;
 };
 export function ParcelDetail({ id }: { id: string }) {
   return (
@@ -92,6 +93,7 @@ function ParcelContent({
           action: Operation["action"],
           fields: Field[],
           input?: Record<string, unknown>,
+          messages?: Dialog["messages"],
         ) =>
           setDialog({
             title,
@@ -102,6 +104,7 @@ function ParcelContent({
               input: { revision, ...input },
             },
             fields,
+            messages,
           });
         const transitions = data.allowedTransitions.filter(
           (state) =>
@@ -121,7 +124,8 @@ function ParcelContent({
               <Button variant="outline" onClick={retry}>
                 {t("Refresh")}
               </Button>
-              {permissions.manageParcels && status === "CREATED" && parcel.pricingMode !== "FINAL_INCLUSIVE" && (
+              {/* Legacy-priced parcels keep their stored fees and cannot be re-priced. */}
+              {permissions.manageParcels && status === "CREATED" && parcel.pricingMode === "FINAL_INCLUSIVE" && (
                 <Button
                   onClick={() =>
                     operate(
@@ -133,6 +137,11 @@ function ParcelContent({
                           ? valueText(data.merchant, "name")
                           : undefined,
                       ),
+                      undefined,
+                      {
+                        conflict:
+                          "The price changed. Review the updated quote and save again.",
+                      },
                     )
                   }
                 >
@@ -420,6 +429,13 @@ function ParcelContent({
                           })),
                         },
                         {
+                          name: "warehouseId",
+                          label: "Receiving warehouse",
+                          type: "warehouse",
+                          required: true,
+                          span: true,
+                        },
+                        {
                           name: "note",
                           label: "Note",
                           type: "textarea",
@@ -444,6 +460,7 @@ function ParcelContent({
                             name: "workerId",
                             label: "Drivers",
                             lookup: "drivers",
+                            lookupQuery: { active: "true" },
                             required: true,
                             value: parcel.workerId,
                             lookupLabel: valueText(parcel, "workerName"),

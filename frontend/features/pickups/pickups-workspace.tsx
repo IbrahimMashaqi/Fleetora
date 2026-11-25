@@ -505,6 +505,7 @@ function PickupDialog({
                       name: "workerId",
                       label: "Drivers",
                       lookup: "drivers",
+                      lookupQuery: { active: "true" },
                     }}
                   />
                 </>

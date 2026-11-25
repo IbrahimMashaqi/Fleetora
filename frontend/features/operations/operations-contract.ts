@@ -618,7 +618,10 @@ const parcelWrites = [
   "recipientName",
   "recipientPhone",
   "secondaryPhone",
-  "city",
+  "zoneId",
+  "finalCustomerAmount",
+  "pricingVersion",
+  "collectionMode",
   "destination",
   "latitude",
   "longitude",
@@ -627,7 +630,6 @@ const parcelWrites = [
   "pieces",
   "weight",
   "declaredValue",
-  "codAmount",
   "notes",
   "scheduledAt",
   "priority",
@@ -637,7 +639,7 @@ parcelWrites.push("customerNotes");
 export function writeFields(operation: Operation): Record<string, unknown> {
   const key = `${operation.resource}:${operation.action}`;
   const specific: Record<string, string[]> = {
-    "parcels:transition": ["revision", "status", "note"],
+    "parcels:transition": ["revision", "status", "note", "warehouseId"],
     "parcels:assignment": ["revision", "workerId", "note"],
     "parcels:attempts": ["revision", "outcome", "reason", "note"],
     "parcels:location": [

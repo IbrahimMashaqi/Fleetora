@@ -20,7 +20,8 @@ import { DirectoryFilters } from "./operations-directory";
 const metrics: Record<string, { label: TranslationKey; status?: string }> = {
   total: { label: "Total parcels" },
   new: { label: "New parcels", status: "CREATED" },
-  atWarehouse: { label: "Warehouse parcels", status: "AT_WAREHOUSE" },
+  // Received and warehouse parcels share one tile, so no single status filter.
+  atWarehouse: { label: "Warehouse parcels" },
   assigned: { label: "Assigned parcels", status: "ASSIGNED" },
   outForDelivery: { label: "Out for delivery", status: "OUT_FOR_DELIVERY" },
   delivered: { label: "Delivered parcels", status: "DELIVERED" },
@@ -30,6 +31,7 @@ const metrics: Record<string, { label: TranslationKey; status?: string }> = {
     label: "Returned to merchant",
     status: "RETURNED_TO_MERCHANT",
   },
+  cancelled: { label: "Cancelled parcels", status: "CANCELLED" },
   overdue: { label: "Overdue parcels" },
 };
 export function OperationsDashboard({

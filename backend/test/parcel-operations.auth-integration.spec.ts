@@ -1,12 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { PrismaService } from '../src/modules/prisma/prisma.service.js';
-import { ParcelStore, instant } from '../src/modules/parcels/parcel-store.js';
+import { ParcelStore, instant, now } from '../src/modules/parcels/parcel-store.js';
+import { MerchantPricingRepository } from '../src/modules/merchant-pricing/merchant-pricing.repository.js';
+import { MerchantPricingService } from '../src/modules/merchant-pricing/merchant-pricing.service.js';
 import { ParcelLedger } from '../src/modules/parcels/parcel-ledger.js';
 import { ParcelOperationsRepository } from '../src/modules/parcels/parcel-operations.repository.js';
 import { ParcelFinanceRepository } from '../src/modules/parcels/parcel-finance.repository.js';
 import { ParcelDashboardRepository } from '../src/modules/parcels/parcel-dashboard.repository.js';
 import { PageDto } from '../src/modules/parcels/parcel.dto.js';
+import { money } from '../src/modules/parcels/parcel-domain.js';
 import { DriversRepository } from '../src/modules/drivers/drivers.repository.js';
 import type { TokenPayload } from '../src/modules/auth/token/token.payload.js';
 import {
@@ -73,22 +76,89 @@ describe('parcel operations on disposable PostgreSQL', () => {
   ) {
     return str((await ops.saveMerchant(who, merchantInput(payer))).merchant.id);
   }
+  /**
+   * Seeds a parcel exactly as the pre-D1 staff path stored it. Staff can no
+   * longer create LEGACY parcels, so these fixtures double as the regression
+   * that existing legacy snapshots still read, collect and settle correctly.
+   */
   async function parcel(merchantId: string, who = actor, codAmount = '100.00') {
-    return str(
-      (
-        await ops.saveParcel(who, {
-          merchantId,
-          recipientName: 'Fixture recipient',
-          recipientPhone: '+000000000',
-          city: 'Fixture city',
-          destination: 'Fixture destination',
-          description: 'Fixture goods',
-          pieces: 1,
-          codAmount,
-          customerNotes: 'Call at the entrance',
-        })
-      ).parcel.id,
-    );
+    const merchant = await prisma.db.orm.public.Merchant.where({
+      id: merchantId,
+      companyId: who.orgId,
+    }).first();
+    if (!merchant) throw new Error('Fixture merchant not found');
+    const row = await prisma.Shipment.create({
+      companyId: who.orgId,
+      merchantId,
+      requestedBy: who.sub,
+      trackingNumber: `FL-${randomUUID().replaceAll('-', '').toUpperCase()}`,
+      recipientName: 'Fixture recipient',
+      recipientPhone: '+000000000',
+      city: 'Fixture city',
+      destination: 'Fixture destination',
+      description: 'Fixture goods',
+      customerNotes: 'Call at the entrance',
+      codMinor: money(codAmount, merchant.currency),
+      deliveryFeeMinor: merchant.deliveryFeeMinor,
+      returnFeeMinor: merchant.returnFeeMinor,
+      returnFeePolicy: merchant.returnFeePolicy,
+      serviceFeeMinor: merchant.serviceFeeMinor,
+      currency: merchant.currency,
+      feePayer: merchant.feePayer,
+      responsibleActorId: who.sub,
+      locationLabel: merchant.pickupAddress,
+      locationSource: 'MERCHANT_ADDRESS',
+      locationUpdatedAt: now(),
+    });
+    return row.id;
+  }
+  /** Zone + plan (15.00) for the merchant and a fresh staff quote for it. */
+  async function priced(merchantId: string, amount = '100.00', who = actor) {
+    const orm = prisma.db.orm.public;
+    const zone = await orm.DeliveryZone.create({
+      companyId: who.orgId,
+      name: 'Fixture zone',
+      city: 'Fixture city',
+      baseFeeMinor: 1500n,
+      currency: 'ILS',
+    });
+    const plan = await orm.MerchantPlan.create({
+      companyId: who.orgId,
+      name: 'Fixture plan',
+      currency: 'ILS',
+    });
+    await orm.Merchant.where({ id: merchantId, companyId: who.orgId }).update({
+      planId: plan.id,
+    });
+    const { quote } = await ops.quote(who, {
+      merchantId,
+      zoneId: zone.id,
+      finalCustomerAmount: amount,
+    });
+    return {
+      merchantId,
+      zoneId: zone.id,
+      finalCustomerAmount: amount,
+      pricingVersion: quote.pricingVersion,
+      collectionMode: 'COD' as const,
+      recipientName: 'Fixture recipient',
+      recipientPhone: '+000000000',
+      destination: 'Fixture destination',
+      description: 'Fixture goods',
+      pieces: 1,
+    };
+  }
+  const warehouses = new Map<string, string>();
+  async function warehouseFor(who: TokenPayload) {
+    const known = warehouses.get(who.orgId);
+    if (known) return known;
+    const created = await prisma.Warehouse.create({
+      companyId: who.orgId,
+      name: 'Fixture hub',
+      address: 'Fixture hub road',
+    });
+    warehouses.set(who.orgId, created.id);
+    return created.id;
   }
   async function draftInput(merchantId: string, currency = 'ILS') {
     const response = await finance.preview(actor, { merchantId, currency });
@@ -106,6 +176,9 @@ describe('parcel operations on disposable PostgreSQL', () => {
     return ops.transition(who, id, {
       revision: await revision(id, who),
       status,
+      ...(['RECEIVED_FROM_MERCHANT', 'AT_WAREHOUSE'].includes(status)
+        ? { warehouseId: await warehouseFor(who) }
+        : {}),
     });
   }
   async function dispatched(merchantId: string, codAmount = '100.00') {
@@ -155,7 +228,11 @@ describe('parcel operations on disposable PostgreSQL', () => {
     await guard.verify(() => readAuthPostgresIdentity(prisma));
     store = new ParcelStore(prisma);
     const ledger = new ParcelLedger(store);
-    ops = new ParcelOperationsRepository(store, ledger);
+    ops = new ParcelOperationsRepository(
+      store,
+      ledger,
+      new MerchantPricingService(new MerchantPricingRepository(store)),
+    );
     finance = new ParcelFinanceRepository(store, ledger);
     dashboard = new ParcelDashboardRepository(store);
   });
@@ -219,6 +296,10 @@ describe('parcel operations on disposable PostgreSQL', () => {
           ).deleteAll();
           await prisma.Shipment.where({ companyId }).deleteAll();
           await prisma.db.orm.public.Merchant.where({ companyId }).deleteAll();
+          await prisma.db.orm.public.PlanZoneTariff.where({ companyId }).deleteAll();
+          await prisma.db.orm.public.MerchantPlan.where({ companyId }).deleteAll();
+          await prisma.db.orm.public.DeliveryZone.where({ companyId }).deleteAll();
+          await prisma.Warehouse.where({ companyId }).deleteAll();
           await prisma.db.orm.public.MonetaryRequest.where({
             companyId,
           }).deleteAll();
@@ -493,8 +574,13 @@ describe('parcel operations on disposable PostgreSQL', () => {
     await expect(ops.details(actor, foreignParcel)).rejects.toMatchObject({
       status: 404,
     });
-    await expect(parcel(merchantId)).rejects.toMatchObject({ status: 404 });
     const ownMerchant = await merchant();
+    await expect(
+      ops.saveParcel(actor, {
+        ...(await priced(ownMerchant)),
+        merchantId,
+      }),
+    ).rejects.toMatchObject({ status: 404 });
     const own = await parcel(ownMerchant);
     await transition(own, 'RECEIVED_FROM_MERCHANT');
     await transition(own, 'AT_WAREHOUSE');
@@ -670,6 +756,7 @@ describe('parcel operations on disposable PostgreSQL', () => {
       ops.transition(actor, id, {
         revision: 1,
         status: 'RECEIVED_FROM_MERCHANT',
+        warehouseId: await warehouseFor(actor),
       }),
       ops.transition(actor, id, { revision: 1, status: 'CANCELLED' }),
     ]);
@@ -987,17 +1074,9 @@ describe('parcel operations on disposable PostgreSQL', () => {
         })
       ).merchant.id,
     );
-    const id = await parcel(first);
-    const edit = {
-      merchantId: second,
-      recipientName: 'Fixture recipient',
-      recipientPhone: '+000000000',
-      city: 'Fixture city',
-      destination: 'Fixture destination',
-      description: 'Fixture goods',
-      pieces: 1,
-      codAmount: '100.00',
-    };
+    const firstInput = await priced(first);
+    const id = str((await ops.saveParcel(actor, firstInput)).parcel.id);
+    const edit = await priced(second);
     await ops.saveParcel(actor, { ...edit, revision: await revision(id) }, id);
     expect((await ops.details(actor, id)).parcel).toMatchObject({
       merchantId: second,
@@ -1026,7 +1105,7 @@ describe('parcel operations on disposable PostgreSQL', () => {
     await expect(
       ops.saveParcel(
         actor,
-        { ...edit, merchantId: first, revision: await revision(id) },
+        { ...(await priced(first)), revision: await revision(id) },
         id,
       ),
     ).rejects.toMatchObject({ status: 409 });

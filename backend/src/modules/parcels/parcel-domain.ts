@@ -25,6 +25,59 @@ export const TRANSITIONS: Record<string, readonly string[]> = {
   ON_HOLD: ['AT_WAREHOUSE'],
   RETURNED: [],
 };
+/**
+ * Every parcel status belongs to exactly one dashboard bucket, so the buckets
+ * always add up to the total. Legacy statuses fold into their nearest bucket.
+ */
+export const BUCKETS = [
+  'new',
+  'atWarehouse',
+  'assigned',
+  'outForDelivery',
+  'delivered',
+  'failedDeliveries',
+  'pendingReturns',
+  'returnedToMerchant',
+  'cancelled',
+] as const;
+export type StatusBucket = (typeof BUCKETS)[number];
+export const STATUS_BUCKETS: Record<StatusBucket, readonly string[]> = {
+  new: ['CREATED'],
+  atWarehouse: [
+    'RECEIVED_FROM_MERCHANT',
+    'AT_WAREHOUSE',
+    'READY_FOR_DISPATCH',
+    'PICKED_UP',
+    'RESCHEDULED',
+    'ON_HOLD',
+  ],
+  assigned: ['ASSIGNED'],
+  outForDelivery: ['OUT_FOR_DELIVERY'],
+  delivered: ['DELIVERED'],
+  failedDeliveries: ['FAILED_DELIVERY'],
+  pendingReturns: ['RETURN_IN_PROGRESS', 'RETURNED_TO_WAREHOUSE'],
+  returnedToMerchant: ['RETURNED_TO_MERCHANT', 'RETURNED'],
+  cancelled: ['CANCELLED'],
+};
+export function statusBuckets(
+  rows: readonly { status: string; count: number }[],
+): Record<StatusBucket, number> {
+  const sum = (bucket: StatusBucket) =>
+    rows
+      .filter((row) => STATUS_BUCKETS[bucket].includes(row.status))
+      .reduce((total, row) => total + row.count, 0);
+  return {
+    new: sum('new'),
+    atWarehouse: sum('atWarehouse'),
+    assigned: sum('assigned'),
+    outForDelivery: sum('outForDelivery'),
+    delivered: sum('delivered'),
+    failedDeliveries: sum('failedDeliveries'),
+    pendingReturns: sum('pendingReturns'),
+    returnedToMerchant: sum('returnedToMerchant'),
+    cancelled: sum('cancelled'),
+  };
+}
 export function money(value: string, currency: string, signed = false): bigint {
   const precision = Object.entries(CURRENCIES).find(
     ([key]) => key === currency,

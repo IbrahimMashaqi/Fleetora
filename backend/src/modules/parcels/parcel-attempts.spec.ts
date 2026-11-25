@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { describe, expect, it, vi } from 'vitest';
+import { MerchantPricingService } from '../merchant-pricing/merchant-pricing.service.js';
 import { ParcelOperationsRepository } from './parcel-operations.repository.js';
 import { ParcelStore } from './parcel-store.js';
 import { ParcelLedger } from './parcel-ledger.js';
@@ -54,6 +55,8 @@ describe('delivery outcome entry points', () => {
     const module = await Test.createTestingModule({
       providers: [
         ParcelOperationsRepository,
+        // Pricing is exercised by the PG suites; these specs never quote.
+        { provide: MerchantPricingService, useValue: {} },
         { provide: ParcelLedger, useValue: {} },
         {
           provide: ParcelStore,

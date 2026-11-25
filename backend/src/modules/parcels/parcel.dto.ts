@@ -14,6 +14,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { TRANSITIONS } from './parcel-domain.js';
 const trim = ({ value }: { value: unknown }) =>
@@ -56,6 +57,13 @@ export class PageDto {
   )
   @IsBoolean()
   remitted?: boolean;
+  /** Parcels only: delivered, uncollected parcels with an amount to collect. */
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === 'true' ? true : value === 'false' ? false : value,
+  )
+  @IsBoolean()
+  collectable?: boolean;
 }
 export class RevisionDto {
   @IsInt() @Min(1) revision!: number;
@@ -128,7 +136,13 @@ export class ParcelInputDto {
   @IsString()
   @MaxLength(40)
   secondaryPhone?: string;
-  @Transform(trim) @IsString() @MinLength(1) @MaxLength(100) city!: string;
+  /** City and price come from the zone; staff never type a free delivery fee. */
+  @IsUUID() zoneId!: string;
+  @IsString()
+  @Matches(/^\d{1,14}(?:\.\d{1,3})?$/)
+  finalCustomerAmount!: string;
+  @IsString() @Matches(/^[a-f0-9]{64}$/) pricingVersion!: string;
+  @IsIn(['COD', 'PREPAID']) collectionMode!: 'COD' | 'PREPAID';
   @Transform(trim)
   @IsString()
   @MinLength(1)
@@ -166,7 +180,6 @@ export class ParcelInputDto {
   @Max(100000)
   weight?: number;
   @IsOptional() @IsString() @MaxLength(20) declaredValue?: string;
-  @IsString() @MaxLength(20) codAmount!: string;
   @IsOptional() @Transform(trim) @IsString() @MaxLength(2000) notes?: string;
   @IsOptional() @IsDateString() scheduledAt?: string;
   @IsOptional() @IsIn(['LOW', 'NORMAL', 'HIGH', 'URGENT']) priority?:
@@ -175,8 +188,22 @@ export class ParcelInputDto {
 export class ParcelEditDto extends ParcelInputDto {
   @IsInt() @Min(1) revision!: number;
 }
+export class ParcelQuoteDto {
+  @IsUUID() merchantId!: string;
+  @IsUUID() zoneId!: string;
+  @IsString()
+  @Matches(/^\d{1,14}(?:\.\d{1,3})?$/)
+  finalCustomerAmount!: string;
+}
+/** Statuses that place a parcel in a company warehouse and must name it. */
+export const RECEIVING_STATUSES = ['RECEIVED_FROM_MERCHANT', 'AT_WAREHOUSE'];
 export class TransitionDto extends RevisionDto {
   @IsIn(Object.keys(TRANSITIONS)) status!: string;
+  @ValidateIf((o: { status?: string }) =>
+    RECEIVING_STATUSES.includes(o.status ?? ''),
+  )
+  @IsUUID()
+  warehouseId?: string;
   @IsOptional() @Transform(trim) @IsString() @MaxLength(1000) note?: string;
 }
 export class AssignmentDto extends RevisionDto {

@@ -120,7 +120,8 @@ describe('Overview aggregation in isolated PostgreSQL', () => {
       'RETURNED', 'CANCELLED', 'ASSIGNED', 'ON_HOLD'];
     for (const [index, status] of statuses.entries()) await shipment(String(index), status);
     const result = await overview.getOverview(actor);
-    expect(result.kpis).toMatchObject({ totalParcels: 12, inWarehouse: 1, outForDelivery: 1, returnsCount: 5 });
+    // In warehouse uses the shared dashboard buckets: AT_WAREHOUSE + legacy ON_HOLD.
+    expect(result.kpis).toMatchObject({ totalParcels: 12, inWarehouse: 2, outForDelivery: 1, returnsCount: 5 });
     expect(result.deliveryPerformance).toEqual({ delivered: 1, failedOrReturned: 5, inProgress: 5, cancelled: 1 });
     expect(result.parcelsByStatus.reduce((sum, row) => sum + row.count, 0)).toBe(12);
     expect(result.kpis.deliveredToday).toBe(0); // Legacy status alone is not dated delivery evidence.

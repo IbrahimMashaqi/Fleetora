@@ -54,7 +54,8 @@ export async function pricingForSession(
     return { status: "changed" };
   const bearer = session.tokens?.accessToken ?? access;
   if (!bearer) return { status: "unavailable" };
-  const writing = prepared.method !== "GET";
+  // A quote is a POST that reads; only real mutations are treated as writes.
+  const writing = prepared.method !== "GET" && !prepared.readOnly;
   let dispatched = false;
   try {
     const endpoint = getBackendEndpoint(prepared.path);

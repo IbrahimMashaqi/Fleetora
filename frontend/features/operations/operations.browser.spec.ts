@@ -142,6 +142,17 @@ let status: number;
 let empty: boolean;
 let delay: number;
 let uncertain: boolean;
+const pricingZone = {
+  id: "10000000-0000-4000-8000-00000000000a",
+  companyId,
+  name: "Fixture zone",
+  city: "Fixture city",
+  currency: "ILS",
+  active: true,
+  revision: 1,
+  baseFee: "15.00",
+};
+let quotes: Record<string, unknown>[] = [];
 let writes: { path: string; body: Record<string, unknown> }[];
 test.beforeAll(async () => {
   backend = createServer(async (req, res) => {
@@ -175,6 +186,44 @@ test.beforeAll(async () => {
     let raw = "";
     for await (const chunk of req) raw += chunk;
     const body = raw ? JSON.parse(raw) : {};
+    // Pricing reads: zone list and the read-only staff quote.
+    if (url.pathname === "/merchant-pricing/zones")
+      return res.writeHead(200, { "Content-Type": "application/json" }).end(
+        JSON.stringify({
+          success: true,
+          data: {
+            companyId,
+            items: [pricingZone],
+            page: 1,
+            pageSize: 25,
+            hasNext: false,
+          },
+        }),
+      );
+    if (url.pathname === "/parcels/quote") {
+      quotes.push(body);
+      return res.writeHead(200, { "Content-Type": "application/json" }).end(
+        JSON.stringify({
+          success: true,
+          data: {
+            companyId,
+            quote: {
+              deliveryZoneId: pricingZone.id,
+              zoneName: pricingZone.name,
+              city: pricingZone.city,
+              currency: "ILS",
+              pricingVersion: "d".repeat(64),
+              finalCustomerAmount: body.finalCustomerAmount,
+              baseDeliveryFee: "15.00",
+              discount: "0.00",
+              promotionDiscount: "0.00",
+              deliveryFee: "15.00",
+              expectedMerchantProceeds: "135.00",
+            },
+          },
+        }),
+      );
+    }
     if (req.method !== "GET") {
       writes.push({ path: url.pathname, body });
       if (url.pathname === "/financial/adjustments") balanceAmount = "93.00";
@@ -344,6 +393,7 @@ test.afterAll(async () => {
   await new Promise<void>((resolve) => backend.close(() => resolve()));
 });
 test.beforeEach(async ({ context }) => {
+  quotes = [];
   balanceAmount = "83.00";
   parcelOverride = {};
   returnedFixture = null;
@@ -434,7 +484,6 @@ test("parcel creation submits recipient, merchant and customer notes", async ({
   for (const [label, value] of [
     ["Recipient name", "Fictional UI recipient"],
     ["Recipient phone", "+000000009"],
-    ["City / region", "Fictional city"],
     ["Delivery address", "Fictional recipient address"],
     ["Parcel description", "Fictional goods"],
   ])
@@ -442,7 +491,23 @@ test("parcel creation submits recipient, merchant and customer notes", async ({
   await dialog
     .getByRole("textbox", { name: /^Customer notes/ })
     .fill("Call on arrival");
-  await dialog.getByLabel("COD goods amount", { exact: true }).fill("100.00");
+  await expect(dialog.getByLabel("COD goods amount", { exact: true })).toHaveCount(0);
+  await expect(dialog.getByLabel("City / region", { exact: true })).toHaveCount(0);
+  await dialog
+    .getByLabel("Destination zone", { exact: true })
+    .selectOption(pricingZone.id);
+  await dialog
+    .getByLabel("Final amount to collect", { exact: true })
+    .fill("150.00");
+  const quote = dialog.getByRole("region", { name: "Price quote" });
+  await expect(quote).toContainText("15.00");
+  await expect(quote).toContainText("150.00");
+  await expect(quote).toContainText("135.00");
+  expect(quotes.at(-1)).toMatchObject({
+    merchantId,
+    zoneId: pricingZone.id,
+    finalCustomerAmount: "150.00",
+  });
   await dialog.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/app/parcels/${parcelId}$`));
   expect(writes).toHaveLength(1);
@@ -452,11 +517,15 @@ test("parcel creation submits recipient, merchant and customer notes", async ({
       merchantId,
       recipientName: "Fictional UI recipient",
       customerNotes: "Call on arrival",
-      codAmount: "100.00",
+      zoneId: pricingZone.id,
+      finalCustomerAmount: "150.00",
+      pricingVersion: "d".repeat(64),
+      collectionMode: "COD",
       pieces: 1,
     },
   });
   expect(writes[0].body).not.toHaveProperty("companyId");
+  expect(writes[0].body).not.toHaveProperty("codAmount");
 });
 test("Other return reason requires explanation before sending", async ({
   page,

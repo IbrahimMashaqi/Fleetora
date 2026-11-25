@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MerchantPricingModule } from '../merchant-pricing/merchant-pricing.module.js';
 import { ParcelStore } from './parcel-store.js';
 import { ParcelLedger } from './parcel-ledger.js';
 import { ParcelOperationsRepository } from './parcel-operations.repository.js';
@@ -15,6 +16,7 @@ import { ParcelDashboardController } from './parcel-dashboard.controller.js';
 import { OverviewController } from './overview.controller.js';
 import { OverviewRepository } from './overview.repository.js';
 @Module({
+  imports: [MerchantPricingModule],
   controllers: [
     ParcelsController,
     ReturnsController,

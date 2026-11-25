@@ -1,7 +1,7 @@
 import { and, or, not } from '@prisma/orm-postgres/orm-client';
 import { Inject, Injectable } from '@nestjs/common';
 import type { TokenPayload } from '../auth/token/token.payload.js';
-import { amount, company } from './parcel-domain.js';
+import { amount, company, statusBuckets } from './parcel-domain.js';
 import { ParcelStore, dateRange, now, pattern, wire, RETURN_PARCEL_FIELDS } from './parcel-store.js';
 import { shipmentFilter } from './parcel-filters.js';
 import { DashboardQueryDto } from './parcel.dto.js';
@@ -117,22 +117,11 @@ export class ParcelDashboardRepository {
             .build(),
         ),
       ]);
-    const count = (...statuses: string[]) =>
-      distribution
-        .filter((s) => statuses.includes(s.status))
-        .reduce((sum, s) => sum + s.count, 0);
     return {
       companyId,
       counts: {
         total: distribution.reduce((sum, s) => sum + s.count, 0),
-        new: count('CREATED'),
-        atWarehouse: count('AT_WAREHOUSE'),
-        assigned: count('ASSIGNED'),
-        outForDelivery: count('OUT_FOR_DELIVERY'),
-        delivered: count('DELIVERED'),
-        failedDeliveries: count('FAILED_DELIVERY'),
-        pendingReturns: count('RETURN_IN_PROGRESS', 'RETURNED_TO_WAREHOUSE'),
-        returnedToMerchant: count('RETURNED_TO_MERCHANT'),
+        ...statusBuckets(distribution),
         overdue: overdue[0]?.count ?? 0,
       },
       statusDistribution: distribution,
