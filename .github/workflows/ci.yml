@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (typecheck, lint, unit tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx vitest run
+
+  backend-integration:
+    name: Backend integration (PostgreSQL 18)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      FLEETORA_PG_BIN: /usr/lib/postgresql/18/bin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Install PostgreSQL 18 from the PGDG apt repository
+        working-directory: .
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-18
+          sudo systemctl stop postgresql || true
+          # The owned test cluster runs as the runner user and needs the default socket directory.
+          sudo chmod 1777 /var/run/postgresql
+          "$FLEETORA_PG_BIN/postgres" --version
+      - run: npm ci
+      - name: Run every auth-integration spec on an owned disposable cluster
+        run: node test/run-parcel-integration.cjs --maxWorkers=1 test/*.auth-integration.spec.ts
+      - name: Upload integration diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-diagnostics
+          path: /tmp/fleetora-parcel-postgres-*
+          retention-days: 7
+          if-no-files-found: ignore
+
+  frontend:
+    name: Frontend (types, lint, action tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm run test:actions
+      - run: npm run build
+
+  docker:
+    name: Docker images build
+    runs-on: ubuntu-latest
+    env:
+      # Clearly fake placeholders: compose requires them to be set; nothing is run or pushed.
+      POSTGRES_PASSWORD: ci-fake-postgres-password
+      ACCESS_TOKEN_SECRET: ci-fake-access-token-secret-not-real-0000000000
+      REFRESH_TOKEN_SECRET: ci-fake-refresh-token-secret-not-real-000000000
+      FLEETORA_CLIENT_SOURCE_SECRET: ci-fake-client-source-secret-not-real-0000000
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build

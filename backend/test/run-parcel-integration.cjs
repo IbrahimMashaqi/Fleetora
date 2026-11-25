@@ -20,7 +20,11 @@ function run(command, args, name, env = environment) {
   let result;
   try { result = cp.spawnSync(command, args, { cwd: root, env, windowsHide: true, stdio: ['ignore', descriptor, descriptor], timeout: name === 'start-owned-cluster' ? 60000 : 900000 }); }
   finally { fs.closeSync(descriptor); }
-  if (result.status !== 0) throw new Error(`${name} failed; diagnostic log is in the owned test output directory`);
+  if (result.status !== 0) {
+    const lines = fs.readFileSync(path.join(output, `${name}.log`), 'utf8').split(/\r?\n/);
+    console.error(`--- last 200 lines of ${name}.log ---\n${lines.slice(-200).join('\n')}\n--- end of ${name}.log ---`);
+    throw new Error(`${name} failed; diagnostic log is in the owned test output directory`);
+  }
   return result;
 }
 async function main() {

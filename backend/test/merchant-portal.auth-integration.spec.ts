@@ -11,7 +11,6 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { Workbook } from 'exceljs';
 import * as bcrypt from 'bcrypt';
-import { verifyMerchantBrowser } from './merchant-browser.js';
 import { verifyMerchantAndroid } from './merchant-android.js';
 import { configureMerchantImportBody } from '../src/modules/merchant-portal/merchant-import-body.js';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -1084,7 +1083,8 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
       await prisma.db.orm.public.SettlementPayment.where({ companyId }).all(),
     ).toEqual([]);
   });
-  it('verifies the canonical Flutter merchant app through real NestJS, PostgreSQL and company dashboard without API mocks', async () => {
+  // Needs an installed Flutter SDK; hosts without one (e.g. CI) skip only this case.
+  it.skipIf(!process.env.FLEETORA_FLUTTER_BIN)('verifies the canonical Flutter merchant app through real NestJS, PostgreSQL and company dashboard without API mocks', async () => {
     await guard.verify(() => readAuthPostgresIdentity(prisma));
     const administrator = jwt.decode<{ sub: string; email: string }>(admin),
       merchant = jwt.decode<{ email: string }>(owner);
@@ -1095,6 +1095,8 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
     const address = app.getHttpServer().address();
     if (!address || typeof address === 'string')
       throw new Error('Disposable backend address unavailable');
+    // Lazy: the browser helper pulls Playwright from frontend/node_modules.
+    const { verifyMerchantBrowser } = await import('./merchant-browser.js');
     const output = await verifyMerchantBrowser({
       backendPort: address.port,
       merchantEmail: merchant.email,
