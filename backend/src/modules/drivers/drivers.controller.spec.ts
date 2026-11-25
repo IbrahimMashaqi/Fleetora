@@ -78,6 +78,9 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
   const isCompanyActiveForUser = vi.fn();
   const findPage = vi.fn();
   const findOne = vi.fn();
+  const create = vi.fn();
+  const update = vi.fn();
+  const setSuspended = vi.fn();
   const secret = 'isolated-driver-api-test-secret';
   const jwt = new JwtService({ secret });
 
@@ -99,7 +102,7 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
       .overrideProvider(VehiclesRepository)
       .useValue({ assign: vi.fn() })
       .overrideProvider(DriversRepository)
-      .useValue({ findPage, findOne })
+      .useValue({ findPage, findOne, create, update, setSuspended })
       .compile();
     app = module.createNestApplication();
     app.useGlobalPipes(
@@ -355,18 +358,156 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
       expect(findPage).not.toHaveBeenCalled();
     });
   }
-  it('rejects malformed IDs and exposes no create operation', async () => {
+  it('rejects malformed IDs', async () => {
     await get('/drivers/not-an-id').expect(400);
     expect(findOne).not.toHaveBeenCalled();
-    await request(app.getHttpServer())
-      .post('/drivers')
-      .set('Authorization', `Bearer ${token()}`)
-      .send({ name: 'Unsafe account', companyId: companyB })
-      .expect(404);
-    await request(app.getHttpServer())
-      .patch(`/drivers/${firstId}`)
-      .set('Authorization', `Bearer ${token()}`)
-      .send({ name: 'Changed' })
-      .expect(404);
+  });
+
+  function write(
+    method: 'post' | 'patch' | 'put',
+    path: string,
+    body: Record<string, unknown>,
+    context: string | null = companyA,
+    bearer = token(),
+  ) {
+    const call = request(app.getHttpServer())
+      [method](path)
+      .set('Authorization', `Bearer ${bearer}`);
+    if (context) call.set('X-Fleetora-Company-Context', context);
+    return call.send(body);
+  }
+
+  describe('driver record writes', () => {
+    beforeEach(() => {
+      create.mockResolvedValue(firstId);
+      update.mockResolvedValue(undefined);
+      setSuspended.mockResolvedValue(undefined);
+    });
+
+    it('creates a normalized driver record and ignores submitted tenant, status, and account fields', async () => {
+      const response = await write('post', '/drivers', {
+        name: '  Amina   Driver ',
+        phone: ' +970 599-000001 ',
+        companyId: companyB,
+        status: 'ACTIVE',
+        email: 'driver@example.invalid',
+        password: 'not-accepted',
+      }).expect(201);
+      expect(create).toHaveBeenCalledTimes(1);
+      const [calledActor, input] = create.mock.calls[0];
+      expect(calledActor).toMatchObject({ sub: actor.id, orgId: companyA });
+      expect({ ...input }).toEqual({
+        name: 'Amina Driver',
+        phone: '+970 599-000001',
+      });
+      expect(response.body.data).toMatchObject({
+        companyId: companyA,
+        driver: { id: firstId, name: 'Amina Driver' },
+      });
+    });
+
+    it('edits name and phone of an own driver', async () => {
+      await write('patch', `/drivers/${firstId}`, {
+        name: 'Amina D.',
+        phone: '0599000009',
+      }).expect(200);
+      expect(update).toHaveBeenCalledWith(
+        expect.objectContaining({ orgId: companyA }),
+        firstId,
+        expect.objectContaining({ name: 'Amina D.', phone: '0599000009' }),
+      );
+    });
+
+    it('suspends and reactivates through an explicit boolean only', async () => {
+      await write('put', `/drivers/${firstId}/suspension`, {
+        suspended: true,
+      }).expect(200);
+      await write('put', `/drivers/${firstId}/suspension`, {
+        suspended: false,
+      }).expect(200);
+      expect(setSuspended.mock.calls.map((call) => call.slice(1))).toEqual([
+        [firstId, true],
+        [firstId, false],
+      ]);
+      for (const body of [{}, { suspended: 'true' }, { status: 'SUSPENDED' }])
+        await write('put', `/drivers/${firstId}/suspension`, body).expect(400);
+      expect(setSuspended).toHaveBeenCalledTimes(2);
+    });
+
+    for (const body of [
+      {},
+      { name: 'A', phone: '0599000001' },
+      { name: 'x'.repeat(151), phone: '0599000001' },
+      { name: 'Valid Name', phone: '12' },
+      { name: 'Valid Name', phone: 'call me' },
+      { name: 'Valid Name', phone: '1'.repeat(41) },
+      { name: 42, phone: '0599000001' },
+    ])
+      it(`rejects invalid driver input ${JSON.stringify(body).slice(0, 40)}`, async () => {
+        await write('post', '/drivers', body).expect(400);
+        await write('patch', `/drivers/${firstId}`, body).expect(400);
+        expect(create).not.toHaveBeenCalled();
+        expect(update).not.toHaveBeenCalled();
+      });
+
+    it('rejects a missing or stale company context header before persistence', async () => {
+      const valid = { name: 'Valid Name', phone: '0599000001' };
+      for (const context of [null, companyB]) {
+        await write('post', '/drivers', valid, context).expect(403);
+        await write('patch', `/drivers/${firstId}`, valid, context).expect(403);
+        await write(
+          'put',
+          `/drivers/${firstId}/suspension`,
+          { suspended: true },
+          context,
+        ).expect(403);
+      }
+      expect(create).not.toHaveBeenCalled();
+      expect(update).not.toHaveBeenCalled();
+      expect(setSuspended).not.toHaveBeenCalled();
+    });
+
+    for (const role of ['PLATFORM_ADMIN', 'MERCHANT', 'ACCOUNTANT'] as const)
+      it(`denies ${role} writes even with a Company Admin token`, async () => {
+        actor.role = role;
+        const valid = { name: 'Valid Name', phone: '0599000001' };
+        await write('post', '/drivers', valid).expect(403);
+        await write('patch', `/drivers/${firstId}`, valid).expect(403);
+        await write('put', `/drivers/${firstId}/suspension`, {
+          suspended: true,
+        }).expect(403);
+        expect(create).not.toHaveBeenCalled();
+        expect(update).not.toHaveBeenCalled();
+        expect(setSuspended).not.toHaveBeenCalled();
+      });
+
+    it('requires authentication and a valid driver id for writes', async () => {
+      await request(app.getHttpServer())
+        .post('/drivers')
+        .send({ name: 'Valid Name', phone: '0599000001' })
+        .expect(401);
+      await write('patch', '/drivers/not-an-id', {
+        name: 'Valid Name',
+        phone: '0599000001',
+      }).expect(400);
+      await write('put', '/drivers/not-an-id/suspension', {
+        suspended: true,
+      }).expect(400);
+      expect(update).not.toHaveBeenCalled();
+      expect(setSuspended).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when the repository does not find an own driver', async () => {
+      const { NotFoundException } = await import('@nestjs/common');
+      update.mockRejectedValue(new NotFoundException('Driver not found'));
+      setSuspended.mockRejectedValue(new NotFoundException('Driver not found'));
+      await write('patch', `/drivers/${otherId}`, {
+        name: 'Valid Name',
+        phone: '0599000001',
+      }).expect(404);
+      await write('put', `/drivers/${otherId}/suspension`, {
+        suspended: true,
+      }).expect(404);
+    });
   });
 });

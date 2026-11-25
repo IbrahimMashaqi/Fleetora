@@ -1,6 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { or } from '@prisma/orm-postgres/orm-client';
+import type { TokenPayload } from '../auth/token/token.payload.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { lockedFleetWrite } from '../vehicles/vehicles.repository.js';
+import type { DriverInputDto } from './dto/driver-input.dto.js';
 import type { ListDriversDto } from './dto/list-drivers.dto.js';
 import type { DriverRow } from './drivers.types.js';
 
@@ -55,5 +58,67 @@ export class DriversRepository {
           ),
       )
       .first();
+  }
+
+  // Writes reuse the fleet lock order (company, then actor) so identity and
+  // tenant state are re-verified inside the transaction that performs them.
+  async create(actor: TokenPayload, input: DriverInputDto): Promise<string> {
+    return lockedFleetWrite(this.prisma, actor, async (tx, companyId) => {
+      const created = await tx.orm.public.Worker.create({
+        companyId,
+        fullName: input.name,
+        phone: input.phone,
+        status: 'OFFLINE',
+      });
+      return created.id;
+    });
+  }
+
+  async update(
+    actor: TokenPayload,
+    id: string,
+    input: DriverInputDto,
+  ): Promise<void> {
+    await lockedFleetWrite(this.prisma, actor, async (tx, companyId) => {
+      await this.lockDriver(tx, id, companyId);
+      await tx.orm.public.Worker.where({ id, companyId }).update({
+        fullName: input.name,
+        phone: input.phone,
+      });
+    });
+  }
+
+  // Suspension is an administrative override. Reactivation returns the driver
+  // to OFFLINE; ACTIVE and ON_BREAK are operational states the driver sets.
+  async setSuspended(
+    actor: TokenPayload,
+    id: string,
+    suspended: boolean,
+  ): Promise<void> {
+    await lockedFleetWrite(this.prisma, actor, async (tx, companyId) => {
+      const driver = await this.lockDriver(tx, id, companyId);
+      if (suspended === (driver.status === 'SUSPENDED')) return;
+      await tx.orm.public.Worker.where({ id, companyId }).update({
+        status: suspended ? 'SUSPENDED' : 'OFFLINE',
+      });
+    });
+  }
+
+  private async lockDriver(
+    tx: Parameters<Parameters<typeof lockedFleetWrite>[2]>[0],
+    id: string,
+    companyId: string,
+  ) {
+    await tx.execute(
+      this.prisma.db.raw
+        .sql`SELECT "id" FROM "workers" WHERE "id"=${id} AND "companyId"=${companyId} FOR UPDATE`
+        .affectedCount()
+        .build(),
+    );
+    const driver = await tx.orm.public.Worker.where({ id, companyId })
+      .select('id', 'status')
+      .first();
+    if (!driver) throw new NotFoundException('Driver not found');
+    return driver;
   }
 }

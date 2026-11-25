@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { operationsArabic, operationsEnglish } from "@/features/operations/operations-copy";
 import { overviewArabic, overviewEnglish } from "@/features/dashboard/overview-copy";
+import { driversArabic, driversEnglish } from "@/features/drivers/drivers-copy";
 
 export type Locale = "en" | "ar";
 
 const english = {
   ...operationsEnglish,
   ...overviewEnglish,
+  ...driversEnglish,
   "Overview": "Overview",
   "Live Tracking": "Live Tracking",
   "Merchants": "Merchants",
@@ -477,6 +479,7 @@ export type TranslationKey = keyof typeof english;
 
 const arabic: Record<TranslationKey, string> = {
   ...overviewArabic,
+  ...driversArabic,
   "Returns & finance": "المرتجعات والمالية",
   "Company resources": "موارد الشركة",
   "Operations dashboard": "لوحة العمليات",
