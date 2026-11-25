@@ -1084,7 +1084,8 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
       await prisma.db.orm.public.SettlementPayment.where({ companyId }).all(),
     ).toEqual([]);
   });
-  it('verifies the canonical Flutter merchant app through real NestJS, PostgreSQL and company dashboard without API mocks', async () => {
+  // Needs an installed Flutter SDK; hosts without one (e.g. CI) skip only this case.
+  it.skipIf(!process.env.FLEETORA_FLUTTER_BIN)('verifies the canonical Flutter merchant app through real NestJS, PostgreSQL and company dashboard without API mocks', async () => {
     await guard.verify(() => readAuthPostgresIdentity(prisma));
     const administrator = jwt.decode<{ sub: string; email: string }>(admin),
       merchant = jwt.decode<{ email: string }>(owner);
