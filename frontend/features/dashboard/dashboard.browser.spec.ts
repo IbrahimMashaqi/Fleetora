@@ -101,7 +101,7 @@ for (const locale of ["en", "ar"] as const) for (const width of [1920, 1440, 128
     const nav = sidebar.getByRole("navigation");
     await expandNavigationGroups(nav);
     const labels = await sidebar.locator("a > span").evaluateAll(elements => elements.map(element => ({ height: element.getBoundingClientRect().height, line: parseFloat(getComputedStyle(element).lineHeight), overflow: element.scrollWidth > element.clientWidth })));
-    expect(labels.length).toBe(15);
+    expect(labels.length).toBe(16);
     expect(labels.every(label => label.height <= label.line + 1 && !label.overflow)).toBe(true);
     await expect(sidebar.getByRole("link", { name: translate(locale, "Account & security"), exact: true })).toBeInViewport();
     await expect(sidebar.getByRole("button", { name: translate(locale, "Log out"), exact: true })).toBeInViewport();
@@ -373,7 +373,7 @@ test("shows validated company identity and only implemented navigation", async (
   const destinations = await page.locator("a[href^='/']").evaluateAll((links) =>
     [...new Set(links.map((link) => link.getAttribute("href")))],
   );
-  expect(destinations).toEqual(["/app", "/app/live-map", "/app/operations", "/app/parcels", "/app/pickups", "/app/requests", "/app/pricing", "/app/merchants", "/app/drivers", "/app/vehicles", "/app/warehouses", "/app/returns", "/app/collections", "/app/settlements", "/app/account"]);
+  expect(destinations).toEqual(["/app", "/app/live-map", "/app/operations", "/app/parcels", "/app/pickups", "/app/requests", "/app/pricing", "/app/merchants", "/app/drivers", "/app/vehicles", "/app/warehouses", "/app/team", "/app/returns", "/app/collections", "/app/settlements", "/app/account"]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   const browserStorage = await page.evaluate(() => JSON.stringify({
     cookies: document.cookie,

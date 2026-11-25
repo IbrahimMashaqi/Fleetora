@@ -23,6 +23,8 @@ let status: string,
   canApprove: boolean,
   changed: boolean;
 let writes: { path: string; body: Record<string, unknown> }[];
+let sessionRole: string;
+let requested: string[];
 function pickup() {
   return {
     id,
@@ -66,6 +68,7 @@ test.beforeAll(async () => {
   server = createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     const url = new URL(req.url ?? "/", "http://fixture.invalid");
+    requested.push(url.pathname);
     const end = (data: unknown) =>
       res.end(JSON.stringify({ success: true, data }));
     if (url.pathname === "/auth/session")
@@ -76,7 +79,7 @@ test.beforeAll(async () => {
               orgId: "other-company",
               company: { id: "other-company", name: "Changed fixture company" },
             }
-          : user,
+          : { ...user, role: sessionRole },
       );
     let raw = "";
     for await (const chunk of req) raw += chunk;
@@ -161,6 +164,8 @@ test.afterAll(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
 });
 test.beforeEach(async ({ context }) => {
+  sessionRole = "COMPANY_ADMIN";
+  requested = [];
   status = "REQUESTED";
   error = false;
   delay = false;
@@ -387,4 +392,24 @@ test("Arabic mobile dialogs fit the viewport and changed sessions hide previous 
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(page.getByText("Fixture address correction")).toHaveCount(0);
   expect(writes).toEqual([]);
+});
+
+test("accountant sees only the settlement-request queue without errors or parcel-change calls", async ({
+  page,
+}) => {
+  sessionRole = "ACCOUNTANT";
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  await page.goto("/app/requests");
+  await expect(
+    page.getByRole("button", { name: "Mark reviewed", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Review financial impact", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByText(/not permitted|access required|forbidden/i)).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Merchant requests", exact: true })).toBeVisible();
+  expect(requested).toContain("/merchant-settlement-requests");
+  expect(requested.filter((path) => path.startsWith("/parcel-requests"))).toEqual([]);
+  expect(runtimeErrors).toEqual([]);
 });
