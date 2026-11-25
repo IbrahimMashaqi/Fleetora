@@ -25,6 +25,8 @@ import { HttpExceptionFilter } from '../../common/exceptions-filter/http-excepti
 import type { UserRole } from '../auth/token/token.payload.js';
 import { StaffModule } from './staff.module.js';
 import { StaffRepository } from './staff.repository.js';
+import { MailService } from '../mail/mail.service.js';
+import { Global, Logger, Module } from '@nestjs/common';
 import { hashStaffToken } from './staff.service.js';
 
 const companyA = '11111111-1111-4111-8111-111111111111';
@@ -66,12 +68,22 @@ describe('Company staff invitations API (isolated fixtures)', () => {
   const revoke = vi.fn();
   const accept = vi.fn();
   const setActive = vi.fn();
+  const sendInvitationEmail = vi.fn();
+  const companyName = vi.fn();
   const secret = 'isolated-staff-api-test-secret';
   const jwt = new JwtService({ secret });
 
+  // Stands in for the app's global MailModule.
+  @Global()
+  @Module({
+    providers: [{ provide: MailService, useValue: { sendInvitationEmail } }],
+    exports: [MailService],
+  })
+  class MailStub {}
+
   beforeAll(async () => {
     const module = await Test.createTestingModule({
-      imports: [StaffModule],
+      imports: [StaffModule, MailStub],
       providers: [
         AccessTokenStrategy,
         {
@@ -86,7 +98,11 @@ describe('Company staff invitations API (isolated fixtures)', () => {
     })
       .overrideProvider(ConfigService)
       .useValue(
-        new ConfigService({ ACCESS_TOKEN_SECRET: secret, SALT_ROUNDS: 4 }),
+        new ConfigService({
+          ACCESS_TOKEN_SECRET: secret,
+          SALT_ROUNDS: 4,
+          FRONTEND_URL: 'https://app.fleetora.test',
+        }),
       )
       .overrideProvider(StaffRepository)
       .useValue({
@@ -98,6 +114,7 @@ describe('Company staff invitations API (isolated fixtures)', () => {
         revoke,
         accept,
         setActive,
+        companyName,
       })
       .compile();
     app = module.createNestApplication();
@@ -133,6 +150,8 @@ describe('Company staff invitations API (isolated fixtures)', () => {
     invitations.mockResolvedValue([invitationRow({ tokenHash: 'private' })]);
     findOne.mockResolvedValue(invitationRow());
     issue.mockResolvedValue({ companyId: companyA, id: invitationId });
+    companyName.mockResolvedValue('Fixture Logistics');
+    sendInvitationEmail.mockResolvedValue(undefined);
     revoke.mockResolvedValue(true);
     findByTokenHash.mockResolvedValue({ id: invitationId, companyId: companyA });
     setActive.mockResolvedValue({
@@ -259,7 +278,7 @@ describe('Company staff invitations API (isolated fixtures)', () => {
     const data = response.body.data;
     expect(data).toMatchObject({
       companyId: companyA,
-      delivery: 'MANUAL',
+      delivery: 'EMAIL',
       invitation: { id: invitationId, state: 'PENDING', role: 'ACCOUNTANT' },
     });
     expect(data.token).toMatch(/^[a-f0-9]{64}$/);
@@ -455,6 +474,47 @@ describe('Company staff invitations API (isolated fixtures)', () => {
       actor.role = 'ACCOUNTANT';
       await put({ active: false }).expect(403);
       expect(setActive).not.toHaveBeenCalled();
+    });
+  });
+  describe('invitation email', () => {
+    const body = { email: 'accountant@example.invalid', role: 'ACCOUNTANT' };
+
+    it('emails the fragment link to the invited address and reports EMAIL delivery', async () => {
+      const response = await issueRequest(body).expect(201);
+      const data = response.body.data;
+      expect(data.delivery).toBe('EMAIL');
+      expect(data.token).toMatch(/^[a-f0-9]{64}$/);
+      expect(sendInvitationEmail).toHaveBeenCalledTimes(1);
+      expect(sendInvitationEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'accountant@example.invalid',
+          url: `https://app.fleetora.test/auth/accept-invitation#token=${data.token}`,
+          inviter: 'Fixture Logistics',
+          role: 'ACCOUNTANT',
+        }),
+      );
+    });
+
+    it('keeps the invitation and falls back to MANUAL when sending fails, never logging the token', async () => {
+      const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+      const error = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      sendInvitationEmail.mockRejectedValue(new Error('smtp down'));
+      const response = await issueRequest(body).expect(201);
+      const data = response.body.data;
+      expect(data.delivery).toBe('MANUAL');
+      expect(data.token).toMatch(/^[a-f0-9]{64}$/);
+      expect(issue).toHaveBeenCalledTimes(1);
+      const logged = JSON.stringify([...warn.mock.calls, ...error.mock.calls]);
+      expect(logged).toContain(invitationId);
+      expect(logged).not.toContain(data.token);
+      warn.mockRestore();
+      error.mockRestore();
+    });
+
+    it('sends nothing when issuing is refused', async () => {
+      issue.mockRejectedValue(new ConflictException('An account already uses this email'));
+      await issueRequest(body).expect(409);
+      expect(sendInvitationEmail).not.toHaveBeenCalled();
     });
   });
 });

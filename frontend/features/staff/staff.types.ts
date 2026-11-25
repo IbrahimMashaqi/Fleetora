@@ -33,7 +33,7 @@ export type StaffWriteFailure =
   | "unavailable"
   | "uncertain";
 export type StaffWriteResult =
-  | { status: "issued"; invitation: StaffInvitation; token: string }
+  | { status: "issued"; invitation: StaffInvitation; token: string; emailed: boolean }
   | { status: "revoked" }
   | { status: "updated"; member: StaffMember }
   | { status: StaffWriteFailure };

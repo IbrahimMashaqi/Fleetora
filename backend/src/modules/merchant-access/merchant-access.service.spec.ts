@@ -11,6 +11,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MerchantAccessRepository } from './merchant-access.repository.js';
 import { MerchantAccessService } from './merchant-access.service.js';
 import { MERCHANT_PERMISSIONS } from './merchant-access.types.js';
+import { MailService } from '../mail/mail.service.js';
+import { Logger } from '@nestjs/common';
 
 const credentials = vi.hoisted(() => ({ compare: vi.fn(), hash: vi.fn() }));
 vi.mock('bcrypt', () => credentials);
@@ -76,6 +78,7 @@ describe('merchant invitation and access security', () => {
     lockInvitation: vi.fn(),
     audit: vi.fn(),
   };
+  const mail = { sendInvitationEmail: vi.fn() };
   let service: MerchantAccessService;
   beforeEach(async () => {
     vi.resetAllMocks();
@@ -112,6 +115,7 @@ describe('merchant invitation and access security', () => {
         MerchantAccessService,
         { provide: MerchantAccessRepository, useValue: repository },
         { provide: ConfigService, useValue: { get: () => 4 } },
+        { provide: MailService, useValue: mail },
       ],
     }).compile();
     service = module.get(MerchantAccessService);
@@ -195,7 +199,7 @@ describe('merchant invitation and access security', () => {
       role: 'EMPLOYEE',
     });
     expect(result.token).toMatch(/^[a-f0-9]{64}$/);
-    expect(result.delivery).toBe('MANUAL');
+    expect(result.delivery).toBe('EMAIL');
     expect(result).not.toHaveProperty('tokenHash');
     expect(orm.MerchantInvitation.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -337,5 +341,53 @@ describe('merchant invitation and access security', () => {
       merchantId: 'merchant',
     });
     expect(orm.User.update).not.toHaveBeenCalled();
+  });
+  describe('invitation email', () => {
+    const admin = () =>
+      orm.User.first.mockResolvedValue({ ...user, role: 'COMPANY_ADMIN' });
+
+    it('emails company-issued merchant invitations with the app activation link and code', async () => {
+      admin();
+      orm.Merchant.first.mockResolvedValue({ id: 'merchant', companyId: 'company', active: true, name: 'Fixture Store' });
+      const result = await service.issueByAdmin({ sub: 'user' }, 'merchant', {
+        email: 'Owner@Example.invalid',
+        role: 'EMPLOYEE',
+      });
+      expect(result.delivery).toBe('EMAIL');
+      expect(mail.sendInvitationEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'owner@example.invalid',
+          url: `fleetora-merchant://app/activate?token=${result.token}`,
+          code: result.token,
+          inviter: 'Fixture Store',
+          role: 'EMPLOYEE',
+        }),
+      );
+    });
+
+    it('keeps the invitation and reports MANUAL when sending fails, without logging the token', async () => {
+      admin();
+      const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+      mail.sendInvitationEmail.mockRejectedValue(new Error('smtp down'));
+      const result = await service.issueByAdmin({ sub: 'user' }, 'merchant', {
+        email: 'owner@example.invalid',
+        role: 'EMPLOYEE',
+      });
+      expect(result.delivery).toBe('MANUAL');
+      expect(result.token).toMatch(/^[a-f0-9]{64}$/);
+      expect(orm.MerchantInvitation.create).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(warn.mock.calls)).not.toContain(result.token);
+      warn.mockRestore();
+    });
+
+    it('leaves owner-issued app invitations manual', async () => {
+      orm.MerchantMembership.first.mockResolvedValue({ ...membership, role: 'OWNER' });
+      const result = await service.issueByOwner(
+        { sub: 'user' },
+        { email: 'employee@example.invalid' },
+      );
+      expect(result.delivery).toBe('MANUAL');
+      expect(mail.sendInvitationEmail).not.toHaveBeenCalled();
+    });
   });
 });

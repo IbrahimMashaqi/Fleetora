@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -12,6 +13,8 @@ import { Temporal } from 'temporal-polyfill';
 import type { TokenPayload } from '../auth/token/token.payload.js';
 import { fleetCompany } from '../vehicles/vehicles.repository.js';
 import { canonicalEmail } from '../../common/utils/email.js';
+import { trustedFrontendOrigin } from '../../common/utils/frontend-url.js';
+import { MailService } from '../mail/mail.service.js';
 import type {
   AcceptStaffInvitationDto,
   StaffInvitationDto,
@@ -52,10 +55,14 @@ function publicInvitation(row: StaffInvitationRow): StaffInvitation {
 @Injectable()
 export class StaffService {
   private readonly saltRounds: number;
+  private readonly frontendOrigin: string;
+  private readonly logger = new Logger(StaffService.name);
   constructor(
     @Inject(StaffRepository) private readonly repository: StaffRepository,
     @Inject(ConfigService) config: ConfigService,
+    @Inject(MailService) private readonly mail: MailService,
   ) {
+    this.frontendOrigin = trustedFrontendOrigin(config);
     this.saltRounds = Number(config.get<string | number>('SALT_ROUNDS') ?? 10);
     if (
       !Number.isInteger(this.saltRounds) ||
@@ -104,12 +111,40 @@ export class StaffService {
     });
     const row = await this.repository.findOne(companyId, id);
     if (!row) throw new NotFoundException('Invitation not found');
+    const invitation = publicInvitation(row);
     return {
       companyId,
-      invitation: publicInvitation(row),
+      invitation,
       token,
-      delivery: 'MANUAL' as const,
+      delivery: await this.deliver(companyId, invitation, token),
     };
+  }
+
+  // Runs after the invitation is committed; a mail failure never undoes it.
+  private async deliver(
+    companyId: string,
+    invitation: StaffInvitation,
+    token: string,
+  ): Promise<'EMAIL' | 'MANUAL'> {
+    const url = new URL('/auth/accept-invitation', this.frontendOrigin);
+    url.hash = new URLSearchParams({ token }).toString();
+    try {
+      await this.mail.sendInvitationEmail({
+        to: invitation.email,
+        url: url.toString(),
+        inviter: await this.repository.companyName(companyId),
+        role: invitation.role,
+        expiresAt: invitation.expiresAt,
+      });
+      return 'EMAIL';
+    } catch (error: unknown) {
+      this.logger.warn({
+        event: 'staff_invitation.email_failed',
+        invitationId: invitation.id,
+        error: error instanceof Error ? error.name : 'unknown',
+      });
+      return 'MANUAL';
+    }
   }
 
   async revoke(actor: TokenPayload, id: string) {

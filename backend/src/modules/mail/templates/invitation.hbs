@@ -1,0 +1,82 @@
+<html lang='en'>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <meta name='referrer' content='no-referrer' />
+    <title>Fleetora invitation</title>
+  </head>
+  <body
+    style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f9f9f9; color: #333;"
+  >
+    <div style='padding: 40px 20px;'>
+      <div
+        style='max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 16px; border: 1px solid #eee; box-shadow: 0 10px 25px rgba(0,0,0,0.05);'
+      >
+        <h2
+          style='color: #0f172a; text-align: center; margin-bottom: 20px; font-size: 24px;'
+        >You're invited to Fleetora</h2>
+
+        <p style='font-size: 15px; line-height: 1.6; color: #555;'>
+          <strong>{{inviter}}</strong> invited you to join as
+          <strong>{{roleEn}}</strong>. Click the button below to choose your
+          name and password and activate your account.
+        </p>
+
+        <div style='text-align: center; margin: 35px 0;'>
+          <a
+            href='{{url}}'
+            style='background-color: #1a73e8; color: white; padding: 14px 30px; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; display: inline-block;'
+          >
+            Accept invitation · قبول الدعوة
+          </a>
+        </div>
+
+        <p style='font-size: 13px; color: #888; text-align: center;'>
+          This invitation expires on <strong>{{expiresAt}}</strong> (UTC). If
+          the button doesn't work, copy this link:
+          <br />
+          <span
+            style='word-break: break-all; color: #2563eb; font-size: 11px; display: block; margin-top: 10px;'
+          >{{url}}</span>
+          {{#if code}}
+            <br />
+            Or enter this invitation code in the Fleetora Merchant app:
+            <span
+              style='word-break: break-all; font-family: monospace; font-size: 12px; display: block; margin-top: 8px; color: #0f172a;'
+            >{{code}}</span>
+          {{/if}}
+        </p>
+
+        <hr style='border: 0; border-top: 1px solid #eee; margin: 25px 0;' />
+
+        <div dir='rtl' lang='ar' style='text-align: right;'>
+          <h3 style='color: #0f172a; font-size: 20px; margin: 0 0 12px;'>دعوة للانضمام إلى Fleetora</h3>
+          <p style='font-size: 15px; line-height: 1.8; color: #555;'>
+            دعاك <strong>{{inviter}}</strong> للانضمام بصفة
+            <strong>{{roleAr}}</strong>. اضغط زر «قبول الدعوة» أعلاه لاختيار اسمك
+            وكلمة المرور وتفعيل حسابك.
+          </p>
+          <p style='font-size: 13px; line-height: 1.7; color: #888;'>
+            تنتهي صلاحية الدعوة في
+            <strong dir='ltr'>{{expiresAt}}</strong> (UTC). إذا لم يعمل الزر،
+            انسخ الرابط الظاهر أعلاه{{#if code}} أو أدخل رمز الدعوة في تطبيق
+            Fleetora Merchant{{/if}}.
+          </p>
+        </div>
+
+        <hr style='border: 0; border-top: 1px solid #eee; margin: 25px 0;' />
+
+        <p style='font-size: 13px; line-height: 1.5; color: #777;'>
+          If you weren't expecting this invitation, you can ignore this email.
+          · إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذه الرسالة.
+        </p>
+
+        <p
+          style='text-align: center; font-size: 12px; color: #aaa; margin-top: 20px;'
+        >
+          © 2026 Fleetora. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

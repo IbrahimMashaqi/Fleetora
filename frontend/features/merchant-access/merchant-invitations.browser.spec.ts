@@ -11,6 +11,7 @@ let role: string;
 let issued: boolean;
 let revoked: boolean;
 let readsFail: boolean;
+let delivery: string;
 let writes: { method: string; body: unknown }[];
 
 test.beforeAll(async () => {
@@ -27,7 +28,7 @@ test.beforeAll(async () => {
       if (req.method === 'DELETE') revoked = true;
       if (readsFail && req.method === 'GET') res.statusCode = 503;
       const invitation = { companyId, merchantId, id: invitationId, email: 'owner@example.com', role: 'OWNER', permissions: [], state: revoked ? 'REVOKED' : 'PENDING', expiresAt: timestamp, createdAt: timestamp, acceptedAt: null, revokedAt: revoked ? timestamp : null };
-      data = req.method === 'POST' ? { ...invitation, token, delivery: 'MANUAL' } : req.method === 'DELETE' ? { companyId, merchantId, revoked: true } : { companyId, merchantId, items: issued ? [invitation] : [] };
+      data = req.method === 'POST' ? { ...invitation, token, delivery } : req.method === 'DELETE' ? { companyId, merchantId, revoked: true } : { companyId, merchantId, items: issued ? [invitation] : [] };
     } else if (path === `/merchants/business/${merchantId}`) data = { companyId, merchant: { id: merchantId, companyId, name: 'Fixture business merchant', contactName: 'Fixture contact', phone: '+970599000000', pickupAddress: 'Fixture pickup address', city: 'Fixture city', active: true, currency: 'ILS', deliveryFee: '15.00', returnFee: '5.00', serviceFee: '0.00', feePayer: 'MERCHANT', returnFeePolicy: 'ON_MERCHANT_HANDOFF', revision: 1, createdAt: timestamp, updatedAt: timestamp }, statistics: {}, balances: [] };
     else data = { companyId, items: [], page: 1, pageSize: 25, hasNext: false };
     res.end(JSON.stringify({ success: true, data }));
@@ -36,7 +37,7 @@ test.beforeAll(async () => {
 });
 test.afterAll(async () => { backend.closeAllConnections(); await new Promise<void>(resolve => backend.close(() => resolve())); });
 test.beforeEach(async ({ context }) => {
-  role = 'COMPANY_ADMIN'; issued = false; revoked = false; readsFail = false; writes = [];
+  role = 'COMPANY_ADMIN'; delivery = 'MANUAL'; issued = false; revoked = false; readsFail = false; writes = [];
   await context.addCookies([{ name: 'fleetora_access', value: 'isolated-invitation-fixture', url: 'http://localhost:3100', httpOnly: true }]);
 });
 
@@ -49,7 +50,7 @@ test('company owner invitation shows a manual activation secret once and revokes
   await panel.getByLabel('Owner email', { exact: true }).fill('owner@example.com');
   await panel.getByRole('button', { name: 'Create owner invitation', exact: true }).click();
   await expect(panel.getByLabel('Activation link', { exact: true })).toHaveValue(`fleetora-merchant://app/activate?token=${token}`);
-  await expect(panel.getByText(/No email was sent/)).toBeVisible();
+  await expect(panel.getByText(/Email not sent\. Copy the link instead/)).toBeVisible();
   await expect(panel.getByLabel('Activation token', { exact: true })).toHaveValue(token);
   await panel.getByRole('button', { name: 'Dismiss invitation secret', exact: true }).click();
   await expect(panel.getByLabel('Activation token', { exact: true })).toHaveCount(0);
@@ -92,4 +93,14 @@ test('accountants do not receive invitation administration controls', async ({ p
   await expect(page.getByRole('heading', { name: 'Fixture business merchant', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Merchant app access' })).toHaveCount(0);
   expect(writes).toEqual([]);
+});
+
+test('emailed owner invitation says so and keeps the link and token fallback', async ({ page }) => {
+  delivery = 'EMAIL';
+  await page.goto(`/app/merchants/${merchantId}`);
+  const panel = page.getByRole('region', { name: 'Merchant app access' });
+  await panel.getByLabel('Owner email', { exact: true }).fill('owner@example.com');
+  await panel.getByRole('button', { name: 'Create owner invitation', exact: true }).click();
+  await expect(panel.getByText(/^Invitation emailed\./)).toBeVisible();
+  await expect(panel.getByLabel('Activation token', { exact: true })).toHaveValue(token);
 });

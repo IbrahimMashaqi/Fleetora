@@ -11,6 +11,7 @@ let issued: { email: string; role: string } | false;
 let revoked: boolean;
 let readsFail: boolean;
 let acceptStatus: number;
+let delivery: string;
 let memberActive: boolean;
 let memberStatus: number;
 const memberId = "10000000-0000-4000-8000-000000000009";
@@ -47,7 +48,7 @@ test.beforeAll(async () => {
       const invitation = { id: invitationId, email: issued ? issued.email : "", role: issued ? issued.role : "ACCOUNTANT", state: revoked ? "REVOKED" : "PENDING", expiresAt: "2026-12-01T12:00:00Z", createdAt: "2026-11-25T12:00:00Z", acceptedAt: null, revokedAt: null };
       data =
         req.method === "POST"
-          ? { companyId, invitation, token, delivery: "MANUAL" }
+          ? { companyId, invitation, token, delivery }
           : req.method === "DELETE"
             ? { companyId, revoked: true }
             : req.method === "PUT"
@@ -75,6 +76,7 @@ test.beforeEach(async ({ context }) => {
   revoked = false;
   readsFail = false;
   acceptStatus = 201;
+  delivery = "MANUAL";
   memberActive = true;
   memberStatus = 200;
   writes = [];
@@ -93,7 +95,7 @@ test("admin invites an accountant, sees the one-time link, and revokes it", asyn
   await expect(page.getByText(/Cannot manage staff/)).toBeVisible();
   await page.getByRole("button", { name: "Create invitation" }).click();
   await expect(page.getByLabel("Activation link")).toHaveValue(`http://localhost:3100/auth/accept-invitation#token=${token}`);
-  await expect(page.getByText(/No email was sent/)).toBeVisible();
+  await expect(page.getByText(/Email not sent\. Copy the link instead/)).toBeVisible();
   await expect(page.getByText("Accountant · Pending")).toBeVisible();
   await page.getByRole("button", { name: "Dismiss invitation link" }).click();
   await expect(page.getByLabel("Activation link")).toHaveCount(0);
@@ -211,4 +213,15 @@ test("guard refusals explain the self and last-administrator rules", async ({ pa
   await page.getByRole("button", { name: "Confirm deactivation" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "last active administrator" })).toBeVisible();
   await expect(page.getByText("Accountant · Inactive")).toHaveCount(0);
+});
+
+test("emailed invitations say so and still offer the copy-link fallback", async ({ page }) => {
+  delivery = "EMAIL";
+  await page.goto("/app/team");
+  await page.getByLabel("Email", { exact: true }).fill("accountant@example.com");
+  await page.getByRole("button", { name: "Create invitation" }).click();
+  await expect(page.getByText(/^Invitation emailed\./)).toBeVisible();
+  await expect(page.getByText(/Email not sent/)).toHaveCount(0);
+  await expect(page.getByLabel("Activation link")).toHaveValue(`http://localhost:3100/auth/accept-invitation#token=${token}`);
+  await expect(page.getByRole("button", { name: "Copy link" })).toBeVisible();
 });

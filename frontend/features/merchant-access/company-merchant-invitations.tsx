@@ -31,7 +31,9 @@ const words = {
     issuing: "Creating invitation…",
     manual: "Share this invitation securely",
     warning:
-      "No email was sent. Deliver this link directly to the invited owner through a trusted channel. Anyone with it can activate a new account for the invited email.",
+      "Email not sent. Copy the link instead and deliver it directly to the invited owner through a trusted channel. Anyone with it can activate a new account for the invited email.",
+    emailed:
+      "Invitation emailed. If it doesn't arrive, copy this link or token and share it directly through a trusted channel.",
     once: "The link and token appear only here. Copy them before dismissing this panel.",
     link: "Activation link",
     token: "Activation token",
@@ -74,7 +76,9 @@ const words = {
     issuing: "جارٍ إنشاء الدعوة…",
     manual: "شارك هذه الدعوة بأمان",
     warning:
-      "لم يُرسل بريد إلكتروني. سلّم الرابط مباشرة إلى المالك المدعو عبر قناة موثوقة. من يملك الرابط يستطيع تفعيل حساب جديد للبريد المدعو.",
+      "لم يُرسل البريد الإلكتروني. انسخ الرابط بدلاً من ذلك وسلّمه مباشرة إلى المالك المدعو عبر قناة موثوقة. من يملك الرابط يستطيع تفعيل حساب جديد للبريد المدعو.",
+    emailed:
+      "أُرسلت الدعوة بالبريد الإلكتروني. إذا لم تصل، انسخ الرابط أو الرمز وشاركه مباشرة عبر قناة موثوقة.",
     once: "يظهر الرابط والرمز هنا فقط. انسخهما قبل إخفاء هذه اللوحة.",
     link: "رابط التفعيل",
     token: "رمز التفعيل",
@@ -141,6 +145,7 @@ function InvitationPanel({
   const [issued, setIssued] = useState<{
     invitation: Invitation;
     token: string;
+    emailed: boolean;
   }>();
   const [failure, setFailure] = useState<InvitationFailure>();
   const [feedback, setFeedback] = useState<
@@ -293,7 +298,7 @@ function InvitationPanel({
           <p className="break-all text-sm" dir="ltr">
             {issued.invitation.email}
           </p>
-          <p className="text-sm">{copy.warning}</p>
+          <p role="status" className="text-sm">{issued.emailed ? copy.emailed : copy.warning}</p>
           <p className="text-sm">{copy.once}</p>
           <Label htmlFor={`${id}-link`}>{copy.link}</Label>
           <Input id={`${id}-link`} value={activationLink} readOnly dir="ltr" />
