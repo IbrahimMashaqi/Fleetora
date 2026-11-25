@@ -63,14 +63,15 @@ jobs:
           "$FLEETORA_PG_BIN/postgres" --version
       - run: npm ci
       - name: Run every auth-integration spec on an owned disposable cluster
-        run: node test/run-parcel-integration.cjs test/*.auth-integration.spec.ts
-      - name: Print integration diagnostics
+        run: node test/run-parcel-integration.cjs --maxWorkers=1 test/*.auth-integration.spec.ts
+      - name: Upload integration diagnostics
         if: failure()
-        working-directory: .
-        run: |
-          for log in /tmp/fleetora-parcel-postgres-*/*.log; do
-            echo "::group::$log"; tail -n 200 "$log"; echo "::endgroup::"
-          done
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-diagnostics
+          path: /tmp/fleetora-parcel-postgres-*
+          retention-days: 7
+          if-no-files-found: ignore
 
   frontend:
     name: Frontend (types, lint, action tests, build)
