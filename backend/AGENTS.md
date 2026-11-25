@@ -6,12 +6,10 @@ These instructions apply inside `backend/`. Read any more specific `AGENTS.md` i
 
 Fleetora is a multi-tenant delivery management platform. Its backend owns authentication, authorization, company isolation, business rules, persistence, and operational history. Web, mobile, and AI clients use these rules through controlled interfaces.
 
-- Read `../docs/Fleetora_Master_Project_Document.md` before planning a product or domain change. If it is missing, locate the actual project specification; do not invent its contents.
-- Treat approved requirements as intended behavior, and code as evidence of current behavior. A roadmap item or conceptual example is not authorization to implement it.
+- Product rules: see /AGENTS.md and docs/product/
 - Inspect the affected module and its dependencies: DTOs, guards, services, persistence, schema, and relevant tests. Read only the parts needed to understand the change.
 - Check `package.json`, configuration, and existing imports before assuming library versions, commands, paths, or available features.
 - The expected stack is NestJS, TypeScript, PostgreSQL, and Prisma. Use the actual authentication implementation and test runner present in the project.
-- Do not import requirements or design decisions from another project.
 
 ## 2. Work in a short, complete loop
 

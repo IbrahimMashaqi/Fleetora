@@ -1,3 +1,5 @@
+ARCHIVED — superseded by docs/product/. Do not use.
+
 FLEETORA — AUTHORITATIVE PHASE 1 BUSINESS SPECIFICATION
 Source: the project owner's authoritative, self-contained message dated 2026-10-22.
 This specification supersedes earlier incorrect assumptions about staff-created parcels.

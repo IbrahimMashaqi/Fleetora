@@ -53,7 +53,7 @@ Maps each rule / functional requirement to its implementation and tests. Initial
 | FR-SH-01 (merchant/staff creation, actor kept) | done | `Shipment.requestedBy`, `be/merchant-portal/merchant-parcels.service.ts#create`, `be/parcels/parcel-operations.repository.ts#saveParcel` | `it/merchant-portal.auth-integration.spec.ts` › "accepts an invitation, signs in … and persists final150/fee15…"; `it/parcel-http.auth-integration.spec.ts` › "completes merchant, parcel, delivery…" |
 | FR-SH-02 (city + address, GPS optional) | done | `Shipment.city/destination`, `shipment_coordinates` check | `parcel.dto.spec.ts`; `it/merchant-portal.auth-integration.spec.ts` › "…blocks zone/city mismatch…" |
 | FR-SH-05 (tracking ID, QR label, details) | done | `trackingNumber @unique`, `GET /merchant/parcels/:id/label`, `app/features/labels/label_pdf.dart` | `apps/merchant_app/test` |
-| BR-083, FR-SH-05 (priority values, OD-10 pending) | partial | `ShipmentPriority` enum | — |
+| BR-083, FR-SH-05 (priority `NORMAL \| HIGH \| URGENT`, `LOW` → `NORMAL` migration, OD-10, Phase 1) | partial | `ShipmentPriority` enum (still has `LOW`) | — |
 | FR-SH-04 (Excel import, preview, idempotency) | partial | `MerchantImport`, `be/merchant-portal/merchant-imports.service.ts` | `merchant-imports.spec.ts`; `it/merchant-portal.auth-integration.spec.ts` › "previews Excel row errors, imports valid rows exactly once…" |
 | BR-077 (saved import column mappings) | missing | — | — |
 | FR-SH-06 (event history / timeline) | partial | `ShipmentHistory`, `GET /parcels/:id/events` | `parcel-store.spec.ts`, `parcel-query.spec.ts` |
@@ -104,7 +104,7 @@ Maps each rule / functional requirement to its implementation and tests. Initial
 | Return record, reason, staged handoff, fee once | done | `ParcelReturn`, `be/parcels/returns.controller.ts`, `parcel-ledger.ts` | `it/parcel-operations.auth-integration.spec.ts` › "records structured failure, return custody, and exactly one merchant handoff fee…"; `it/parcel-http.auth-integration.spec.ts` › "records a failed attempt and both return handoff stages…" |
 | FR-EX-01 (failed attempt ≠ automatic return) | done | explicit `POST /returns` | `parcel-attempts.spec.ts` |
 | FR-EX-05 (cancellation after pickup via return) | done | merchant `CANCEL` request → review → return | `parcel-cancellation.spec.ts`; `it/merchant-portal.auth-integration.spec.ts` › "…routes cancellation through controlled return" |
-| BR-023, BR-096, BR-104, §6 (direct/warehouse, merchant confirms, one active, OD-08) | partial | `TRANSITIONS` (warehouse stage forced), `ParcelReturn.shipmentId @unique` | — |
+| BR-023, BR-096, BR-104, §6 (direct/warehouse, merchant confirms, one active, OD-08, Phase 9) | partial | `TRANSITIONS` (warehouse stage forced), `ParcelReturn.shipmentId @unique` | — |
 | FR-EX-06/07 (post-delivery return, exchange) | missing | — | — |
 | FR-EX-08 (damage / loss incidents) | missing | — | — |
 | S-05 (reattempt-limit policy) | missing | — | — |

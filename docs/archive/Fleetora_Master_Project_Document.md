@@ -1,3 +1,5 @@
+ARCHIVED — superseded by docs/product/. Do not use.
+
 # Fleetora — AI-Powered Delivery Management SaaS
 
 > **Project Type:** B2B SaaS / Logistics & Fleet Operations  

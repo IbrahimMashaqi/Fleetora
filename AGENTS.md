@@ -6,7 +6,7 @@ This file applies to the entire project. Read it before working, then read the `
 
 Fleetora is a multi-tenant logistics platform with a web frontend, a NestJS backend, and an AI service. The logistics core must work independently of AI.
 
-- Read `docs/Fleetora_Master_Project_Document.md` before product, architecture, or domain changes. If unavailable, report the missing reference instead of inventing requirements.
+- Read `docs/product/` (start with `docs/product/README.md`) before product, architecture, or domain changes. It is the only product source; `docs/archive/` is superseded and must not be used. If a needed rule is missing, report it instead of inventing requirements.
 - Distinguish approved requirements, current implementation, conceptual examples, and future plans. Do not implement roadmap features merely because the document mentions them.
 - Inspect code to understand what exists; do not assume documented modules, versions, paths, or integrations are already implemented.
 - Apply the user's explicit task within the approved scope. If it changes an established requirement or security boundary, identify the conflict instead of silently choosing.

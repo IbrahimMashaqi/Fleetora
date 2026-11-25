@@ -12,6 +12,9 @@ This folder holds the approved product baseline for Fleetora and the reconciliat
 | [MASTER_PROJECT.md](MASTER_PROJECT.md) | Master project document: strategy, roles, conceptual architecture, approved amendments AM-01–AM-04. |
 | [ARCHITECTURE_BLUEPRINT.md](ARCHITECTURE_BLUEPRINT.md) | Proposed architecture/database blueprint. A proposal, not a decision. |
 | [RECONCILIATION.md](RECONCILIATION.md) | Phase 0 audit: what the repository implements against this baseline, and the open owner decisions. |
+| [DECISIONS.md](DECISIONS.md) | Owner decisions OD-01..OD-13 that resolve the reconciliation conflicts. |
+| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Ordered implementation phases. |
+| [TRACEABILITY.md](TRACEABILITY.md) | Rule / FR → status, code path, test. |
 
 ## Authority order
 
@@ -22,7 +25,7 @@ When sources disagree, the higher entry wins:
 3. **BR-001..BR-093** — owner-confirmed recollection (2026-11-25, not verbatim), in [BUSINESS_RULES.md](BUSINESS_RULES.md); source list in [BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md).
 4. **[PRD.md](PRD.md)** — consolidated functional requirements.
 5. **[ARCHITECTURE_BLUEPRINT.md](ARCHITECTURE_BLUEPRINT.md)** — proposal only; never treated as an approved requirement.
-6. **[docs/merchant-business-model.txt](../merchant-business-model.txt)** — historical; superseded wherever it conflicts with the sources above.
+6. **[docs/archive/merchant-business-model.txt](../archive/merchant-business-model.txt)** — archived, historical; do not use. Superseded wherever it conflicts with the sources above.
 
 ## BR-001..BR-093
 

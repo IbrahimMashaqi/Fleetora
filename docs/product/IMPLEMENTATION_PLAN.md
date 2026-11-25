@@ -5,15 +5,13 @@
 - **Principle:** reuse, don't rebuild. Every phase extends the existing NestJS modules, Prisma contract schema, Next.js dashboard and merchant Flutter app. Migrations are additive-only.
 - **Ordering constraints from the owner:** OD-02 and OD-13 early; OD-07 last, and no earlier phase may block it.
 - **Every phase:** plan first (rule IDs, files, migrations, tests, risks) and wait for approval; tests first, including rejection, permission, cross-tenant and concurrency cases for money and custody; update [TRACEABILITY.md](TRACEABILITY.md).
-- **OD-10 (priority values) is pending.** No phase changes `ShipmentPriority` until the owner decides.
+## Phase 1 — Merchant activation, company currency and priority values
 
-## Phase 1 — Merchant activation and company currency
-
-- **Goal:** a staff-created merchant stays PENDING until it accepts the invitation and agreement; each company operates in exactly one currency.
-- **Rule IDs:** OD-13 (BR-002, BR-093), OD-02 (BR-066, FR-PL-06), FR-ME-01.
-- **Reuses:** `Merchant`, `MerchantInvitation`, `MerchantMembership`, `be/merchant-access/*`, `be/parcels/parcel-operations.repository.ts#saveMerchant`, existing currency check constraints.
+- **Goal:** a staff-created merchant stays PENDING until it accepts the invitation and agreement; each company operates in exactly one currency; parcel priority is `NORMAL | HIGH | URGENT` only.
+- **Rule IDs:** OD-13 (BR-002, BR-093), OD-02 (BR-066, FR-PL-06), OD-10 (BR-083, FR-SH-05), FR-ME-01.
+- **Reuses:** `Merchant`, `MerchantInvitation`, `MerchantMembership`, `be/merchant-access/*`, `be/parcels/parcel-operations.repository.ts#saveMerchant`, existing currency check constraints, `ShipmentPriority`.
 - **Depends on:** none.
-- **Exit criteria:** parcel creation, COD collection and settlement are rejected for non-ACTIVE merchants (staff and merchant paths); activation requires recorded merchant acceptance of the agreement; a company has one currency and mismatching merchant/plan/zone/shipment currency is rejected; existing data migration path documented and additive; cross-tenant and concurrent-acceptance tests pass.
+- **Exit criteria:** parcel creation, COD collection and settlement are rejected for non-ACTIVE merchants (staff and merchant paths); activation requires recorded merchant acceptance of the agreement; a company has one currency and mismatching merchant/plan/zone/shipment currency is rejected; existing `LOW` parcels are migrated to `NORMAL` by an owner-approved, additive-safe migration with a test, and `LOW` is rejected on every create/update/import path; existing data migration path documented and additive; cross-tenant and concurrent-acceptance tests pass.
 
 ## Phase 2 — Staff roles and driver identity
 
@@ -76,7 +74,7 @@
 - **Goal:** direct or via-warehouse returns that complete only on merchant confirmation; multiple returns per parcel with one active at a time; post-delivery return/exchange and incidents.
 - **Rule IDs:** OD-08 (BR-023, BR-104, BR-096), FR-EX-05..08, S-05, S-06.
 - **Reuses:** `ParcelReturn`, `be/parcels/returns.controller.ts`, return fee posting, custody handover from Phase 5.
-- **Depends on:** Phases 5 and 7.
+- **Depends on:** Phase 5 (custody + parcel lifecycle; owner-confirmed for OD-08); Phase 7 for the return-fee and cash parts.
 - **Exit criteria:** a second active return is rejected (including concurrently); each return links to the original parcel; the return fee posts exactly once; merchant confirmation is required to close.
 
 ## Phase 10 — Partners, driver compensation, GPS history, reports
