@@ -318,6 +318,37 @@ Path shorthand: `be/` = `backend/src/modules/`, `it/` = `backend/test/` (disposa
 
 ---
 
+## 16. Re-check against BR-001..BR-093 (owner-confirmed recollection, 2026-11-25)
+
+Each recollected meaning in [BUSINESS_RULES.md](BUSINESS_RULES.md) was compared with the code. Items already listed above are not repeated. The recollection is not verbatim and ranks below BR-094..BR-137 (see [README.md](README.md)).
+
+### Existing owner decisions now backed by a BR-001..093 rule
+- OD-02 ← BR-066 (one currency per company, no FX). OD-03 ← BR-018, BR-020 (custody moves only on actual confirmed receipt). OD-05 ← BR-033 (partial or full COD handover with a receipt both sides confirm). OD-06 ← BR-010 (partial payments with carry-forward). OD-07 ← BR-001, BR-092 (merchant may move to another company with isolated history). OD-08 ← BR-023 (direct or warehouse return; complete only when the merchant confirms). OD-10 ← BR-083 (Normal/High/Urgent). OD-11 ← BR-045 (self-registration needs Fleetora platform approval).
+- OD-04 note: BR-021 says proof of delivery is "independent of financial collection confirmation", while BR-088 forbids partial COD. The owner decision should say whether delivery and COD confirmation are one step or two linked steps.
+
+### PARTIAL (new)
+- **BR-032 vehicle registry:** `Vehicle` has type/plate/manufacturer/model only; no status or breakdown record.
+- **BR-074 instructions and notes:** `Shipment.instructions/notes/customerNotes` are plain columns with no creator/time and no split between driver notes and operations notes.
+- **BR-082 pickup failure:** per-parcel `MISSING/DISCREPANT` exists, but there are no pickup failure reasons, rescheduling or optional pickup fees.
+- **BR-087 duplicate prevention:** imports and creation are idempotent, but `Shipment.merchantReference` (external ID) is not unique and there is no similarity warning.
+- **BR-036 warehouses:** multiple warehouses exist; no warehouse-to-warehouse transfer.
+- **BR-070 labels:** QR PDF exists in the merchant app only; no company-customizable templates, no barcode, no company-side label.
+
+### MISSING (new)
+- **BR-068:** company admin editing the company's basic profile (only headquarters location is editable).
+- **BR-077:** saved per-merchant import column mappings (the import template is fixed).
+- **BR-086:** authorized status correction with reason/evidence (terminal statuses are fixed; no correction flow).
+- **BR-060:** merchant financial disputes (partial/full, optional hold of the disputed amount).
+- **BR-061:** automatic COD reconciliation with investigation cases and alerts.
+- **BR-027, BR-035:** driver visibility and task filtering by service zone.
+- **BR-048:** platform support access that requires company approval and is read-only by default.
+
+### CONFLICT → OWNER DECISION (new)
+- **OD-12 Maker-checker on money (BR-009, BR-012).** BR-009: "تُضبط الصلاحيات وحدود الموافقات داخل الشركة، مع فصل مُجري العملية عن مُعتمدها في الإجراءات الحساسة." BR-012: "تتم التصحيحات والعكس بموافقة مخوّلة وقيود مستقلة…". Code: `capabilities()` in `be/parcels/parcel-domain.ts` gives `COMPANY_ADMIN` create, approve **and** pay on settlements, and nothing checks that the finalizer differs from the creator, so one admin can draft, finalize and pay the same settlement. Adjustments and reversals (`POST /financial/adjustments`, `…/reversal`) are posted at once by one admin, with no second approver.
+- **OD-13 Merchant activation consent (BR-002, BR-093).** BR-002: "تحتاج العلاقة إلى قبول متبادل من التاجر وشركة التوصيل." BR-093: "توافق شركة التوصيل وتُفعل التاجر بعد موافقته على الاتفاقية". Code: staff create a `Merchant` that is `active` immediately (`be/parcels/parcel-operations.repository.ts#saveMerchant`), and staff can create parcels, collect COD and settle for it before any merchant invitation is accepted. No merchant acceptance of the agreement is recorded.
+
+---
+
 ## Summary counts
 
 Counted as line items in the sections above (one table row or bullet each; a MISSING bullet may group several related requirements).
@@ -339,7 +370,8 @@ Counted as line items in the sections above (one table row or bullet each; a MIS
 | 13 Partners | 0 | 0 | 1 | 0 |
 | 14 AI | 0 | 1 | 1 | 0 |
 | 15 Platform/subscriptions | 2 | 1 | 1 | 1 |
-| **Total** | **45** | **22** | **19** | **11** |
+| 16 BR-001..093 re-check (new items) | 0 | 6 | 7 | 2 |
+| **Total** | **45** | **28** | **26** | **13** |
 
 ## OWNER DECISIONS (ranked by impact)
 
@@ -356,10 +388,12 @@ Counted as line items in the sections above (one table row or bullet each; a MIS
 | OD-09 | Assignment vs status | Distinct concepts | `ASSIGNED` is a shipment status |
 | OD-10 | Priority values | normal/high/urgent | LOW/NORMAL/HIGH/URGENT |
 | OD-11 | Company registration | Request + platform approval, or platform creates | Self-signup creates active TRIAL company |
+| OD-12 | Maker-checker on money | BR-009/BR-012: performer ≠ approver; corrections need authorized approval | One admin can draft, finalize and pay; adjustments post without a second approver |
+| OD-13 | Merchant activation consent | BR-002/BR-093: mutual acceptance; company activates after merchant accepts agreement | Merchant active on staff creation; operations possible before merchant accepts |
 
 ## Proposed phase order (reuse, don't rebuild)
 
-1. **Phase 1 — Owner decisions + identity gaps.** Resolve OD-01..OD-11 first; they change what later phases build. Then add the missing staff roles (Operations, Warehouse) on top of the existing capability map, a **driver identity** that plugs into the existing `DriverIdentityVerifier` seam, and platform approval/plan flags using the existing `Company.plan`/`suspended` and `PlatformAdminGrant`.
+1. **Phase 1 — Owner decisions + identity gaps.** Resolve OD-01..OD-13 first; they change what later phases build. Then add the missing staff roles (Operations, Warehouse) on top of the existing capability map, a **driver identity** that plugs into the existing `DriverIdentityVerifier` seam, and platform approval/plan flags using the existing `Company.plan`/`suspended` and `PlatformAdminGrant`.
 2. **Phase 2 — Custody + obstacles on the existing parcel core.** Add confirmed custody handover (OD-03), task acceptance policy, and the AM-04 Obstacles queue/merchant resolution using `ParcelAttempt`, `ShipmentHistory` and the merchant app. Reuse transitions, revisions and the pickup receipt model.
 3. **Phase 3 — Flutter driver app.** New app beside `apps/merchant_app`, reusing its networking/auth/localization patterns: tasks, custody box, pickup receipt, POD (`ProofOfDelivery`), COD capture, limited offline; turns on the already-built telemetry pipeline.
 4. **Phase 4 — Cash: driver COD liability, accountant cashboxes, transfers, delegated payment tasks.** Build on `CodCollection`, `CashRemittance`, `MonetaryRequest` idempotency and the append-only ledger pattern.

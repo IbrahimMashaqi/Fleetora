@@ -4,1307 +4,1402 @@
 
 > **Do not treat this as a complete verbatim rulebook until BR-001–BR-093 have been backfilled from the original approval transcript.** Status records the decision history, not verification that exact wording is on file.
 
+> **Update 2026-11-25:** BR-001–BR-093 now carry owner-confirmed recollected meanings (not verbatim) from [BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md). Verbatim BR-094–BR-137 still rank above them.
+
 ---
 
-## BR-001 — Original title not verifiable from available approval record
+## BR-001 — ارتباط التاجر بشركة توصيل
 
 - **ID:** BR-001
-- **Title:** Original title not verifiable from available approval record
+- **Title:** ارتباط التاجر بشركة توصيل
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** BR-002, BR-092, BR-093
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يرتبط التاجر بشركة واحدة في الوقت نفسه، مع إمكان الانتقال بعد إنهاء العلاقة.
 
 ---
 
-## BR-002 — Original title not verifiable from available approval record
+## BR-002 — قبول العلاقة التجارية
 
 - **ID:** BR-002
-- **Title:** Original title not verifiable from available approval record
+- **Title:** قبول العلاقة التجارية
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تحتاج العلاقة إلى قبول متبادل من التاجر وشركة التوصيل.
 
 ---
 
-## BR-003 — Original title not verifiable from available approval record
+## BR-003 — إيقاف التعامل مؤقتًا
 
 - **ID:** BR-003
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إيقاف التعامل مؤقتًا
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يمكن لأي طرف إيقاف التعاملات الجديدة مع استمرار تنفيذ الطرود والالتزامات القائمة.
 
 ---
 
-## BR-004 — Original title not verifiable from available approval record
+## BR-004 — استئناف التعامل
 
 - **ID:** BR-004
-- **Title:** Original title not verifiable from available approval record
+- **Title:** استئناف التعامل
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يمكن لكل طرف رفع إيقافه، ولا تُستأنف العلاقة إلا عند زوال الإيقاف من الطرفين.
 
 ---
 
-## BR-005 — Original title not verifiable from available approval record
+## BR-005 — تسعير التاجر
 
 - **ID:** BR-005
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تسعير التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** BR-001, BR-094
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): توجد أسعار واتفاقيات وخصومات خاصة بكل تاجر ومناطق أو مدن التوصيل.
 
 ---
 
-## BR-006 — Original title not verifiable from available approval record
+## BR-006 — التحصيل ورسوم التوصيل
 
 - **ID:** BR-006
-- **Title:** Original title not verifiable from available approval record
+- **Title:** التحصيل ورسوم التوصيل
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): مبلغ التحصيل من الزبون يشمل رسوم التوصيل، ويُحسب صافي مستحق التاجر بعد خصمها وفق الاتفاقية.
 
 ---
 
-## BR-007 — Original title not verifiable from available approval record
+## BR-007 — رسوم الفشل والإرجاع
 
 - **ID:** BR-007
-- **Title:** Original title not verifiable from available approval record
+- **Title:** رسوم الفشل والإرجاع
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): سياسة رسوم الفشل والمرتجع مرنة حسب اتفاقية التاجر والشركة، ولا تفرض الرسوم تلقائيًا في كل حالة.
 
 ---
 
-## BR-008 — Original title not verifiable from available approval record
+## BR-008 — مقاصة رسوم التاجر
 
 - **ID:** BR-008
-- **Title:** Original title not verifiable from available approval record
+- **Title:** مقاصة رسوم التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يمكن مقاصتها من مستحقات COD أو إصدار فاتورة مستقلة أو الجمع بين الطريقتين.
 
 ---
 
-## BR-009 — Original title not verifiable from available approval record
+## BR-009 — الموافقات المالية والصلاحيات
 
 - **ID:** BR-009
-- **Title:** Original title not verifiable from available approval record
+- **Title:** الموافقات المالية والصلاحيات
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تُضبط الصلاحيات وحدود الموافقات داخل الشركة، مع فصل مُجري العملية عن مُعتمدها في الإجراءات الحساسة.
 
 ---
 
-## BR-010 — Original title not verifiable from available approval record
+## BR-010 — دفعات التاجر الجزئية
 
 - **ID:** BR-010
-- **Title:** Original title not verifiable from available approval record
+- **Title:** دفعات التاجر الجزئية
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تُسمح الدفعات الجزئية مع ترحيل الرصيد غير المسوّى.
 
 ---
 
-## BR-011 — Original title not verifiable from available approval record
+## BR-011 — طرق دفع مستحقات التاجر
 
 - **ID:** BR-011
-- **Title:** Original title not verifiable from available approval record
+- **Title:** طرق دفع مستحقات التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تُحدد طرق الدفع حسب الشركة مع إثبات الدفع، والتمييز بين التسجيل والتأكيد الفعلي.
 
 ---
 
-## BR-012 — Original title not verifiable from available approval record
+## BR-012 — التعديلات والقيود المالية
 
 - **ID:** BR-012
-- **Title:** Original title not verifiable from available approval record
+- **Title:** التعديلات والقيود المالية
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تتم التصحيحات والعكس بموافقة مخوّلة وقيود مستقلة وسجل تدقيق، دون تعديل خفي أو عكس مزدوج.
 
 ---
 
-## BR-013 — Original title not verifiable from available approval record
+## BR-013 — إنشاء الطرود
 
 - **ID:** BR-013
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إنشاء الطرود
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): التاجر أو موظف الشركة المخوّل يستطيع إنشاء الطرد مع حفظ المنفذ الفعلي.
 
 ---
 
-## BR-014 — Original title not verifiable from available approval record
+## BR-014 — عنوان العميل
 
 - **ID:** BR-014
-- **Title:** Original title not verifiable from available approval record
+- **Title:** عنوان العميل
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): المدينة أو البلدة والوصف النصي مطلوبان، وإحداثيات GPS اختيارية.
 
 ---
 
-## BR-015 — Original title not verifiable from available approval record
+## BR-015 — حساب الزبون النهائي
 
 - **ID:** BR-015
-- **Title:** Original title not verifiable from available approval record
+- **Title:** حساب الزبون النهائي
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): الزبون النهائي لا يحتاج حسابًا أو تطبيقًا مخصصًا؛ البيع يتم عبر قنوات خارجية.
 
 ---
 
-## BR-016 — Original title not verifiable from available approval record
+## BR-016 — تعديل الطرد وإلغاؤه
 
 - **ID:** BR-016
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تعديل الطرد وإلغاؤه
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): قبل الاستلام الفعلي يتصرف التاجر مباشرة، وبعده يلزم اعتماد الشركة؛ وبعد التسليم تستخدم مسارات التصحيح أو الإرجاع.
 
 ---
 
-## BR-017 — Original title not verifiable from available approval record
+## BR-017 — طلبات استلام التاجر
 
 - **ID:** BR-017
-- **Title:** Original title not verifiable from available approval record
+- **Title:** طلبات استلام التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تدعم عمليات الاستلام اليدوية والمجدولة والمجمّعة والجزئية دون طلبي استلام نشطين لنفس الطرد.
 
 ---
 
-## BR-018 — Original title not verifiable from available approval record
+## BR-018 — تأكيد الاستلام الفعلي
 
 - **ID:** BR-018
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تأكيد الاستلام الفعلي
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يُؤكد الاستلام الفعلي يدويًا أو بمسح رمز مع تسجيل الشخص والوقت، وليس بالإسناد وحده.
 
 ---
 
-## BR-019 — Original title not verifiable from available approval record
+## BR-019 — مسارات الطرد
 
 - **ID:** BR-019
-- **Title:** Original title not verifiable from available approval record
+- **Title:** مسارات الطرد
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** AM-03, BR-029
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يمكن التوصيل المباشر للتاجر إلى الزبون أو المرور بالمستودع أو النقل بين السائقين، مع الفصل بين الحالة والإسناد والعهدة والموقع.
 
 ---
 
-## BR-020 — Original title not verifiable from available approval record
+## BR-020 — التسليم بين السائقين
 
 - **ID:** BR-020
-- **Title:** Original title not verifiable from available approval record
+- **Title:** التسليم بين السائقين
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تتبع عملية التسليم سياسة الشركة أو موافقة العمليات، ولا تنتقل العهدة حتى يؤكد السائق المستلم الاستلام الفعلي.
 
 ---
 
-## BR-021 — Original title not verifiable from available approval record
+## BR-021 — إثبات التسليم
 
 - **ID:** BR-021
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إثبات التسليم
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): إثبات التسليم قابل للتهيئة يدويًا أو OTP أو توقيع أو صورة حسب المخاطر، وهو مستقل عن تأكيد التحصيل المالي.
 
 ---
 
-## BR-022 — Original title not verifiable from available approval record
+## BR-022 — فشل محاولة التوصيل
 
 - **ID:** BR-022
-- **Title:** Original title not verifiable from available approval record
+- **Title:** فشل محاولة التوصيل
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تُحدد سياسات المحاولات والجدولة والإرجاع حسب الشركة والتاجر، وفشل المحاولة لا يعني مرتجعًا تلقائيًا.
 
 ---
 
-## BR-023 — Original title not verifiable from available approval record
+## BR-023 — إرجاع الطرود إلى التاجر
 
 - **ID:** BR-023
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إرجاع الطرود إلى التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يجوز الإرجاع المباشر أو عبر المستودع أو نقل العهدة، ولا يكتمل حتى يؤكد التاجر الاستلام.
 
 ---
 
-## BR-024 — Original title not verifiable from available approval record
+## BR-024 — الضياع والتلف
 
 - **ID:** BR-024
-- **Title:** Original title not verifiable from available approval record
+- **Title:** الضياع والتلف
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تُفتح حادثة مع أدلة وتحقيق ومسؤولية متفق عليها وتعويض معتمد، دون تحميل طرف المسؤولية تلقائيًا.
 
 ---
 
-## BR-025 — Original proposed title unavailable
+## BR-025 — تحديد مواقع السائقين المباشر
 
 - **ID:** BR-025
-- **Title:** Original proposed title unavailable
+- **Title:** تحديد مواقع السائقين المباشر
 - **Status:** SKIPPED / NOT APPROVED
+- **Approved option (recollected):** لم يُعتمد (SKIPPED / NOT APPROVED)
 - **Related rules:** BR-128
-- **Text source:** Recorded skipped decision; not an approved rule
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-NOT APPROVED — original proposed rule wording unavailable; no approved rule text exists.
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): غير متأكد — لم يُعتمد BR-025؛ جرى تأجيل الموضوع قبل حسمه لاحقًا في BR-128.
 
 ---
 
-## BR-026 — Original title not verifiable from available approval record
+## BR-026 — طلب السائق طرودًا غير مسندة
 
 - **ID:** BR-026
-- **Title:** Original title not verifiable from available approval record
+- **Title:** طلب السائق طرودًا غير مسندة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يمكنه طلب طرد متاح، وسياسة الشركة تحدد القبول التلقائي أو موافقة العمليات، والعهدة مستقلة عن الإسناد.
 
 ---
 
-## BR-027 — Original title not verifiable from available approval record
+## BR-027 — رؤية السائق للطرود المتاحة
 
 - **ID:** BR-027
-- **Title:** Original title not verifiable from available approval record
+- **Title:** رؤية السائق للطرود المتاحة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تُقيَّد الرؤية بمنطقة خدمة السائق وصلاحياته وتحمي معلومات الزبائن الشخصية.
 
 ---
 
-## BR-028 — Original title not verifiable from available approval record
+## BR-028 — إعادة إسناد الطرود
 
 - **ID:** BR-028
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إعادة إسناد الطرود
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تتم إعادة الإسناد من العمليات أو بناءً على طلب السائق حسب السياسة، دون نقل العهدة تلقائيًا وبسجل تغييرات.
 
 ---
 
-## BR-029 — Original title not verifiable from available approval record
+## BR-029 — إدارة خط السير
 
 - **ID:** BR-029
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إدارة خط السير
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): السائق يتحكم بترتيب المسار وإضافة التوقفات المسموحة ولا تفرض العمليات مسارًا إلزاميًا افتراضيًا.
 
 ---
 
-## BR-030 — Original title not verifiable from available approval record
+## BR-030 — توفر السائق
 
 - **ID:** BR-030
-- **Title:** Original title not verifiable from available approval record
+- **Title:** توفر السائق
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يختار متاحًا أو مشغولًا، وتستطيع الشركة إيقافه، وقد تسمح سياستها بقبول مهام إضافية أثناء الانشغال.
 
 ---
 
-## BR-031 — Original title not verifiable from available approval record
+## BR-031 — تخصيص مركبة للسائق
 
 - **ID:** BR-031
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تخصيص مركبة للسائق
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): مركبة واحدة نشطة لكل سائق، سواء كانت مملوكة للشركة أو للسائق، بتخصيص ونقل رسمي غير مزدوج.
 
 ---
 
-## BR-032 — Original title not verifiable from available approval record
+## BR-032 — سجل المركبات
 
 - **ID:** BR-032
-- **Title:** Original title not verifiable from available approval record
+- **Title:** سجل المركبات
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): سجل أساسي للمركبة والحالة والأعطال، بلا نظام صيانة أو وقود تفصيلي.
 
 ---
 
-## BR-033 — Original title not verifiable from available approval record
+## BR-033 — تسليم COD من السائق
 
 - **ID:** BR-033
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تسليم COD من السائق
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** BR-061, BR-108, BR-109
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يجوز التسليم الجزئي أو الكامل ضمن المهل وبإيصال يؤكده الطرفان وتسوية الفروقات.
 
 ---
 
-## BR-034 — Original title not verifiable from available approval record
+## BR-034 — رواتب وعمولات السائقين
 
 - **ID:** BR-034
-- **Title:** Original title not verifiable from available approval record
+- **Title:** رواتب وعمولات السائقين
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يمكن راتب ثابت أو عمولة لكل توصيل أو الاثنان، دون نظام موارد بشرية ورواتب شامل.
 
 ---
 
-## BR-035 — Original title not verifiable from available approval record
+## BR-035 — صلاحيات السائقين
 
 - **ID:** BR-035
-- **Title:** Original title not verifiable from available approval record
+- **Title:** صلاحيات السائقين
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): السائقون النشطون لهم الصلاحيات التشغيلية نفسها مع تصفية المهام حسب المنطقة وسياسة الشركة.
 
 ---
 
-## BR-036 — Original title not verifiable from available approval record
+## BR-036 — مستودعات الشركة
 
 - **ID:** BR-036
-- **Title:** Original title not verifiable from available approval record
+- **Title:** مستودعات الشركة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تُدعم مستودعات متعددة اختيارية مع العهدة والتحويل، دون نظام مواقع تخزين تفصيلي كامل.
 
 ---
 
-## BR-037 — Original title not verifiable from available approval record
+## BR-037 — نطاق التغطية
 
 - **ID:** BR-037
-- **Title:** Original title not verifiable from available approval record
+- **Title:** نطاق التغطية
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تغطية الشركة عمومًا للضفة الغربية مع أسعار محددة حسب المنطقة، والشحن للداخل عبر شركاء خارجيين.
 
 ---
 
-## BR-038 — Original title not verifiable from available approval record
+## BR-038 — شركاء التوصيل
 
 - **ID:** BR-038
-- **Title:** Original title not verifiable from available approval record
+- **Title:** شركاء التوصيل
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تُدعم شركات شريكة داخل Fleetora وخارجها، مع بقاء الاتفاقية مع الشركة الأصلية وحماية العزل والتسويات.
 
 ---
 
-## BR-039 — Original title not verifiable from available approval record
+## BR-039 — تسليم الطرد للشريك
 
 - **ID:** BR-039
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تسليم الطرد للشريك
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): حسب اتفاق الشراكة مباشرة أو بموافقة العمليات، مع تأكيد استلام فعلي.
 
 ---
 
-## BR-040 — Original title not verifiable from available approval record
+## BR-040 — التسويات بين الشركاء
 
 - **ID:** BR-040
-- **Title:** Original title not verifiable from available approval record
+- **Title:** التسويات بين الشركاء
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تدعم مقاصة COD أو الدفع الإجمالي وفواتير الشريك أو التسوية الجزئية بتوثيق مالي.
 
 ---
 
-## BR-041 — Original title not verifiable from available approval record
+## BR-041 — مرتجعات الشركاء
 
 - **ID:** BR-041
-- **Title:** Original title not verifiable from available approval record
+- **Title:** مرتجعات الشركاء
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): إرجاع مباشر أو بموافقة الشركة الأصلية حسب العقد مع توثيق العهدة والرسوم وحوادث الفقد.
 
 ---
 
-## BR-042 — Original title not verifiable from available approval record
+## BR-042 — أدوار موظفي الشركة
 
 - **ID:** BR-042
-- **Title:** Original title not verifiable from available approval record
+- **Title:** أدوار موظفي الشركة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): أدوار جاهزة للإدارة والعمليات والمالية والمستودع وأدوار مخصصة مع فصل الصلاحيات الحساسة.
 
 ---
 
-## BR-043 — Original title not verifiable from available approval record
+## BR-043 — ربط الموظف بالشركة
 
 - **ID:** BR-043
-- **Title:** Original title not verifiable from available approval record
+- **Title:** ربط الموظف بالشركة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): كل موظف يتبع شركة واحدة فقط مع دعوة وتفعيل وتعليق وسحب صلاحيات موثقة.
 
 ---
 
-## BR-044 — Original title not verifiable from available approval record
+## BR-044 — تفويض الصلاحيات المؤقت
 
 - **ID:** BR-044
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تفويض الصلاحيات المؤقت
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تفويض محدد النطاق والمدة مع انتهاء تلقائي ومنع تفويض فرعي أو تخطي ضوابط الموافقات المالية.
 
 ---
 
-## BR-045 — Original title not verifiable from available approval record
+## BR-045 — تسجيل شركات التوصيل
 
 - **ID:** BR-045
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تسجيل شركات التوصيل
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): طلب تسجيل ذاتي بموافقة منصة Fleetora أو إنشاء مباشر بواسطة المنصة، مع مدير أساسي إلزامي.
 
 ---
 
-## BR-046 — Original title not verifiable from available approval record
+## BR-046 — اشتراكات المنصة
 
 - **ID:** BR-046
-- **Title:** Original title not verifiable from available approval record
+- **Title:** اشتراكات المنصة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): خطط اشتراك ثابتة أو حسب الشحنات أو مختلطة، مع فواتير.
 
 ---
 
-## BR-047 — Original title not verifiable from available approval record
+## BR-047 — انتهاء الاشتراك
 
 - **ID:** BR-047
-- **Title:** Original title not verifiable from available approval record
+- **Title:** انتهاء الاشتراك
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): سياسة فترة سماح أو قيود حسب الشركة تحفظ العمليات والالتزامات القائمة؛ التعليق الأمني منفصل.
 
 ---
 
-## BR-048 — Original title not verifiable from available approval record
+## BR-048 — وصول دعم المنصة
 
 - **ID:** BR-048
-- **Title:** Original title not verifiable from available approval record
+- **Title:** وصول دعم المنصة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): وصول مؤقت بموافقة الشركة ومحدد الصلاحيات ويكون للقراءة فقط افتراضيًا مع تدقيق ودون تعديل مالي مباشر.
 
 ---
 
-## BR-049 — Original title not verifiable from available approval record
+## BR-049 — إحصاءات المنصة
 
 - **ID:** BR-049
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إحصاءات المنصة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): إحصاءات استخدام مجمعة ومؤشرات الشركات ومراقبة تقنية دون كشف بيانات العملاء المالية والشخصية افتراضيًا.
 
 ---
 
-## BR-050 — Original title not verifiable from available approval record
+## BR-050 — حدود الخطة والميزات
 
 - **ID:** BR-050
-- **Title:** Original title not verifiable from available approval record
+- **Title:** حدود الخطة والميزات
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): Feature Flags وحدود لكل خطة، مع حدود صارمة أو مرنة أو رسوم تجاوز واستثناءات معتمدة.
 
 ---
 
-## BR-051 — Original title not verifiable from available approval record
+## BR-051 — إعلانات المنصة
 
 - **ID:** BR-051
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إعلانات المنصة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): إعلانات داخل التطبيق وبالبريد مستهدفة حسب الشركة والدور والأولوية والجدولة مع تأكيد قراءة ولغتين.
 
 ---
 
-## BR-052 — Original title not verifiable from available approval record
+## BR-052 — أدوار فريق المنصة
 
 - **ID:** BR-052
-- **Title:** Original title not verifiable from available approval record
+- **Title:** أدوار فريق المنصة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): RBAC مستقل بفئات جاهزة ومخصصة وحماية Super Admin وعدم منح صلاحيات تشغيل الشركات افتراضيًا.
 
 ---
 
-## BR-053 — Original title not verifiable from available approval record
+## BR-053 — سجل التدقيق
 
 - **ID:** BR-053
-- **Title:** Original title not verifiable from available approval record
+- **Title:** سجل التدقيق
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): سجل متقدم غير قابل للتغيير الصامت مع فئات خطورة وتنبيهات وبحث وتصدير واحتفاظ وحماية ضد العبث.
 
 ---
 
-## BR-054 — Original title not verifiable from available approval record
+## BR-054 — أمن تسجيل الدخول
 
 - **ID:** BR-054
-- **Title:** Original title not verifiable from available approval record
+- **Title:** أمن تسجيل الدخول
 - **Status:** APPROVED
+- **Approved option (recollected):** A
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): توثيق آمن مع كلمات مرور وحماية معدلات الدخول وإدارة الجلسات، دون MFA إلزامي.
 
 ---
 
-## BR-055 — Original title not verifiable from available approval record
+## BR-055 — إغلاق حساب الشركة والاحتفاظ
 
 - **ID:** BR-055
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إغلاق حساب الشركة والاحتفاظ
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): مراجعة الالتزامات وتصدير البيانات واحتفاظ حسب الفئة والمتطلبات النظامية وحذف آمن عند الاستحقاق.
 
 ---
 
-## BR-056 — Original title not verifiable from available approval record
+## BR-056 — تقارير شركة التوصيل
 
 - **ID:** BR-056
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تقارير شركة التوصيل
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تقارير متقدمة بفلاتر وواجهات محفوظة وتصدير CSV وExcel وPDF وتقارير مجدولة وفق الصلاحيات.
 
 ---
 
-## BR-057 — Original title not verifiable from available approval record
+## BR-057 — مؤشرات الأداء
 
 - **ID:** BR-057
-- **Title:** Original title not verifiable from available approval record
+- **Title:** مؤشرات الأداء
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): مؤشرات رسمية موحدة مع أهداف مخصصة للشركة ومنع العد المكرر.
 
 ---
 
-## BR-058 — Original title not verifiable from available approval record
+## BR-058 — تنبيهات الأداء
 
 - **ID:** BR-058
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تنبيهات الأداء
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تنبيهات مرنة حسب الشركة والسائق والتاجر والشريك مع تحديد المستلمين والحالة ومنع التكرار.
 
 ---
 
-## BR-059 — Original title not verifiable from available approval record
+## BR-059 — تقارير التاجر
 
 - **ID:** BR-059
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تقارير التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تحليلات وكشوف مالية متقدمة وتصدير وجدولة وكشف الاعتراضات على التسويات.
 
 ---
 
-## BR-060 — Original title not verifiable from available approval record
+## BR-060 — الاعتراضات المالية للتاجر
 
 - **ID:** BR-060
-- **Title:** Original title not verifiable from available approval record
+- **Title:** الاعتراضات المالية للتاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): اعتراضات جزئية أو كلية أو مرفوضة، مع تعليق المبلغ المتنازع عليه اختياريًا وتسوية غير المتنازع عليه وتصحيحات مالية موثقة.
 
 ---
 
-## BR-061 — Original title not verifiable from available approval record
+## BR-061 — مطابقة COD
 
 - **ID:** BR-061
-- **Title:** Original title not verifiable from available approval record
+- **Title:** مطابقة COD
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): مطابقة آلية للتحصيل مع الأدلة وحالات تحقيق وتنبيهات، مع عدم اعتبار التسليم الجزئي وحده فرقًا.
 
 ---
 
-## BR-062 — Original title not verifiable from available approval record
+## BR-062 — إغلاق الفترة المالية
 
 - **ID:** BR-062
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إغلاق الفترة المالية
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): إغلاق يومي أو شهري أو مخصص بمراجعة واعتماد وتصحيحات لاحقة في فترة مفتوحة دون إعادة كتابة الماضي.
 
 ---
 
-## BR-063 — Original title not verifiable from available approval record
+## BR-063 — مصروفات الشركة
 
 - **ID:** BR-063
-- **Title:** Original title not verifiable from available approval record
+- **Title:** مصروفات الشركة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تصنيف المصروفات والفواتير والموافقات وتقدير الربح، دون ERP أو محاسبة عامة كاملة.
 
 ---
 
-## BR-064 — Original title not verifiable from available approval record
+## BR-064 — دورة صرف المصروف
 
 - **ID:** BR-064
-- **Title:** Original title not verifiable from available approval record
+- **Title:** دورة صرف المصروف
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): طلب ثم اعتماد ثم دفع منفصل مع حدود ودفعات جزئية ومرفقات وسجل تدقيق.
 
 ---
 
-## BR-065 — Original title not verifiable from available approval record
+## BR-065 — صندوق النقدية للشركة
 
 - **ID:** BR-065
-- **Title:** Original title not verifiable from available approval record
+- **Title:** صندوق النقدية للشركة
 - **Status:** SUPERSEDED BY AM-01
+- **Approved option (recollected):** A
 - **Related rules:** AM-01, BR-066
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): كان القرار الأصلي صندوق نقدية موحدًا للشركة دون حسابات فروع أو إدارة حسابات بنكية؛ ثم عدله AM-01 إلى صناديق محاسبين منفصلة وإجمالي للإدارة.
 
 ---
 
-## BR-066 — Original title not verifiable from available approval record
+## BR-066 — عملة الشركة
 
 - **ID:** BR-066
-- **Title:** Original title not verifiable from available approval record
+- **Title:** عملة الشركة
 - **Status:** APPROVED
+- **Approved option (recollected):** A
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): عملة واحدة لكل شركة دون تحويل FX، وتغيير العملة التشغيلية يحتاج انتقالًا مضبوطًا.
 
 ---
 
-## BR-067 — Original proposed title unavailable
+## BR-067 — ساعات الدوام والعطل
 
 - **ID:** BR-067
-- **Title:** Original proposed title unavailable
+- **Title:** ساعات الدوام والعطل
 - **Status:** SKIPPED / NOT APPROVED
+- **Approved option (recollected):** لم يُعتمد (SKIPPED / NOT APPROVED)
 - **Related rules:** BR-090, BR-128, BR-135
-- **Text source:** Recorded skipped decision; not an approved rule
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-NOT APPROVED — original proposed rule wording unavailable; no approved rule text exists.
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): غير متأكد — طُرح الموضوع ثم رفضه المستخدم صراحةً، ولم تُعتمد قاعدة BR-067.
 
 ---
 
-## BR-068 — Original title not verifiable from available approval record
+## BR-068 — الملف الأساسي للشركة
 
 - **ID:** BR-068
-- **Title:** Original title not verifiable from available approval record
+- **Title:** الملف الأساسي للشركة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): مدير الشركة يغير بياناتها الأساسية، بينما الاشتراك والتفعيل تتحكم بهما منصة Fleetora.
 
 ---
 
-## BR-069 — Original title not verifiable from available approval record
+## BR-069 — استيراد الطرود والتكاملات
 
 - **ID:** BR-069
-- **Title:** Original title not verifiable from available approval record
+- **Title:** استيراد الطرود والتكاملات
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): استيراد CSV وExcel وتكاملات API مع فحص ومعاينة وتكرار آمن وIdempotency.
 
 ---
 
-## BR-070 — Original title not verifiable from available approval record
+## BR-070 — ملصقات الطرود
 
 - **ID:** BR-070
-- **Title:** Original title not verifiable from available approval record
+- **Title:** ملصقات الطرود
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): قوالب PDF/QR/Barcode قابلة لتخصيص الشركة مع رقم تتبع فريد ثابت وحماية البيانات.
 
 ---
 
-## BR-071 — Original title not verifiable from available approval record
+## BR-071 — تاريخ أحداث الطرد
 
 - **ID:** BR-071
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تاريخ أحداث الطرد
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): سجل داخلي كامل للأحداث ونسخة مبسطة للتاجر، مع فصل الحالة والعهدة والموقع والإسناد.
 
 ---
 
-## BR-072 — Original title not verifiable from available approval record
+## BR-072 — تتبع الزبون بدون حساب
 
 - **ID:** BR-072
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تتبع الزبون بدون حساب
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): رابط تتبع اختياري بدون حساب أو تطبيق، برمز آمن قابل للإلغاء وانتهاء صلاحية وبيانات محدودة.
 
 ---
 
-## BR-073 — Original title not verifiable from available approval record
+## BR-073 — إشعارات الزبون
 
 - **ID:** BR-073
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إشعارات الزبون
 - **Status:** APPROVED
+- **Approved option (recollected):** A
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): لا إشعارات آلية للزبون؛ التواصل معه يدويًا من الشركة أو التاجر، مع بقاء رابط التتبع الاختياري.
 
 ---
 
-## BR-074 — Original title not verifiable from available approval record
+## BR-074 — تعليمات وملاحظات الطرد
 
 - **ID:** BR-074
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تعليمات وملاحظات الطرد
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** BR-101, BR-103, AM-04
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تعليمات توصيل من التاجر وملاحظات تشغيل منفصلة للسائق والعمليات مع تسجيل المنشئ والوقت وضبط التصحيحات الحساسة.
 
 ---
 
-## BR-075 — Original title not verifiable from available approval record
+## BR-075 — مرفقات الطرود
 
 - **ID:** BR-075
-- **Title:** Original title not verifiable from available approval record
+- **Title:** مرفقات الطرود
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): مرفقات مصنفة وآمنة بحدود حجم وفحص أمني وروابط تنزيل مؤقتة واحتفاظ.
 
 ---
 
-## BR-076 — Original title not verifiable from available approval record
+## BR-076 — بحث الطرود وإدارتها
 
 - **ID:** BR-076
-- **Title:** Original title not verifiable from available approval record
+- **Title:** بحث الطرود وإدارتها
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): بحث متقدم وفلاتر وواجهات محفوظة وأعمدة وتصدير وعمليات جماعية مصرح بها مع ترقيم صفحات من الخادم.
 
 ---
 
-## BR-077 — Original title not verifiable from available approval record
+## BR-077 — استيراد التاجر بخرائط أعمدة
 
 - **ID:** BR-077
-- **Title:** Original title not verifiable from available approval record
+- **Title:** استيراد التاجر بخرائط أعمدة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): خرائط أعمدة قابلة للحفظ لكل تاجر وفحص التسعير والتكرار وإعادة المحاولة الآمنة.
 
 ---
 
-## BR-078 — Original title not verifiable from available approval record
+## BR-078 — عناوين التاجر المحفوظة
 
 - **ID:** BR-078
-- **Title:** Original title not verifiable from available approval record
+- **Title:** عناوين التاجر المحفوظة
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): عدة عناوين مسماة مع عنوان افتراضي، دون تعديل تلقائي للطرود السابقة.
 
 ---
 
-## BR-079 — Original title not verifiable from available approval record
+## BR-079 — حسابات موظفي التاجر
 
 - **ID:** BR-079
-- **Title:** Original title not verifiable from available approval record
-- **Status:** APPROVED
-- **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Title:** حسابات موظفي التاجر
+- **Status:** PARTLY SUPERSEDED BY AM-05
+- **Approved option (recollected):** A
+- **Related rules:** AM-05
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): حساب واحد للتاجر، دون حسابات أو أدوار لموظفيه.
 
 ---
 
-## BR-080 — Original title not verifiable from available approval record
+## BR-080 — فروع التاجر
 
 - **ID:** BR-080
-- **Title:** Original title not verifiable from available approval record
+- **Title:** فروع التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** B
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): عناوين متعددة مسماة دون كيانات فروع أو حسابات أو إدارة فروع.
 
 ---
 
-## BR-081 — Original title not verifiable from available approval record
+## BR-081 — طلب الاستلام من التاجر
 
 - **ID:** BR-081
-- **Title:** Original title not verifiable from available approval record
+- **Title:** طلب الاستلام من التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): طلب استلام اختياري لمجموعة طرود مع استلام مباشر مصرح وجدولة وجزئية وتأكيد عهدة.
 
 ---
 
-## BR-082 — Original title not verifiable from available approval record
+## BR-082 — فشل استلام التاجر
 
 - **ID:** BR-082
-- **Title:** Original title not verifiable from available approval record
+- **Title:** فشل استلام التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): أسباب فشل أو استلام جزئي مع إعادة جدولة ورسوم اختيارية حسب الاتفاق، دون تسجيل استلام لم يحدث.
 
 ---
 
-## BR-083 — Original title not verifiable from available approval record
+## BR-083 — أولوية الطرود
 
 - **ID:** BR-083
-- **Title:** Original title not verifiable from available approval record
+- **Title:** أولوية الطرود
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): أولوية بسيطة Normal/High/Urgent دون SLA صارم أو تسعير آلي أو فرض مسار السائق.
 
 ---
 
-## BR-084 — Original title not verifiable from available approval record
+## BR-084 — وصف محتويات الطرد
 
 - **ID:** BR-084
-- **Title:** Original title not verifiable from available approval record
+- **Title:** وصف محتويات الطرد
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): وصف بسيط وعدد قطع ووزن اختياري وملاحظة للتعامل دون تسعير حجمي أو أبعاد مفصلة.
 
 ---
 
-## BR-085 — Original title not verifiable from available approval record
+## BR-085 — عدد القطع والتتبع
 
 - **ID:** BR-085
-- **Title:** Original title not verifiable from available approval record
+- **Title:** عدد القطع والتتبع
 - **Status:** APPROVED
+- **Approved option (recollected):** A
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): رقم تتبع واحد للطرود متعددة القطع كوحدة تشغيلية واحدة دون تتبع مستقل لكل قطعة.
 
 ---
 
-## BR-086 — Original title not verifiable from available approval record
+## BR-086 — تصحيح حالة الطرد
 
 - **ID:** BR-086
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تصحيح حالة الطرد
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): تصحيح مخوّل مع سبب وأدلة وموافقات حسب الخطورة وبفصل عن COD والعهدة.
 
 ---
 
-## BR-087 — Original title not verifiable from available approval record
+## BR-087 — منع تكرار الطرود
 
 - **ID:** BR-087
-- **Title:** Original title not verifiable from available approval record
+- **Title:** منع تكرار الطرود
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): منع التكرار المؤكد بالمعرف الخارجي أو Idempotency، والتنبيه على التشابه اليدوي دون حذف أو دمج تلقائي.
 
 ---
 
-## BR-088 — Original title not verifiable from available approval record
+## BR-088 — نوع دفع الطرد
 
 - **ID:** BR-088
-- **Title:** Original title not verifiable from available approval record
+- **Title:** نوع دفع الطرد
 - **Status:** APPROVED
+- **Approved option (recollected):** B
 - **Related rules:** BR-098
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): COD كامل أو Prepaid كامل، دون دعم دفع الزبون جزءًا فقط من COD.
 
 ---
 
-## BR-089 — Original title not verifiable from available approval record
+## BR-089 — تحصيل رسوم الطرد المدفوع مسبقًا
 
 - **ID:** BR-089
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تحصيل رسوم الطرد المدفوع مسبقًا
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): فواتير مستقلة أو مقاصة من حصيلة COD أو الجمع بينهما، مع دفتر مالي قابل للتدقيق.
 
 ---
 
-## BR-090 — Original title not verifiable from available approval record
+## BR-090 — مواعيد تسوية التجار
 
 - **ID:** BR-090
-- **Title:** Original title not verifiable from available approval record
+- **Title:** مواعيد تسوية التجار
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): يوميًا أو أسبوعيًا أو شهريًا أو حسب الطلب لكل تاجر؛ إعداد التسوية ليس تأكيد دفع.
 
 ---
 
-## BR-091 — Original title not verifiable from available approval record
+## BR-091 — حدود مديونية التاجر
 
 - **ID:** BR-091
-- **Title:** Original title not verifiable from available approval record
+- **Title:** حدود مديونية التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): حدود مرنة لكل تاجر وتنبيه أو منع طرود جديدة مع استثناءات؛ الالتزامات القائمة مستمرة.
 
 ---
 
-## BR-092 — Original title not verifiable from available approval record
+## BR-092 — إنهاء علاقة التاجر
 
 - **ID:** BR-092
-- **Title:** Original title not verifiable from available approval record
+- **Title:** إنهاء علاقة التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): منع التعامل الجديد مع استمرار الطرود والديون والمرتجعات والنزاعات، وإمكان انتقال التاجر لشركة أخرى مع عزل التاريخ.
 
 ---
 
-## BR-093 — Original title not verifiable from available approval record
+## BR-093 — تفعيل اتفاقية التاجر
 
 - **ID:** BR-093
-- **Title:** Original title not verifiable from available approval record
+- **Title:** تفعيل اتفاقية التاجر
 - **Status:** APPROVED
+- **Approved option (recollected):** غير متأكد
 - **Related rules:** Not independently verified
-- **Text source:** Decision status known, exact approved wording unavailable
+- **Text source:** Owner-confirmed recollection 2026-11-25 ([BR_001_093_RECOLLECTED.md](BR_001_093_RECOLLECTED.md)); not verbatim
 
 **Full rule text:**
 
-[ORIGINAL VERBATIM APPROVAL TEXT NOT AVAILABLE — DO NOT SUBSTITUTE A SUMMARY OR IMPLEMENT FROM THIS PLACEHOLDER]
+Recollected meaning (owner-confirmed 2026-11-25, not verbatim): توافق شركة التوصيل وتُفعل التاجر بعد موافقته على الاتفاقية، دون موافقة منصة Fleetora.
 
 ---
 
