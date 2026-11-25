@@ -29,6 +29,7 @@ import type {
   PickupReviewDto,
 } from './merchant-portal.dto.js';
 import { not } from '@prisma/orm-postgres/orm-client';
+import { lockLinkableWarehouse } from '../warehouses/warehouses.repository.js';
 @Injectable()
 export class MerchantPickupsService {
   constructor(
@@ -135,10 +136,12 @@ export class MerchantPickupsService {
           }
           if (
             input.warehouseId &&
-            !(await tx.orm.public.Warehouse.where({
-              id: input.warehouseId,
-              companyId: context.companyId,
-            }).first())
+            !(await lockLinkableWarehouse(
+              this.companyStore.prisma,
+              tx,
+              input.warehouseId,
+              context.companyId,
+            ))
           )
             throw new NotFoundException('Warehouse not found');
           // An alternate address without a pin must not silently inherit the primary address's GPS pin.
@@ -295,10 +298,12 @@ export class MerchantPickupsService {
           throw new NotFoundException('Eligible pickup driver not found');
         if (
           input.warehouseId &&
-          !(await tx.orm.public.Warehouse.where({
-            id: input.warehouseId,
+          !(await lockLinkableWarehouse(
+            this.companyStore.prisma,
+            tx,
+            input.warehouseId,
             companyId,
-          }).first())
+          ))
         )
           throw new NotFoundException('Warehouse not found');
         if (input.action === 'CANCEL') {

@@ -1,0 +1,250 @@
+import "server-only";
+import {
+  getBackendEndpoint,
+  readBackendBody,
+  requestBackend,
+} from "@/lib/api/backend.server";
+import {
+  accessCookie,
+  refreshCookie,
+  clearSessionCookies,
+  setSessionTokens,
+} from "@/lib/auth/cookies.server";
+import { resolveSession } from "@/lib/auth/session.server";
+import {
+  isValidWarehouseInput,
+  normalizeWarehouseInput,
+} from "./warehouses.types";
+import type {
+  Warehouse,
+  WarehouseQuery,
+  WarehouseResult,
+  WarehouseScope,
+  WarehouseWrite,
+  WarehouseWriteResult,
+} from "./warehouses.types";
+
+type SessionCookies = Parameters<typeof setSessionTokens>[0] &
+  Parameters<typeof clearSessionCookies>[0] & {
+    get(name: string): { value: string } | undefined;
+  };
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function object(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object";
+}
+function validQuery(query: WarehouseQuery): boolean {
+  return (
+    object(query) &&
+    typeof query.search === "string" &&
+    query.search.length <= 100 &&
+    (query.status === "ACTIVE" || query.status === "ARCHIVED") &&
+    Number.isInteger(query.page) &&
+    query.page >= 1 &&
+    query.page <= 10000 &&
+    Number.isInteger(query.pageSize) &&
+    query.pageSize >= 1 &&
+    query.pageSize <= 50
+  );
+}
+function parseWarehouse(value: unknown): Warehouse | null {
+  if (
+    !object(value) ||
+    typeof value.id !== "string" ||
+    !uuid.test(value.id) ||
+    typeof value.name !== "string" ||
+    typeof value.address !== "string" ||
+    typeof value.archived !== "boolean"
+  )
+    return null;
+  return {
+    id: value.id,
+    name: value.name,
+    address: value.address,
+    archived: value.archived,
+  };
+}
+
+type AuthorizedSession =
+  | { status: "ready"; bearer: string; companyId: string }
+  | { status: "unauthenticated" | "forbidden" | "changed" | "unavailable" };
+
+async function authorizeWarehouseSession(
+  jar: SessionCookies,
+  expected: WarehouseScope,
+): Promise<AuthorizedSession> {
+  const access = jar.get(accessCookie)?.value;
+  const session = await resolveSession({
+    access,
+    refresh: jar.get(refreshCookie)?.value,
+  });
+  if (session.status === "unauthenticated") {
+    clearSessionCookies(jar);
+    return { status: "unauthenticated" };
+  }
+  if (session.status === "refresh-rejected") return { status: "changed" };
+  if (session.tokens) setSessionTokens(jar, session.tokens);
+  if (session.status !== "ready") return { status: "unavailable" };
+  if (
+    session.user.role !== "COMPANY_ADMIN" ||
+    !session.user.company ||
+    !session.user.orgId
+  )
+    return { status: "forbidden" };
+  // Submitted identity is only a stale-context veto. The JWT selects all scope.
+  if (
+    !expected ||
+    session.user.id !== expected.userId ||
+    session.user.orgId !== expected.companyId
+  )
+    return { status: "changed" };
+  const bearer = session.tokens?.accessToken ?? access;
+  if (!bearer) return { status: "unavailable" };
+  return { status: "ready", bearer, companyId: session.user.orgId };
+}
+
+export async function readWarehousesForSession(
+  jar: SessionCookies,
+  expected: WarehouseScope,
+  query: WarehouseQuery,
+): Promise<WarehouseResult> {
+  if (!validQuery(query)) return { status: "invalid" };
+  const authorized = await authorizeWarehouseSession(jar, expected);
+  if (authorized.status !== "ready") return authorized;
+  const { bearer, companyId } = authorized;
+  try {
+    const endpoint = getBackendEndpoint("warehouses");
+    if (!endpoint) return { status: "unavailable" };
+    endpoint.searchParams.set("status", query.status);
+    endpoint.searchParams.set("page", String(query.page));
+    endpoint.searchParams.set("pageSize", String(query.pageSize));
+    if (query.search.trim())
+      endpoint.searchParams.set("search", query.search.trim());
+    const response = await requestBackend(endpoint, { method: "GET", bearer });
+    if (response.status === 401) {
+      clearSessionCookies(jar);
+      return { status: "unauthenticated" };
+    }
+    if (response.status === 403) return { status: "forbidden" };
+    if (response.status === 400) return { status: "invalid" };
+    if (!response.ok) return { status: "unavailable" };
+    const body = await readBackendBody(response);
+    if (!object(body) || body.success !== true) return { status: "unavailable" };
+    const data = body.data;
+    if (!object(data) || typeof data.companyId !== "string" || !data.companyId)
+      return { status: "unavailable" };
+    if (data.companyId !== companyId) return { status: "changed" };
+    if (
+      !Array.isArray(data.items) ||
+      data.items.length > query.pageSize ||
+      data.page !== query.page ||
+      data.pageSize !== query.pageSize ||
+      typeof data.hasNext !== "boolean"
+    )
+      return { status: "unavailable" };
+    const items: Warehouse[] = [];
+    for (const item of data.items) {
+      const parsed = parseWarehouse(item);
+      if (!parsed || parsed.archived !== (query.status === "ARCHIVED"))
+        return { status: "unavailable" };
+      items.push(parsed);
+    }
+    return {
+      status: "list",
+      data: {
+        items,
+        page: query.page,
+        pageSize: query.pageSize,
+        hasNext: data.hasNext,
+      },
+    };
+  } catch {
+    return { status: "unavailable" };
+  }
+}
+
+function validWrite(operation: WarehouseWrite): WarehouseWrite | null {
+  if (!object(operation)) return null;
+  if (operation.kind === "create" || operation.kind === "edit") {
+    if (
+      !object(operation.input) ||
+      typeof operation.input.name !== "string" ||
+      typeof operation.input.address !== "string"
+    )
+      return null;
+    const input = normalizeWarehouseInput(operation.input);
+    if (!isValidWarehouseInput(input)) return null;
+    if (operation.kind === "create") return { kind: "create", input };
+    return typeof operation.id === "string" && uuid.test(operation.id)
+      ? { kind: "edit", id: operation.id, input }
+      : null;
+  }
+  if (
+    operation.kind === "archive" &&
+    typeof operation.id === "string" &&
+    uuid.test(operation.id) &&
+    typeof operation.archived === "boolean"
+  )
+    return { kind: "archive", id: operation.id, archived: operation.archived };
+  return null;
+}
+
+export async function writeWarehouseForSession(
+  jar: SessionCookies,
+  expected: WarehouseScope,
+  submitted: WarehouseWrite,
+): Promise<WarehouseWriteResult> {
+  const operation = validWrite(submitted);
+  if (!operation) return { status: "invalid" };
+  const authorized = await authorizeWarehouseSession(jar, expected);
+  if (authorized.status !== "ready") return authorized;
+  const { bearer, companyId } = authorized;
+  let dispatched = false;
+  try {
+    const endpoint = getBackendEndpoint(
+      operation.kind === "create"
+        ? "warehouses"
+        : operation.kind === "edit"
+          ? `warehouses/${operation.id}`
+          : `warehouses/${operation.id}/archive`,
+    );
+    if (!endpoint) return { status: "unavailable" };
+    dispatched = true;
+    const response = await requestBackend(endpoint, {
+      method:
+        operation.kind === "create"
+          ? "POST"
+          : operation.kind === "edit"
+            ? "PATCH"
+            : "PUT",
+      body:
+        operation.kind === "archive"
+          ? { archived: operation.archived }
+          : { name: operation.input.name, address: operation.input.address },
+      bearer,
+      expectedCompany: companyId,
+    });
+    if (response.status === 401) {
+      clearSessionCookies(jar);
+      return { status: "unauthenticated" };
+    }
+    if (response.status === 403) return { status: "forbidden" };
+    if (response.status === 400) return { status: "invalid" };
+    if (response.status === 404 && operation.kind !== "create")
+      return { status: "not-found" };
+    if (response.status === 409) return { status: "conflict" };
+    if (!response.ok) return { status: "uncertain" };
+    const body = await readBackendBody(response);
+    if (!object(body) || body.success !== true || !object(body.data))
+      return { status: "uncertain" };
+    if (body.data.companyId !== companyId) return { status: "changed" };
+    const warehouse = parseWarehouse(body.data.warehouse);
+    if (
+      !warehouse ||
+      (operation.kind !== "create" && warehouse.id !== operation.id)
+    )
+      return { status: "uncertain" };
+    return { status: "saved", data: warehouse };
+  } catch {
+    return { status: dispatched ? "uncertain" : "unavailable" };
+  }
+}

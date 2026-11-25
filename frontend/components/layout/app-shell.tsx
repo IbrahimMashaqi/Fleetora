@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Banknote, Building2, ChevronDown, ClipboardList, LayoutDashboard, MapPin, Package, ReceiptText, RotateCcw, Settings2, Store, Tags, Truck, TruckElectric, UserRoundCheck, Wallet, type LucideIcon } from "lucide-react";
+import { Banknote, Building2, ChevronDown, ClipboardList, LayoutDashboard, MapPin, Package, ReceiptText, RotateCcw, Settings2, Store, Tags, Truck, TruckElectric, UserRoundCheck, Wallet, Warehouse, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher, useLocale, type TranslationKey } from "@/lib/i18n";
 import type { SessionUser } from "@/lib/auth/session.types";
@@ -29,6 +29,7 @@ const navigation: NavigationItem[] = [
   { href: "/app/merchants", label: "Merchants", icon: Store, group: "Company resources" },
   { href: "/app/drivers", label: "Drivers", icon: UserRoundCheck, group: "Company resources" },
   { href: "/app/vehicles", label: "Vehicles", icon: TruckElectric, group: "Company resources" },
+  { href: "/app/warehouses", label: "Warehouses", icon: Warehouse, group: "Company resources" },
   { href: "/app/returns", label: "Returns", icon: RotateCcw, group: "Returns & finance" },
   { href: "/app/collections", label: "COD & collections", icon: Banknote, group: "Returns & finance" },
   { href: "/app/settlements", label: "Merchant settlements", icon: Wallet, group: "Returns & finance" },

@@ -273,8 +273,10 @@ model Warehouse {
   companyId String
   name      String
   address   String
+  // Archived warehouses keep their history but accept no new pickup links.
+  archivedAt DateTime?
   createdAt DateTime @default(now())
-  updatedAt temporal.updatedAt()  
+  updatedAt temporal.updatedAt()
 
   company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   zones     Zone[]
