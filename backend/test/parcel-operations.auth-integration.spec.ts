@@ -7,6 +7,7 @@ import { ParcelOperationsRepository } from '../src/modules/parcels/parcel-operat
 import { ParcelFinanceRepository } from '../src/modules/parcels/parcel-finance.repository.js';
 import { ParcelDashboardRepository } from '../src/modules/parcels/parcel-dashboard.repository.js';
 import { PageDto } from '../src/modules/parcels/parcel.dto.js';
+import { DriversRepository } from '../src/modules/drivers/drivers.repository.js';
 import type { TokenPayload } from '../src/modules/auth/token/token.payload.js';
 import {
   AuthPostgresTestGuard,
@@ -516,6 +517,28 @@ describe('parcel operations on disposable PostgreSQL', () => {
       (await ops.parcels(actor, new PageDto())).items.map((p) => p.id),
     ).toEqual([own]);
     expect((await dashboard.dashboard(actor)).counts.total).toBe(1);
+  });
+  it('rejects assignment to a driver suspended through the driver records API until reactivated', async () => {
+    const drivers = new DriversRepository(prisma);
+    const own = await parcel(await merchant());
+    await transition(own, 'RECEIVED_FROM_MERCHANT');
+    await transition(own, 'AT_WAREHOUSE');
+    await drivers.setSuspended(actor, driverId, true);
+    const before = await revision(own);
+    await expect(
+      ops.assignment(actor, own, { revision: before, workerId: driverId }),
+    ).rejects.toMatchObject({ status: 404 });
+    const unchanged = (await ops.details(actor, own)).parcel;
+    expect(unchanged).toMatchObject({ status: 'AT_WAREHOUSE' });
+    expect(Number(unchanged.revision)).toBe(before);
+    await drivers.setSuspended(actor, driverId, false);
+    await ops.assignment(actor, own, {
+      revision: await revision(own),
+      workerId: driverId,
+    });
+    expect((await ops.details(actor, own)).parcel).toMatchObject({
+      status: 'ASSIGNED',
+    });
   });
   it('enforces accountant permissions and persisted user role changes', async () => {
     const merchantId = await merchant();
