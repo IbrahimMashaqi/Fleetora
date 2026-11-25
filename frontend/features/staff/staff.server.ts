@@ -260,7 +260,13 @@ export async function writeStaffForSession(
       !token.test(body.data.token)
     )
       return { status: "uncertain" };
-    return { status: "issued", invitation, token: body.data.token };
+    return {
+      status: "issued",
+      invitation,
+      token: body.data.token,
+      // Only an explicit EMAIL confirmation counts as sent.
+      emailed: body.data.delivery === "EMAIL",
+    };
   } catch {
     return { status: dispatched ? "uncertain" : "unavailable" };
   }

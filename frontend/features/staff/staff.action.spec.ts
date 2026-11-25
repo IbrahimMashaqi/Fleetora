@@ -14,6 +14,7 @@ let sessionCompany: string;
 let responseCompany: string;
 let status: number;
 let disconnected: boolean;
+let delivery: string | undefined;
 let requests: { path: string; method: string; body: unknown; context?: string | string[] }[];
 const jar = {
   get: (name: string) => (name.includes("access") ? { value: "fixture-access" } : undefined),
@@ -72,7 +73,7 @@ test.beforeAll(async () => {
                 companyId: responseCompany,
                 invitation: { ...invitation, tokenHash: "private-hash" },
                 token,
-                delivery: "MANUAL",
+                delivery,
               }
             : req.method === "DELETE"
               ? { companyId: responseCompany, revoked: true }
@@ -115,6 +116,7 @@ test.beforeEach(() => {
   responseCompany = companyId;
   status = 200;
   disconnected = false;
+  delivery = "MANUAL";
   requests = [];
 });
 
@@ -161,6 +163,7 @@ test("issues an invitation with normalized email and the session company context
       expiresAt: "2026-12-01T12:00:00Z",
     },
     token,
+    emailed: false,
   });
   expect(requests[1]).toMatchObject({
     path: "/company/staff/invitations",
@@ -264,4 +267,15 @@ test("rejects malformed member status writes without dispatch", async () => {
       await writeStaffForSession(jar, scope, operation as Parameters<typeof writeStaffForSession>[2]),
     ).toEqual({ status: "invalid" });
   expect(requests).toHaveLength(0);
+});
+
+test("reports whether the invitation email was sent", async () => {
+  delivery = "EMAIL";
+  expect(
+    await writeStaffForSession(jar, scope, { action: "issue", email: "accountant@example.com", role: "ACCOUNTANT" }),
+  ).toMatchObject({ status: "issued", emailed: true, token });
+  delivery = undefined;
+  expect(
+    await writeStaffForSession(jar, scope, { action: "issue", email: "accountant@example.com", role: "ACCOUNTANT" }),
+  ).toMatchObject({ status: "issued", emailed: false, token });
 });

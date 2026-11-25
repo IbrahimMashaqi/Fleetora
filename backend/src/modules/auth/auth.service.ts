@@ -1,3 +1,4 @@
+import { trustedFrontendOrigin } from '../../common/utils/frontend-url.js';
 import {
   BadRequestException,
   ConflictException,
@@ -71,29 +72,7 @@ export class AuthService {
       throw new Error('VERIFICATION_CODE_EXPIRY_MINUTES must be a positive integer');
     }
     this.VERIFICATION_CODE_EXPIRY_MINUTES = verificationMinutes;
-    const configuredFrontendUrl = this.configService.get<string>('FRONTEND_URL');
-    const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
-    if (!configuredFrontendUrl && isProduction) {
-      throw new Error('FRONTEND_URL must be configured in production');
-    }
-
-    let frontendUrl: URL;
-    try {
-      frontendUrl = new URL(configuredFrontendUrl ?? 'http://localhost:3000');
-    } catch {
-      throw new Error('FRONTEND_URL must be a valid trusted frontend URL');
-    }
-    if (
-      !['http:', 'https:'].includes(frontendUrl.protocol) ||
-      frontendUrl.username ||
-      frontendUrl.password ||
-      frontendUrl.search ||
-      frontendUrl.hash ||
-      (isProduction && frontendUrl.protocol !== 'https:')
-    ) {
-      throw new Error('FRONTEND_URL must be a valid trusted frontend URL');
-    }
-    this.FRONTEND_URL = frontendUrl.origin;
+    this.FRONTEND_URL = trustedFrontendOrigin(this.configService);
   }
 
   private async buildAuthResponse(user: {

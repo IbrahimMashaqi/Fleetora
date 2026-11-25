@@ -8,6 +8,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { MerchantAccessRepository } from '../src/modules/merchant-access/merchant-access.repository.js';
 import { MerchantAccessService } from '../src/modules/merchant-access/merchant-access.service.js';
 import { PrismaService } from '../src/modules/prisma/prisma.service.js';
+import { MailService } from '../src/modules/mail/mail.service.js';
+
+// Records outgoing mail instead of using SMTP; persistence is what is under test.
+const sentMail = new MailService({
+  sendMail: async () => ({}),
+} as unknown as ConstructorParameters<typeof MailService>[0]);
 import {
   AuthPostgresTestGuard,
   readAuthPostgresIdentity,
@@ -81,6 +87,7 @@ describe('merchant identity on disposable PostgreSQL', () => {
     service = new MerchantAccessService(
       new MerchantAccessRepository(prisma),
       new ConfigService({ SALT_ROUNDS: 4 }),
+      sentMail,
     );
   });
   beforeEach(async () => {

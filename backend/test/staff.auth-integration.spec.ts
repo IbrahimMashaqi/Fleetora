@@ -18,6 +18,11 @@ import { TokenService } from '../src/modules/auth/token/token.service.js';
 import { createRefreshTokenVerifier } from '../src/modules/auth/token/refresh-token-verifier.js';
 import { MailService } from '../src/modules/mail/mail.service.js';
 import { PrismaService } from '../src/modules/prisma/prisma.service.js';
+
+// Records outgoing mail instead of using SMTP; persistence is what is under test.
+const sentMail = new MailService({
+  sendMail: async () => ({}),
+} as unknown as ConstructorParameters<typeof MailService>[0]);
 import { StaffRepository } from '../src/modules/staff/staff.repository.js';
 import { StaffService } from '../src/modules/staff/staff.service.js';
 import type { StaffRole } from '../src/modules/staff/staff.types.js';
@@ -80,6 +85,7 @@ describe('staff invitations against disposable PostgreSQL', () => {
     service = new StaffService(
       new StaffRepository(prisma),
       new ConfigService({ SALT_ROUNDS: 4 }),
+      sentMail,
     );
     module = await Test.createTestingModule({
       imports: [JwtModule.register({})],

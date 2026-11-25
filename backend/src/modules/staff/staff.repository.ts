@@ -84,6 +84,13 @@ export class StaffRepository {
       .first();
   }
 
+  async companyName(companyId: string): Promise<string> {
+    const company = await this.prisma.Company.where({ id: companyId })
+      .select('name')
+      .first();
+    return company?.name ?? 'Fleetora';
+  }
+
   findByTokenHash(tokenHash: string) {
     return this.prisma.db.orm.public.StaffInvitation.where({ tokenHash })
       .select('id', 'companyId')

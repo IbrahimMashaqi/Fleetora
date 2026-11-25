@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -25,6 +26,7 @@ import {
   type MerchantPermission,
 } from './merchant-access.types.js';
 import { canonicalEmail } from '../../common/utils/email.js';
+import { MailService } from '../mail/mail.service.js';
 import type {
   AcceptMerchantInvitationDto,
   CompanyMerchantInvitationDto,
@@ -62,10 +64,12 @@ const publicInvitation = (row: InvitationRow) => ({
 @Injectable()
 export class MerchantAccessService {
   private readonly saltRounds: number;
+  private readonly logger = new Logger(MerchantAccessService.name);
   constructor(
     @Inject(MerchantAccessRepository)
     private readonly repository: MerchantAccessRepository,
     @Inject(ConfigService) config: ConfigService,
+    @Inject(MailService) private readonly mail: MailService,
   ) {
     this.saltRounds = Number(config.get<string | number>('SALT_ROUNDS') ?? 10);
     if (
@@ -181,19 +185,49 @@ export class MerchantAccessService {
     input: CompanyMerchantInvitationDto,
   ) {
     const initial = await this.admin(actor);
-    return this.repository.transaction(initial.companyId, async (tx) => {
-      const admin = await this.admin(actor, tx);
-      if (admin.companyId !== initial.companyId)
-        throw new ForbiddenException('Company context changed');
-      return this.issue(
-        tx,
-        admin.userId,
-        admin.companyId,
-        merchantId,
-        input.role,
-        input,
-      );
-    });
+    const { invitation, merchantName } = await this.repository.transaction(
+      initial.companyId,
+      async (tx) => {
+        const admin = await this.admin(actor, tx);
+        if (admin.companyId !== initial.companyId)
+          throw new ForbiddenException('Company context changed');
+        return this.issue(
+          tx,
+          admin.userId,
+          admin.companyId,
+          merchantId,
+          input.role,
+          input,
+        );
+      },
+    );
+    return { ...invitation, delivery: await this.deliver(invitation, merchantName) };
+  }
+
+  // Runs after the invitation is committed; a mail failure never undoes it.
+  // The link and code are the merchant app's existing activation contract.
+  private async deliver(
+    invitation: ReturnType<typeof publicInvitation> & { token: string },
+    merchantName: string,
+  ): Promise<'EMAIL' | 'MANUAL'> {
+    try {
+      await this.mail.sendInvitationEmail({
+        to: invitation.email,
+        url: `fleetora-merchant://app/activate?token=${invitation.token}`,
+        code: invitation.token,
+        inviter: merchantName,
+        role: invitation.role === 'OWNER' ? 'OWNER' : 'EMPLOYEE',
+        expiresAt: invitation.expiresAt.toString(),
+      });
+      return 'EMAIL';
+    } catch (error: unknown) {
+      this.logger.warn({
+        event: 'merchant_invitation.email_failed',
+        invitationId: invitation.id,
+        error: error instanceof Error ? error.name : 'unknown',
+      });
+      return 'MANUAL';
+    }
   }
 
   async issueByOwner(actor: MerchantIdentity, input: MerchantInvitationDto) {
@@ -205,7 +239,7 @@ export class MerchantAccessService {
         owner.merchantId !== initial.merchantId
       )
         throw new ForbiddenException('Merchant context changed');
-      return this.issue(
+      const { invitation } = await this.issue(
         tx,
         owner.userId,
         owner.companyId,
@@ -213,6 +247,8 @@ export class MerchantAccessService {
         'EMPLOYEE',
         input,
       );
+      // The merchant app hands the code over itself; no email is sent here.
+      return { ...invitation, delivery: 'MANUAL' as const };
     });
   }
 
@@ -270,9 +306,8 @@ export class MerchantAccessService {
       { invitationId: invitation.id, role, email, permissions: grant },
     );
     return {
-      ...publicInvitation(invitation),
-      token,
-      delivery: 'MANUAL' as const,
+      invitation: { ...publicInvitation(invitation), token },
+      merchantName: merchant.name,
     };
   }
 

@@ -16,6 +16,7 @@ let responseCompany: string;
 let responseMerchant: string;
 let status: number;
 let disconnected: boolean;
+let delivery: string | undefined;
 let requests: {
   path: string;
   method: string;
@@ -81,7 +82,7 @@ test.beforeAll(async () => {
         success: true,
         data:
           req.method === "POST"
-            ? { ...invitation, delivery: "MANUAL" }
+            ? { ...invitation, delivery }
             : req.method === "DELETE"
               ? {
                   companyId: responseCompany,
@@ -115,6 +116,7 @@ test.beforeEach(() => {
   responseMerchant = merchantId;
   status = 200;
   disconnected = false;
+  delivery = "MANUAL";
   requests = [];
 });
 
@@ -148,7 +150,10 @@ test("issues an OWNER invitation and exposes the manual token only in issuance",
     email: "Owner@Example.com",
   });
   expect(result.status).toBe("issued");
-  if (result.status === "issued") expect(result.token).toBe(token);
+  if (result.status === "issued") {
+    expect(result.token).toBe(token);
+    expect(result.emailed).toBe(false);
+  }
   expect(requests[1]).toMatchObject({
     method: "POST",
     body: { email: "owner@example.com", role: "OWNER" },
@@ -238,4 +243,21 @@ test("preserves backend invitation conflict without claiming issuance success", 
       email: "owner@example.com",
     }),
   ).toEqual({ status: "conflict" });
+});
+
+test("reports an emailed invitation while still exposing the fallback link", async () => {
+  delivery = "EMAIL";
+  const result = await merchantInvitationsForSession(jar, scope, merchantId, {
+    action: "issue",
+    email: "owner@example.com",
+  });
+  expect(result).toMatchObject({ status: "issued", emailed: true, token });
+});
+test("treats an unknown delivery as not emailed rather than claiming success", async () => {
+  delivery = "CARRIER_PIGEON";
+  const result = await merchantInvitationsForSession(jar, scope, merchantId, {
+    action: "issue",
+    email: "owner@example.com",
+  });
+  expect(result).toMatchObject({ status: "issued", emailed: false, token });
 });

@@ -44,7 +44,8 @@ const words = {
     issue: "Create invitation",
     working: "Working…",
     manual: "Share this invitation securely",
-    warning: "No email was sent. Deliver this link directly to the invited person through a trusted channel. Anyone with it can activate a new account for the invited email.",
+    warning: "Email not sent. Copy the link instead and deliver it directly to the invited person through a trusted channel. Anyone with it can activate a new account for the invited email.",
+    emailed: "Invitation emailed. If it doesn't arrive, copy this link and share it directly through a trusted channel.",
     once: "The link appears only here. Copy it before dismissing this panel.",
     link: "Activation link",
     copyLink: "Copy link",
@@ -104,7 +105,8 @@ const words = {
     issue: "إنشاء الدعوة",
     working: "جارٍ التنفيذ…",
     manual: "شارك هذه الدعوة بأمان",
-    warning: "لم يُرسل بريد إلكتروني. سلّم الرابط مباشرة إلى الشخص المدعو عبر قناة موثوقة. من يملك الرابط يستطيع تفعيل حساب جديد للبريد المدعو.",
+    warning: "لم يُرسل البريد الإلكتروني. انسخ الرابط بدلاً من ذلك وسلّمه مباشرة إلى الشخص المدعو عبر قناة موثوقة. من يملك الرابط يستطيع تفعيل حساب جديد للبريد المدعو.",
+    emailed: "أُرسلت الدعوة بالبريد الإلكتروني. إذا لم تصل، انسخ هذا الرابط وشاركه مباشرة عبر قناة موثوقة.",
     once: "يظهر الرابط هنا فقط. انسخه قبل إخفاء هذه اللوحة.",
     link: "رابط التفعيل",
     copyLink: "نسخ الرابط",
@@ -176,7 +178,7 @@ function TeamWorkspace({ scope }: { scope: StaffScope }) {
   }>();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<StaffRole>("ACCOUNTANT");
-  const [issued, setIssued] = useState<{ invitation: StaffInvitation; link: string }>();
+  const [issued, setIssued] = useState<{ invitation: StaffInvitation; link: string; emailed: boolean }>();
   const [failure, setFailure] = useState<StaffWriteFailure>();
   const [feedback, setFeedback] = useState<
     "copied" | "copyFailed" | "revokedSuccess" | "memberDeactivated" | "memberReactivated"
@@ -220,6 +222,7 @@ function TeamWorkspace({ scope }: { scope: StaffScope }) {
           setIssued({
             invitation: result.invitation,
             link: `${window.location.origin}/auth/accept-invitation#token=${result.token}`,
+            emailed: result.emailed,
           });
           setEmail("");
           refresh();
@@ -375,7 +378,7 @@ function TeamWorkspace({ scope }: { scope: StaffScope }) {
               <p className="break-all text-sm">
                 <bdi dir="ltr">{issued.invitation.email}</bdi> · {copy[issued.invitation.role]}
               </p>
-              <p className="text-sm">{copy.warning}</p>
+              <p role="status" className="text-sm">{issued.emailed ? copy.emailed : copy.warning}</p>
               <p className="text-sm">{copy.once}</p>
               <Label htmlFor={`${id}-link`}>{copy.link}</Label>
               <Input id={`${id}-link`} value={issued.link} readOnly dir="ltr" />

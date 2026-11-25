@@ -171,9 +171,14 @@ export async function merchantInvitationsForSession(
       const parsed = invitation(data, scope, merchantId);
       return parsed &&
         typeof data.token === "string" &&
-        /^[a-f0-9]{64}$/.test(data.token) &&
-        data.delivery === "MANUAL"
-        ? { status: "issued", invitation: parsed, token: data.token }
+        /^[a-f0-9]{64}$/.test(data.token)
+        ? {
+            status: "issued",
+            invitation: parsed,
+            token: data.token,
+            // Only an explicit EMAIL confirmation counts as sent.
+            emailed: data.delivery === "EMAIL",
+          }
         : { status: "uncertain" };
     }
     if (!Array.isArray(data.items) || data.items.length > 200)
