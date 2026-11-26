@@ -951,9 +951,13 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
     )
       .send({})
       .expect(201);
+    // OD-02: the request is always in the company currency; another one is rejected.
+    await post('/merchant/settlement-requests')
+      .send({ currency: 'USD', idempotencyKey: randomUUID() })
+      .expect(400);
     const latest = entity(
       await post('/merchant/settlement-requests')
-        .send({ currency: 'USD', idempotencyKey: randomUUID() })
+        .send({ idempotencyKey: randomUUID() })
         .expect(201),
       'request',
     );
@@ -965,7 +969,7 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
       items: [
         {
           id: latest.id,
-          currency: 'USD',
+          currency: 'ILS',
           notes: null,
           status: 'REQUESTED',
           createdAt: expect.any(String),
@@ -1007,7 +1011,7 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
     );
     const other = entity(
       await post('/merchant/settlement-requests', secondOwner)
-        .send({ currency: 'USD', idempotencyKey: randomUUID() })
+        .send({ currency: 'ILS', idempotencyKey: randomUUID() })
         .expect(201),
       'request',
     );
@@ -1016,7 +1020,7 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
       companyId: foreign.orgId,
       merchantId: await merchant(foreignAdmin),
       requestedBy: foreign.sub,
-      currency: 'EUR',
+      currency: 'ILS',
     });
     expect(
       data(await get('/merchant/settlement-requests').expect(200)).items,

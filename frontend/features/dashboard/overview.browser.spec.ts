@@ -5,7 +5,7 @@ import { displayMoney } from "@/features/operations/money";
 import { overviewFixture, emptyOverviewFixture } from "@/tests/fixtures/overview";
 import { contrastRatio } from "@/tests/ui-assertions";
 
-const companyUser = { id: "overview-admin", name: "Overview Admin", email: null, role: "COMPANY_ADMIN", orgId: "overview-company", company: { id: "overview-company", name: "Overview Logistics" } };
+const companyUser = { id: "overview-admin", name: "Overview Admin", email: null, role: "COMPANY_ADMIN", orgId: "overview-company", company: { id: "overview-company", name: "Overview Logistics", currency: "ILS" } };
 let backend: Server;
 let snapshot = overviewFixture(companyUser.orgId);
 let overviewStatus = 200;

@@ -5,7 +5,10 @@ export const sessionRoleLabels: Record<SessionRole, string> = {
   MERCHANT: "Merchant",
   ACCOUNTANT: "Accountant",
 };
-export type SessionCompany = { id: string; name: string };
+/** OD-02 / BR-066: each company operates in exactly one of these currencies. */
+export const COMPANY_CURRENCIES = ["ILS", "USD", "EUR", "JOD"] as const;
+export type CompanyCurrency = (typeof COMPANY_CURRENCIES)[number];
+export type SessionCompany = { id: string; name: string; currency: CompanyCurrency };
 export type SessionUser = {
   id: string;
   name: string;
@@ -49,6 +52,8 @@ export function isSessionUser(value: unknown): value is SessionUser {
     typeof company.id === "string" &&
     company.id.length > 0 &&
     typeof company.name === "string" &&
+    typeof company.currency === "string" &&
+    (COMPANY_CURRENCIES as readonly string[]).includes(company.currency) &&
     company.id === user.orgId
   );
 }

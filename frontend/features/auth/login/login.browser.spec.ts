@@ -56,7 +56,7 @@ test.beforeAll(async () => {
       response.writeHead(sessionStatus);
       const sessionUser = {
         id: "u1", name: "Amina Hassan", email: "amina@example.com", role: "COMPANY_ADMIN",
-        orgId: "org1", company: { id: "org1", name: "Amina Logistics" },
+        orgId: "org1", company: { id: "org1", name: "Amina Logistics", currency: "ILS" },
       };
       response.end(JSON.stringify(sessionStatus === 200
         ? { success: true, data: includeSessionSecrets ? { ...sessionUser, password: "password-hash", refreshToken: "refresh-hash", verificationToken: "verification-token" } : sessionUser }
@@ -103,7 +103,7 @@ test.beforeEach(() => {
 test("validates the expanded session contract and nullable email", () => {
   expect(isSessionUser({
     id: "u1", name: "Amina Hassan", email: null, role: "COMPANY_ADMIN", orgId: "org1",
-    company: { id: "org1", name: "Amina Logistics" },
+    company: { id: "org1", name: "Amina Logistics", currency: "ILS" },
   })).toBe(true);
   expect(isSessionUser({
     id: "admin1", name: "Platform Admin", email: null, role: "PLATFORM_ADMIN", orgId: null,
@@ -114,9 +114,9 @@ test("validates the expanded session contract and nullable email", () => {
 test("rejects malformed company context, mismatched tenant identity, and unsupported roles", () => {
   const session = {
     id: "u1", name: "Amina Hassan", email: "amina@example.com", role: "COMPANY_ADMIN", orgId: "org1",
-    company: { id: "org1", name: "Amina Logistics" },
+    company: { id: "org1", name: "Amina Logistics", currency: "ILS" },
   };
-  expect(isSessionUser({ ...session, company: { id: "org1", name: 4 } })).toBe(false);
+  expect(isSessionUser({ ...session, company: { id: "org1", name: 4, currency: "ILS" } })).toBe(false);
   expect(isSessionUser({ ...session, company: { ...session.company, id: "org2" } })).toBe(false);
   expect(isSessionUser({ ...session, role: "ROOT_ADMIN" })).toBe(false);
   expect(isSessionUser({ ...session, email: undefined })).toBe(false);
@@ -135,7 +135,7 @@ test("returns only public session fields even if the backend includes secret fie
   });
   expect(result.body).toMatchObject({ user: {
     id: "u1", name: "Amina Hassan", role: "COMPANY_ADMIN", orgId: "org1",
-    company: { id: "org1", name: "Amina Logistics" },
+    company: { id: "org1", name: "Amina Logistics", currency: "ILS" },
   } });
   expect(JSON.stringify(result)).not.toMatch(/password-hash|refresh-hash|verification-token/);
   expect(result.cacheControl).toContain("private, no-store");

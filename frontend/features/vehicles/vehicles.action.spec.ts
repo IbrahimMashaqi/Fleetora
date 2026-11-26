@@ -56,7 +56,7 @@ test.beforeAll(async () => {
             company:
               role === "PLATFORM_ADMIN"
                 ? null
-                : { id: company, name: "Company" },
+                : { id: company, name: "Company" , currency: "ILS" },
           },
         }),
       );

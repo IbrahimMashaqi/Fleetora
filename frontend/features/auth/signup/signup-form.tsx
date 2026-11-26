@@ -8,8 +8,9 @@ import authStyles from "../auth.module.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import inputStyles from "@/components/ui/input.module.css";
 import { signupAction } from "./signup.action";
-import type { SignupState } from "./signup.types";
+import { COMPANY_CURRENCIES, type SignupState } from "./signup.types";
 import { LanguageSwitcher, useLocale } from "@/lib/i18n";
 
 const initialState: SignupState = { status: "idle" };
@@ -159,6 +160,24 @@ export function SignupForm() {
                       className={`${styles["signup-field-input"]} h-12 rounded-lg text-sm`}
                     />
                     {errors?.email && <p id="signup-email-error" role="alert" className="text-danger-foreground">{tMessage(errors.email)}</p>}
+                    </div>
+
+                    <div className="signup-field space-y-2">
+                    <Label htmlFor="signup-currency" className="text-sm font-semibold">{t("Operating currency")}</Label>
+                    <select
+                      id="signup-currency"
+                      name="currency"
+                      dir="ltr"
+                      required
+                      defaultValue={values?.currency ?? "ILS"}
+                      aria-invalid={Boolean(errors?.currency)}
+                      aria-describedby={errors?.currency ? "signup-currency-help signup-currency-error" : "signup-currency-help"}
+                      className={`${inputStyles.input} ${styles["signup-field-input"]} flex h-12 w-full rounded-lg border bg-surface px-3 text-sm`}
+                    >
+                      {COMPANY_CURRENCIES.map((currency) => <option key={currency} value={currency}>{currency}</option>)}
+                    </select>
+                    <p id="signup-currency-help" className="text-xs leading-4 text-muted-foreground">{t("Your company uses one currency for fees, COD and settlements.")}</p>
+                    {errors?.currency && <p id="signup-currency-error" role="alert" className={`${authStyles["auth-feedback"]} text-danger-foreground`}>{tMessage(errors.currency)}</p>}
                     </div>
 
                     <div className="signup-field space-y-2">

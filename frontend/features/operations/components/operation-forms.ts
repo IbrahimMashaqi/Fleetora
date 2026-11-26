@@ -15,7 +15,8 @@ function localDateTime(value: string) {
     .toISOString()
     .slice(0, 16);
 }
-export function merchantFields(row?: Row | null): Field[] {
+/** OD-02: merchant terms always use the single company currency. */
+export function merchantFields(row: Row | null | undefined, currency: string): Field[] {
   return [
     text("name", "Business name", row, true),
     text("contactName", "Contact person", row, true),
@@ -27,12 +28,8 @@ export function merchantFields(row?: Row | null): Field[] {
       name: "currency",
       label: "Currency",
       required: true,
-      value: row?.currency ?? "ILS",
-      options: ["ILS", "USD", "EUR", "JOD"].map((value) => ({
-        value,
-        label: value,
-        literal: true,
-      })),
+      value: currency,
+      options: [{ value: currency, label: currency, literal: true }],
     },
     {
       ...text("deliveryFee", "Default delivery fee", row, true),

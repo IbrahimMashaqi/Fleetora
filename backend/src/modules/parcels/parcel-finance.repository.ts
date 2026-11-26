@@ -42,6 +42,9 @@ import type {
   SettlementCancelDto,
   SettlementCreateDto,
 } from './parcel.dto.js';
+import { companyCurrency } from './company-currency.js';
+
+type CurrencyPreview = PreviewDto & { currency: string };
 @Injectable()
 export class ParcelFinanceRepository {
   constructor(
@@ -270,14 +273,15 @@ export class ParcelFinanceRepository {
           .select('id')
           .first();
         if (!merchant) throw new NotFoundException('Merchant not found');
-        const value = money(input.amount, input.currency, true);
+        const currency = await companyCurrency(tx, companyId, input.currency);
+        const value = money(input.amount, currency, true);
         if (value === 0n)
           throw new BadRequestException('Adjustment must be nonzero');
         return (
           await tx.orm.public.MerchantLedgerEntry.create({
             companyId,
             merchantId: merchant.id,
-            currency: input.currency,
+            currency,
             kind: 'ADJUSTMENT',
             amountMinor: value,
             reason: input.reason,
@@ -339,10 +343,21 @@ export class ParcelFinanceRepository {
     if (!entry) throw new NotFoundException('Entry not found');
     return { companyId, entry: wire(entry) };
   }
-  private async candidates(
+  /** OD-02: settlements always run in the company currency. */
+  private async inCompanyCurrency(
     tx: ParcelTransaction,
     companyId: string,
     input: PreviewDto,
+  ): Promise<CurrencyPreview> {
+    return {
+      ...input,
+      currency: await companyCurrency(tx, companyId, input.currency),
+    };
+  }
+  private async candidates(
+    tx: ParcelTransaction,
+    companyId: string,
+    input: CurrencyPreview,
   ) {
     const dates = dateRange(input);
     if (
@@ -379,7 +394,7 @@ export class ParcelFinanceRepository {
   }
   private fingerprint(
     companyId: string,
-    input: PreviewDto,
+    input: CurrencyPreview,
     rows: readonly { id: string; amountMinor: bigint }[],
   ) {
     const dates = dateRange(input);
@@ -404,22 +419,23 @@ export class ParcelFinanceRepository {
       actor,
       'createSettlements',
       async (tx, companyId) => {
-        const rows = await this.candidates(tx, companyId, input);
+        const scoped = await this.inCompanyCurrency(tx, companyId, input);
+        const rows = await this.candidates(tx, companyId, scoped);
         const totals = settlementTotals(rows);
         return {
           companyId,
           preview: {
-            previewHash: this.fingerprint(companyId, input, rows),
-            merchantId: input.merchantId,
-            currency: input.currency,
+            previewHash: this.fingerprint(companyId, scoped, rows),
+            merchantId: scoped.merchantId,
+            currency: scoped.currency,
             lines: rows.map((row) => ({
-              ...wire({ ...row, currency: input.currency }),
+              ...wire({ ...row, currency: scoped.currency }),
               ledgerEntryId: row.id,
             })),
             ...Object.fromEntries(
               Object.entries(totals).map(([key, value]) => [
                 key,
-                amount(value, input.currency),
+                amount(value, scoped.currency),
               ]),
             ),
           },
@@ -506,9 +522,10 @@ export class ParcelFinanceRepository {
       'SETTLEMENT_DRAFT',
       input,
       async (tx, companyId) => {
-        const rows = await this.candidates(tx, companyId, input);
+        const scoped = await this.inCompanyCurrency(tx, companyId, input);
+        const rows = await this.candidates(tx, companyId, scoped);
         if (
-          input.expectedPreviewHash !== this.fingerprint(companyId, input, rows)
+          input.expectedPreviewHash !== this.fingerprint(companyId, scoped, rows)
         )
           throw new ConflictException(
             'Settlement preview changed. Preview again before confirming',
@@ -524,7 +541,7 @@ export class ParcelFinanceRepository {
         FROM merchant_ledger_entries e
         LEFT JOIN settlement_allocations a ON a."ledgerEntryId"=e.id AND a."companyId"=e."companyId"
         LEFT JOIN cash_remittances r ON r."collectionId"=e."collectionId" AND r."companyId"=e."companyId"
-        WHERE e."companyId"=${companyId} AND e."merchantId"=${input.merchantId} AND e.currency=${input.currency}
+        WHERE e."companyId"=${companyId} AND e."merchantId"=${scoped.merchantId} AND e.currency=${scoped.currency}
           AND a.id IS NULL AND (e."collectionId" IS NULL OR r.id IS NOT NULL)
       `
             .returnsRow({ eligible: 'pg/text@1' })
@@ -536,8 +553,8 @@ export class ParcelFinanceRepository {
           );
         const settlement = await tx.orm.public.MerchantSettlement.create({
           companyId,
-          merchantId: input.merchantId,
-          currency: input.currency,
+          merchantId: scoped.merchantId,
+          currency: scoped.currency,
           createdBy: actor.sub,
           grossCollectedMinor: totals.grossCollected,
           deliveryFeesMinor: totals.deliveryFees,

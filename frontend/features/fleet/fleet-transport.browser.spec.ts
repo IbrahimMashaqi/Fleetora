@@ -3,7 +3,7 @@ import { expect, test, type WebSocketRoute } from "@playwright/test";
 import type { FleetDriver, FleetSnapshot, FleetTracking } from "./fleet.types";
 
 const admin = (companyId: string) => ({ id: `admin-${companyId}`, name: "مدير الشركة", email: null,
-  role: "COMPANY_ADMIN", orgId: companyId, company: { id: companyId, name: companyId } });
+  role: "COMPANY_ADMIN", orgId: companyId, company: { id: companyId, name: companyId, currency: "ILS" } });
 function tracking(revision: number, latitude: number): FleetTracking {
   const now = Date.now();
   return { revision, sharing: true, sharingStartedAt: new Date(now - 60_000).toISOString(), location: {

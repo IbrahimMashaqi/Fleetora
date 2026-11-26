@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 
-const first = { id: "nested-reader", name: "Nested Reader", email: null, role: "COMPANY_ADMIN", orgId: "first-company", company: { id: "first-company", name: "First Company" } };
+const first = { id: "nested-reader", name: "Nested Reader", email: null, role: "COMPANY_ADMIN", orgId: "first-company", company: { id: "first-company", name: "First Company", currency: "ILS" } };
 let backend: Server;
 
 // Overview performs authenticated server actions as well as browser session
@@ -49,7 +49,7 @@ test("identity changes discard the previous tenant's child state", async ({ page
   await page.route("**/api/auth/session", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user }) }));
   await page.goto("/app/test-child");
   await page.getByRole("textbox", { name: "Probe draft" }).fill("Previous tenant draft");
-  user = { ...first, id: "new-reader", name: "New Reader", orgId: "new-company", company: { id: "new-company", name: "New Company" } };
+  user = { ...first, id: "new-reader", name: "New Reader", orgId: "new-company", company: { id: "new-company", name: "New Company", currency: "ILS" } };
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(page.getByRole("main").getByText("New Reader")).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Probe draft" })).toHaveValue("");

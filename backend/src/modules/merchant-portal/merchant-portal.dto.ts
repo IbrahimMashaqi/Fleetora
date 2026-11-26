@@ -137,7 +137,8 @@ export class RequestKeyDto {
   @IsUUID() idempotencyKey!: string;
 }
 export class SettlementRequestDto extends RequestKeyDto {
-  @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency = 'ILS';
+  /** OD-02: optional; when sent it must equal the company currency. */
+  @IsOptional() @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency?: string;
   @IsOptional() @Transform(trim) @IsString() @MaxLength(500) notes?: string;
 }
 export class MerchantAmendmentDto extends MerchantParcelEditDto {

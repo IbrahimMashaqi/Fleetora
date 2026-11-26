@@ -9,6 +9,7 @@ import {
 import { createHash } from 'node:crypto';
 import type { TokenPayload } from '../auth/token/token.payload.js';
 import { amount, assertRevision, money } from '../parcels/parcel-domain.js';
+import { companyCurrency } from '../parcels/company-currency.js';
 import type { ParcelTransaction } from '../parcels/parcel-store.js';
 import type {
   AssignMerchantPlanDto,
@@ -304,12 +305,13 @@ export class MerchantPricingService {
   ) {
     this.admin(actor);
     return this.repository.write(actor, async (tx, companyId) => {
+      const currency = await companyCurrency(tx, companyId, input.currency);
       const data = {
         name: input.name,
         city: input.city,
-        currency: input.currency,
+        currency,
         active: input.active ?? true,
-        baseFeeMinor: money(input.baseFee, input.currency),
+        baseFeeMinor: money(input.baseFee, currency),
       };
       if (!id)
         return {
@@ -344,7 +346,7 @@ export class MerchantPricingService {
     return this.repository.write(actor, async (tx, companyId) => {
       const data = {
         name: input.name,
-        currency: input.currency,
+        currency: await companyCurrency(tx, companyId, input.currency),
         active: input.active ?? true,
       };
       if (!id)

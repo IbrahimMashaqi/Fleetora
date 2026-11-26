@@ -34,7 +34,7 @@ test.beforeAll(async () => {
       res.writeHead(sessionStatus, { "Content-Type": "application/json" }).end(JSON.stringify({ success: true, data: {
         id: "admin", name: "Admin", email: null, role,
         orgId: role === "PLATFORM_ADMIN" ? null : company,
-        company: role === "PLATFORM_ADMIN" ? null : { id: company, name: "Company" },
+        company: role === "PLATFORM_ADMIN" ? null : { id: company, name: "Company" , currency: "ILS" },
       } }));
       return;
     }

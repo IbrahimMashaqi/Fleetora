@@ -34,7 +34,7 @@ const admin: SessionUser = {
   email: null,
   role: "COMPANY_ADMIN",
   orgId: "company-a",
-  company: { id: "company-a", name: "Fictional Fleet" },
+  company: { id: "company-a", name: "Fictional Fleet", currency: "ILS" },
 };
 let server: Server,
   user: SessionUser,
@@ -397,7 +397,7 @@ test("a company change before confirmation vetoes the pending delete", async ({
   user = {
     ...admin,
     orgId: "company-b",
-    company: { id: "company-b", name: "Other Company" },
+    company: { id: "company-b", name: "Other Company", currency: "ILS" },
   };
   const dialog = page.getByRole("dialog", {
     name: "Delete vehicle permanently?",
@@ -606,7 +606,7 @@ test("redirects missing session and drops old-company catalog on identity change
   user = {
     ...admin,
     orgId: "company-b",
-    company: { id: "company-b", name: "Another Company" },
+    company: { id: "company-b", name: "Another Company", currency: "ILS" },
   };
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(

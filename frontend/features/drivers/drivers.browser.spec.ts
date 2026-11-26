@@ -10,7 +10,7 @@ const admin: SessionUser = {
   email: null,
   role: "COMPANY_ADMIN",
   orgId: "company-a",
-  company: { id: "company-a", name: "Directory Logistics" },
+  company: { id: "company-a", name: "Directory Logistics", currency: "ILS" },
 };
 const driver: Driver = {
   id: "33333333-3333-4333-8333-333333333333",
@@ -479,7 +479,7 @@ test("discards a delayed old-company read after the same admin changes company",
   user = {
     ...admin,
     orgId: "company-b",
-    company: { id: "company-b", name: "Company B" },
+    company: { id: "company-b", name: "Company B", currency: "ILS" },
   };
   driverName = "Company B Driver";
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
@@ -505,7 +505,7 @@ test("clears driver details on cross-tab invalidation and logout", async ({
     ...admin,
     id: "another-admin",
     orgId: "company-b",
-    company: { id: "company-b", name: "Company B" },
+    company: { id: "company-b", name: "Company B", currency: "ILS" },
   };
   driverName = "New Session Driver";
   await page.evaluate(() => {

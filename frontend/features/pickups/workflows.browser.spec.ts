@@ -13,7 +13,7 @@ const user = {
   email: null,
   role: "COMPANY_ADMIN",
   orgId: companyId,
-  company: { id: companyId, name: "Workflow fixture company" },
+  company: { id: companyId, name: "Workflow fixture company", currency: "ILS" },
 };
 let server: Server;
 let status: string,
@@ -84,7 +84,7 @@ test.beforeAll(async () => {
           ? {
               ...user,
               orgId: "other-company",
-              company: { id: "other-company", name: "Changed fixture company" },
+              company: { id: "other-company", name: "Changed fixture company", currency: "ILS" },
             }
           : { ...user, role: sessionRole },
       );

@@ -54,7 +54,7 @@ export class AuthRepository {
         'isEmailVerified',
       )
       .include('company', (company) =>
-        company.select('id', 'name', 'suspended'),
+        company.select('id', 'name', 'suspended', 'currency'),
       )
       .first();
   }
@@ -234,6 +234,7 @@ export class AuthRepository {
     name: string,
     email: string,
     hashedPassword: string,
+    currency: string,
   ) {
     const existingUser = await this.findUserByEmail(email);
 
@@ -247,6 +248,7 @@ export class AuthRepository {
           name: name ? `${name}'s Company` : `User's Company`,
           plan: 'TRIAL',
           suspended: false,
+          currency,
         });
         const user = await tx.orm.public.User.create({
           fullName: name,

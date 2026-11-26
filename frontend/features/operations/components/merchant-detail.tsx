@@ -24,6 +24,7 @@ import {
   type Field,
 } from "./operations-ui";
 import { merchantFields } from "./operation-forms";
+import { useCompanyCurrency } from "@/features/auth/session/session-context";
 import { CompanyMerchantInvitations } from "@/features/merchant-access/company-merchant-invitations";
 
 export function MerchantDetail({ id }: { id: string }) {
@@ -50,6 +51,7 @@ function MerchantContent({
   permissions: Permissions;
 }) {
   const { t } = useLocale();
+  const companyCurrency = useCompanyCurrency();
   const { result, retry } = useOperations(scope, { resource: "merchants", id });
   const [editing, setEditing] = useState(false);
   const [revision, setRevision] = useState(0);
@@ -230,7 +232,7 @@ function MerchantContent({
                   action: "edit",
                   input: { revision: data.merchant.revision },
                 }}
-                fields={merchantFields(data.merchant)}
+                fields={merchantFields(data.merchant, companyCurrency ?? "")}
                 onClose={() => setEditing(false)}
                 onSaved={() => {
                   setEditing(false);
@@ -258,12 +260,13 @@ function MerchantStatement({
 }) {
   const { t, tMessage } = useLocale();
   const [page, setPage] = useState(1);
-  const [currency, setCurrency] = useState("ILS");
+  // OD-02: a company has one currency, so the statement is always in it.
+  const currency = useCompanyCurrency() ?? "";
   const [dialog, setDialog] = useState<{ row?: Row } | null>(null);
   const { result, retry } = useOperations(scope, {
     resource: "statement",
     id,
-    query: { page: String(page), pageSize: "25", currency },
+    query: { page: String(page), pageSize: "25", ...(currency ? { currency } : {}) },
   });
   const fields: Field[] = dialog?.row
     ? [
@@ -281,11 +284,7 @@ function MerchantStatement({
           label: "Currency",
           required: true,
           value: currency,
-          options: ["ILS", "USD", "EUR", "JOD"].map((value) => ({
-            value,
-            label: value,
-            literal: true,
-          })),
+          options: [{ value: currency, label: currency, literal: true }],
         },
         {
           name: "amount",
@@ -318,19 +317,6 @@ function MerchantStatement({
           "Financial entries are permanent. Corrections use a recorded reversal.",
         )}
       </p>
-      <select
-        aria-label={t("Currency")}
-        value={currency}
-        onChange={(event) => {
-          setCurrency(event.target.value);
-          setPage(1);
-        }}
-        className="mb-4 min-h-10 rounded-md border bg-surface px-3 text-sm"
-      >
-        {["ILS", "USD", "EUR", "JOD"].map((value) => (
-          <option key={value}>{value}</option>
-        ))}
-      </select>
       <ReadState result={result} retry={retry}>
         {(data) =>
           data.kind === "page" ? (

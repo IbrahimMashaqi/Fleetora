@@ -25,7 +25,7 @@ test.beforeAll(async () => {
     res.setHeader("Content-Type", "application/json");
     let data: unknown;
     if (path === "/auth/session")
-      data = { id: userId, name: "Fixture admin", email: "admin@example.com", role, orgId: companyId, company: { id: companyId, name: "Fixture company" } };
+      data = { id: userId, name: "Fixture admin", email: "admin@example.com", role, orgId: companyId, company: { id: companyId, name: "Fixture company", currency: "ILS" } };
     else if (path === "/company/staff/invitations/accept") {
       writes.push({ path, method: req.method ?? "", body: raw ? JSON.parse(raw) : null });
       res.statusCode = acceptStatus;

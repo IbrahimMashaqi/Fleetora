@@ -9,7 +9,7 @@ const companyUser = {
   email: "amina@example.com",
   role: "COMPANY_ADMIN",
   orgId: "company-1",
-  company: { id: "company-1", name: "Amina Logistics" },
+  company: { id: "company-1", name: "Amina Logistics", currency: "ILS" },
 };
 
 const platformAdmin = {
@@ -516,6 +516,7 @@ test("adapts at supported viewport widths and keeps long identities from overflo
     company: {
       id: "company-1",
       name: "Amina Logistics and Regional Distribution Company",
+      currency: "ILS",
     },
   };
   await page.route("**/api/auth/session", (route) => route.fulfill({

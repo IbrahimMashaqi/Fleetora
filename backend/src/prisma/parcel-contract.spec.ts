@@ -17,6 +17,18 @@ describe('parcel persistence compatibility and invariants', () => {
         expect(tables.users.indexes).toEqual(expect.arrayContaining(table.indexes));
         expect(tables.users.uniques).toEqual(expect.arrayContaining(table.uniques));
         expect(tables.users.uniques).toContainEqual({ columns: ['id','companyId'] });
+      } else if (name === 'companies') {
+        // OD-02 adds only the company currency, its (id,currency) key and its check.
+        const { currency, ...columns } = tables.companies.columns;
+        expect(currency).toBeDefined();
+        expect(columns).toEqual(table.columns);
+        expect(tables.companies.primaryKey).toEqual(table.primaryKey);
+        expect(tables.companies.foreignKeys).toEqual(table.foreignKeys);
+        expect(tables.companies.indexes).toEqual(table.indexes);
+        expect(tables.companies.uniques).toEqual([
+          ...table.uniques,
+          { columns: ['id', 'currency'] },
+        ]);
       } else if (!['shipments', 'shipment_history', 'warehouses'].includes(name))
         expect(current[name], name).toEqual(table);
     }

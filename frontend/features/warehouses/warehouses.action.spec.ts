@@ -30,7 +30,7 @@ const user = {
   email: null,
   role: "COMPANY_ADMIN",
   orgId: "company-a",
-  company: { id: "company-a", name: "Company A" },
+  company: { id: "company-a", name: "Company A", currency: "ILS" },
 };
 const warehouse = {
   id,

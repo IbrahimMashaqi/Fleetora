@@ -23,7 +23,7 @@ async function refreshTokens(refresh: string) {
 }
 
 function publicUser(user: SessionUser): SessionUser {
-  return { id: user.id, name: user.name, email: user.email, role: user.role, orgId: user.orgId, company: user.company ? { id: user.company.id, name: user.company.name } : null };
+  return { id: user.id, name: user.name, email: user.email, role: user.role, orgId: user.orgId, company: user.company ? { id: user.company.id, name: user.company.name, currency: user.company.currency } : null };
 }
 
 export async function resolveSession({ access, refresh }: Credentials): Promise<SessionResult> {
