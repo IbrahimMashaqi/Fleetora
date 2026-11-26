@@ -19,7 +19,7 @@ export class TokenService {
   // Only the identity claims are copied; the issued type is never caller-controlled.
   private claims(payload: TokenPayload, typ: TokenType) {
     const { sub, email, role, orgId } = payload;
-    return { sub, email, role, orgId, typ };
+    return { sub, email, role, orgId, typ, ...(role === 'DRIVER' ? { sessionVersion: payload.sessionVersion } : {}) };
   }
 
   async generateAccessToken(payload: TokenPayload): Promise<string> {

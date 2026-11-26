@@ -110,9 +110,10 @@ export class DriversService {
     actor: TokenPayload,
     id: string,
     suspended: boolean,
+    reason?: string,
   ): Promise<DriverDetails> {
     this.companyId(actor);
-    await this.repository.setSuspended(actor, id, suspended);
+    await this.repository.setSuspended(actor, id, suspended, reason);
     return this.details(actor, id);
   }
 }

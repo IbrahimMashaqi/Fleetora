@@ -83,7 +83,7 @@ export class DriversController {
     @Headers('x-fleetora-company-context') expected: string | undefined,
   ) {
     this.context(actor, expected);
-    return this.drivers.setSuspended(actor, id, input.suspended);
+    return this.drivers.setSuspended(actor, id, input.suspended, input.reason);
   }
 
   @Get(':id')

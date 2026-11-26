@@ -32,6 +32,18 @@
       "model": "DeliveryZone",
       "namespace": "public"
     },
+    "driver_access_events": {
+      "model": "DriverAccessEvent",
+      "namespace": "public"
+    },
+    "driver_accounts": {
+      "model": "DriverAccount",
+      "namespace": "public"
+    },
+    "driver_invitations": {
+      "model": "DriverInvitation",
+      "namespace": "public"
+    },
     "driver_tracking_states": {
       "model": "DriverTrackingState",
       "namespace": "public"
@@ -420,6 +432,10 @@
               {
                 "name": "WAREHOUSE",
                 "value": "WAREHOUSE"
+              },
+              {
+                "name": "DRIVER",
+                "value": "DRIVER"
               }
             ]
           },
@@ -1280,6 +1296,51 @@
                   "namespace": "public"
                 }
               },
+              "driverAccessEvents": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "DriverAccessEvent",
+                  "namespace": "public"
+                }
+              },
+              "driverAccounts": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "DriverAccount",
+                  "namespace": "public"
+                }
+              },
+              "driverInvitations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "DriverInvitation",
+                  "namespace": "public"
+                }
+              },
               "headquarters": {
                 "cardinality": "1:1",
                 "nullable": true,
@@ -2092,6 +2153,374 @@
               },
               "namespaceId": "public",
               "table": "delivery_zones"
+            }
+          },
+          "DriverAccessEvent": {
+            "fields": {
+              "action": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "actorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "companyId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "details": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/json@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "workerId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "company": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "action": {
+                  "column": "action"
+                },
+                "actorId": {
+                  "column": "actorId"
+                },
+                "companyId": {
+                  "column": "companyId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "details": {
+                  "column": "details"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "workerId": {
+                  "column": "workerId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "driver_access_events"
+            }
+          },
+          "DriverAccount": {
+            "fields": {
+              "companyId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "phone": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "userId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "workerId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "company": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "userId",
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
+              "worker": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "workerId",
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "Worker",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "companyId": {
+                  "column": "companyId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "phone": {
+                  "column": "phone"
+                },
+                "userId": {
+                  "column": "userId"
+                },
+                "workerId": {
+                  "column": "workerId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "driver_accounts"
+            }
+          },
+          "DriverInvitation": {
+            "fields": {
+              "acceptedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "companyId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "expiresAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "issuedById": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "phone": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "revokedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "tokenHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "workerId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "company": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
+              "worker": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "workerId",
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "Worker",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "acceptedAt": {
+                  "column": "acceptedAt"
+                },
+                "companyId": {
+                  "column": "companyId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "expiresAt": {
+                  "column": "expiresAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "issuedById": {
+                  "column": "issuedById"
+                },
+                "phone": {
+                  "column": "phone"
+                },
+                "revokedAt": {
+                  "column": "revokedAt"
+                },
+                "tokenHash": {
+                  "column": "tokenHash"
+                },
+                "workerId": {
+                  "column": "workerId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "driver_invitations"
             }
           },
           "DriverTrackingState": {
@@ -7661,6 +8090,13 @@
           },
           "User": {
             "fields": {
+              "authVersion": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "companyId": {
                 "nullable": true,
                 "type": {
@@ -7806,6 +8242,24 @@
                   "namespace": "public"
                 }
               },
+              "driverAccount": {
+                "cardinality": "1:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "id",
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "userId",
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "DriverAccount",
+                  "namespace": "public"
+                }
+              },
               "issuedPlatformGrants": {
                 "cardinality": "1:N",
                 "on": {
@@ -7903,6 +8357,9 @@
             },
             "storage": {
               "fields": {
+                "authVersion": {
+                  "column": "authVersion"
+                },
                 "companyId": {
                   "column": "companyId"
                 },
@@ -8254,6 +8711,13 @@
                   "kind": "scalar"
                 }
               },
+              "offboardedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
               "phone": {
                 "nullable": false,
                 "type": {
@@ -8327,6 +8791,41 @@
                 },
                 "to": {
                   "model": "Company",
+                  "namespace": "public"
+                }
+              },
+              "driverAccount": {
+                "cardinality": "1:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "id",
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "workerId",
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "DriverAccount",
+                  "namespace": "public"
+                }
+              },
+              "driverInvitations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "workerId",
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "DriverInvitation",
                   "namespace": "public"
                 }
               },
@@ -8442,6 +8941,9 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "offboardedAt": {
+                  "column": "offboardedAt"
                 },
                 "phone": {
                   "column": "phone"
@@ -9520,6 +10022,383 @@
                   "columns": [
                     "id",
                     "companyId"
+                  ]
+                }
+              ]
+            },
+            "driver_access_events": {
+              "columns": {
+                "action": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "actorId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "companyId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "details": {
+                  "codecId": "pg/json@1",
+                  "nativeType": "json",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "workerId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "driver_access_events"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "companyId"
+                  ],
+                  "name": "driver_access_events_companyId_idx_33acc5ed",
+                  "prefix": "driver_access_events_companyId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "companyId",
+                    "workerId",
+                    "createdAt"
+                  ],
+                  "name": "driver_access_events_companyId_workerId_createdAt_idx_4b9d7965",
+                  "prefix": "driver_access_events_companyId_workerId_createdAt_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "driver_accounts": {
+              "checks": [
+                {
+                  "expression": "\"phone\" ~ '^\\+(9705[69][0-9]{7}|9725[0-9]{8})$'",
+                  "name": "driver_phone_e164_ae949d68",
+                  "prefix": "driver_phone_e164"
+                }
+              ],
+              "columns": {
+                "companyId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "phone": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "userId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "workerId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "userId",
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "driver_accounts"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "workerId",
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "driver_accounts"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "workers"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "driver_accounts"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "companyId"
+                  ],
+                  "name": "driver_accounts_companyId_idx_33acc5ed",
+                  "prefix": "driver_accounts_companyId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "userId"
+                  ]
+                },
+                {
+                  "columns": [
+                    "workerId"
+                  ]
+                },
+                {
+                  "columns": [
+                    "phone"
+                  ]
+                },
+                {
+                  "columns": [
+                    "userId",
+                    "companyId"
+                  ]
+                },
+                {
+                  "columns": [
+                    "workerId",
+                    "companyId"
+                  ]
+                }
+              ]
+            },
+            "driver_invitations": {
+              "checks": [
+                {
+                  "expression": "NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL)",
+                  "name": "driver_invitation_state_dec73fa1",
+                  "prefix": "driver_invitation_state"
+                }
+              ],
+              "columns": {
+                "acceptedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "companyId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "expiresAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "issuedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "phone": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "revokedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "tokenHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "workerId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "workerId",
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "driver_invitations"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "workers"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "driver_invitations"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "companyId"
+                  ],
+                  "name": "driver_invitations_companyId_idx_33acc5ed",
+                  "prefix": "driver_invitations_companyId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "companyId",
+                    "workerId"
+                  ],
+                  "name": "driver_invitations_companyId_workerId_idx_82008f07",
+                  "prefix": "driver_invitations_companyId_workerId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "workerId",
+                    "companyId"
+                  ],
+                  "name": "driver_invitations_workerId_companyId_idx_95d2064a",
+                  "prefix": "driver_invitations_workerId_companyId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "tokenHash"
                   ]
                 }
               ]
@@ -14478,12 +15357,21 @@
             "users": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'MERCHANT', 'ACCOUNTANT', 'OPERATIONS', 'WAREHOUSE')",
-                  "name": "users_role_check_57499776",
+                  "expression": "\"role\" IN ('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'MERCHANT', 'ACCOUNTANT', 'OPERATIONS', 'WAREHOUSE', 'DRIVER')",
+                  "name": "users_role_check_45aad123",
                   "prefix": "users_role_check"
                 }
               ],
               "columns": {
+                "authVersion": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
                 "companyId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -14843,6 +15731,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "offboardedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "phone": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -15110,7 +16003,8 @@
                 "MERCHANT",
                 "ACCOUNTANT",
                 "OPERATIONS",
-                "WAREHOUSE"
+                "WAREHOUSE",
+                "DRIVER"
               ]
             },
             "VehicleType": {
@@ -15137,10 +16031,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "2ff1b08107872ba334fb1b73e951c3137ffe67ad5ebc122ef5f6d3a4710496ce"
+    "storageHash": "fa391c311e88c3733c41bb73f1161357fd40294661abf95dfb84b6d3084fea2f"
   },
   "execution": {
-    "executionHash": "d8a3960be16b58c6aacd171a6e89d448bc21204f3731a1218097d6d6b7a40b1b",
+    "executionHash": "fb217b14dd0841d1e41f1ea0e0060f0e26c7ba86d25ab3f78cfe13ecf81e40b2",
     "mutations": {
       "defaults": [
         {
@@ -15267,6 +16161,39 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "delivery_zones"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "driver_access_events"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "driver_accounts"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "driver_invitations"
           }
         },
         {

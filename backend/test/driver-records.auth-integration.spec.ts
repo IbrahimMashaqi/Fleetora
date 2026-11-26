@@ -39,6 +39,7 @@ describe('driver record writes against disposable PostgreSQL', () => {
   async function cleanup() {
     guard.assertVerified();
     for (const id of [companyId, otherCompanyId]) {
+      await prisma.db.orm.public.DriverAccessEvent.where({ companyId: id }).deleteAll();
       await prisma.Worker.where({ companyId: id }).delete();
       await prisma.User.where({ companyId: id }).delete();
       await prisma.Company.where({ id }).delete();
@@ -135,12 +136,23 @@ describe('driver record writes against disposable PostgreSQL', () => {
   });
 
   it('suspends idempotently and reactivates to offline', async () => {
-    await repository.setSuspended(actor, driverId, true);
+    await repository.setSuspended(actor, driverId, true, 'Documented operational review');
     expect((await read(driverId))?.status).toBe('SUSPENDED');
-    await repository.setSuspended(actor, driverId, true);
+    await repository.setSuspended(actor, driverId, true, 'Documented operational review');
     expect((await read(driverId))?.status).toBe('SUSPENDED');
     await repository.setSuspended(actor, driverId, false);
     expect((await read(driverId))?.status).toBe('OFFLINE');
+    const events = await prisma.db.orm.public.DriverAccessEvent.where({ companyId, workerId: driverId }).orderBy(event => event.createdAt.asc()).all();
+    expect(events).toHaveLength(2);
+    expect(events[0]).toMatchObject({ actorId: adminId, action: 'DRIVER_SUSPENDED', details: { reason: 'Documented operational review', previousStatus: 'ON_BREAK' } });
+    expect(events[1].action).toBe('DRIVER_REACTIVATED');
+  });
+
+  it('BR-118 refuses to suspend without a documented reason and makes no operational change', async () => {
+    const before = await read(driverId);
+    await expect(repository.setSuspended(actor, driverId, true)).rejects.toMatchObject({ status: 400 });
+    expect(await read(driverId)).toEqual(before);
+    expect(await prisma.db.orm.public.DriverAccessEvent.where({ companyId, workerId: driverId }).all()).toEqual([]);
   });
 
   it('does not change an operational status when reactivating a non-suspended driver', async () => {
@@ -156,7 +168,7 @@ describe('driver record writes against disposable PostgreSQL', () => {
         repository.update(actor, id, { name: 'Hijack', phone: '+1234567' }),
       ).rejects.toMatchObject({ status: 404 });
       await expect(
-        repository.setSuspended(actor, id, true),
+        repository.setSuspended(actor, id, true, 'Documented operational review'),
       ).rejects.toMatchObject({ status: 404 });
       expect(await read(foreignDriverId)).toEqual(foreign);
     },
@@ -166,7 +178,7 @@ describe('driver record writes against disposable PostgreSQL', () => {
     const before = await read(driverId);
     await prisma.User.where({ id: adminId }).update({ role: 'MERCHANT' });
     await expect(
-      repository.setSuspended(actor, driverId, true),
+      repository.setSuspended(actor, driverId, true, 'Documented operational review'),
     ).rejects.toMatchObject({ status: 403 });
     await prisma.User.where({ id: adminId }).update({
       role: 'COMPANY_ADMIN',

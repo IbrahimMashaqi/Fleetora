@@ -418,16 +418,16 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
       );
     });
 
-    it('suspends and reactivates through an explicit boolean only', async () => {
+    it('suspends and reactivates with a documented reason and reactivates through the authorized path', async () => {
       await write('put', `/drivers/${firstId}/suspension`, {
-        suspended: true,
+        suspended: true, reason: 'Documented operational review',
       }).expect(200);
       await write('put', `/drivers/${firstId}/suspension`, {
         suspended: false,
       }).expect(200);
       expect(setSuspended.mock.calls.map((call) => call.slice(1))).toEqual([
-        [firstId, true],
-        [firstId, false],
+        [firstId, true, 'Documented operational review'],
+        [firstId, false, undefined],
       ]);
       for (const body of [{}, { suspended: 'true' }, { status: 'SUSPENDED' }])
         await write('put', `/drivers/${firstId}/suspension`, body).expect(400);
@@ -458,7 +458,7 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
         await write(
           'put',
           `/drivers/${firstId}/suspension`,
-          { suspended: true },
+          { suspended: true, reason: 'Documented operational review' },
           context,
         ).expect(403);
       }
@@ -474,7 +474,7 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
         await write('post', '/drivers', valid).expect(403);
         await write('patch', `/drivers/${firstId}`, valid).expect(403);
         await write('put', `/drivers/${firstId}/suspension`, {
-          suspended: true,
+          suspended: true, reason: 'Documented operational review',
         }).expect(403);
         expect(create).not.toHaveBeenCalled();
         expect(update).not.toHaveBeenCalled();
@@ -491,7 +491,7 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
         phone: '0599000001',
       }).expect(400);
       await write('put', '/drivers/not-an-id/suspension', {
-        suspended: true,
+        suspended: true, reason: 'Documented operational review',
       }).expect(400);
       expect(update).not.toHaveBeenCalled();
       expect(setSuspended).not.toHaveBeenCalled();
@@ -506,7 +506,7 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
         phone: '0599000001',
       }).expect(404);
       await write('put', `/drivers/${otherId}/suspension`, {
-        suspended: true,
+        suspended: true, reason: 'Documented operational review',
       }).expect(404);
     });
   });

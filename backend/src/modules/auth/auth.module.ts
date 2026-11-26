@@ -38,6 +38,6 @@ import { ClientSourceService } from './client-source.js';
     ClientSourceService,
   ],
   controllers: [AuthController],
-  exports: [AuthRepository],
+  exports: [AuthRepository, AuthService, TokenService, AccessTokenStrategy, JwtModule, InMemorySigninRateLimiter, InMemoryRecoveryRateLimiter, ClientSourceService],
 })
 export class AuthModule {}

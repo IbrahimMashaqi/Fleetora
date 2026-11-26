@@ -37,6 +37,7 @@ export async function companyRequest(
     method: "GET" | "POST";
     body?: object;
     accountant?: boolean;
+    operations?: boolean;
   },
 ): Promise<
   { status: "data"; data: Record<string, unknown> } | { status: CompanyFailure }
@@ -57,7 +58,8 @@ export async function companyRequest(
     !session.user.company ||
     !(
       session.user.role === "COMPANY_ADMIN" ||
-      (request.accountant && session.user.role === "ACCOUNTANT")
+      (request.accountant && session.user.role === "ACCOUNTANT") ||
+      (request.operations && session.user.role === "OPERATIONS")
     )
   )
     return { status: "forbidden" };

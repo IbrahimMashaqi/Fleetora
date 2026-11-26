@@ -256,7 +256,7 @@ export class StaffRepository {
               );
           }
         }
-        if (member.isActive !== active)
+        if (member.isActive !== active) {
           await tx.orm.public.User.where({ id: memberId, companyId }).update(
             // Deactivation also revokes the refresh session; reactivation
             // requires a fresh sign-in.
@@ -264,6 +264,9 @@ export class StaffRepository {
               ? { isActive: true }
               : { isActive: false, refreshToken: null },
           );
+          await tx.orm.public.StaffAccessEvent.create({ companyId, actorId: actor.sub, subjectId: memberId,
+            action: active ? 'STAFF_REACTIVATED' : 'STAFF_DEACTIVATED', details: { previousActive: member.isActive, active } });
+        }
         return { ...member, isActive: active };
       }),
     );

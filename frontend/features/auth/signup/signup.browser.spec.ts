@@ -57,7 +57,7 @@ test("submits through the Server Action and ends at email confirmation", async (
   await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
   expect(requests).toEqual([{
     method: "POST", path: "/auth/signup",
-    body: { name: "Amina Hassan", email: "amina@example.com", password: "Passw0rd" },
+    body: { name: "Amina Hassan", email: "amina@example.com", password: "Passw0rd", currency: "ILS" },
   }]);
   expect(new URL(page.url()).pathname).toBe("/signup");
   await expect(page.getByRole("link")).toHaveCount(0);
@@ -157,7 +157,7 @@ test("fits the standard desktop viewport and still scrolls naturally on mobile",
   for (const size of [{ width: 1366, height: 768 }, { width: 1280, height: 720 }]) {
     await page.setViewportSize(size);
     await page.goto("/signup");
-    expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(size.height);
   }
 
   await page.setViewportSize({ width: 375, height: 640 });

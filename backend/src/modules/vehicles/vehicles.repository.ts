@@ -223,9 +223,10 @@ export class VehiclesRepository {
             .build(),
         );
         const driver = await tx.orm.public.Worker.where({ id, companyId })
-          .select('id', 'vehicleId')
+          .select('id', 'vehicleId', 'offboardedAt', 'status')
           .first();
         if (!driver) throw new NotFoundException('Driver or vehicle not found');
+        if (input.vehicleId && (driver.offboardedAt || driver.status === 'SUSPENDED')) throw new ConflictException('Driver cannot receive new assignments');
         if (input.vehicleId) {
           await tx.execute(
             this.prisma.db.raw
