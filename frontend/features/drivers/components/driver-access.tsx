@@ -136,11 +136,24 @@ export function DriverAccessControls({
                   : c("Access revoked", "الوصول ملغى")
                 : c("No login account linked", "لا يوجد حساب دخول مرتبط")}
           </p>
+          {data.invitationBlockedReason && (
+            <p role="alert" className="text-sm">
+              {data.invitationBlockedReason === "PHONE_IN_USE"
+                ? c(
+                    "This phone is already used by another driver account. Edit this driver's phone before inviting.",
+                    "هذا الرقم مستخدم لحساب سائق آخر. عدّل رقم هذا السائق قبل إرسال الدعوة.",
+                  )
+                : c(
+                    "This phone cannot be used for driver login. Edit it before inviting.",
+                    "لا يمكن استخدام هذا الرقم لتسجيل دخول السائق. عدّله قبل إرسال الدعوة.",
+                  )}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
-              disabled={busy || uncertain}
+              disabled={busy || uncertain || !!data.invitationBlockedReason}
               onClick={() => void run({ id, kind: "invite" })}
             >
               {data.linked || data.pendingInvitation

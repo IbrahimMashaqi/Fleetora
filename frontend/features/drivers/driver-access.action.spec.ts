@@ -11,6 +11,7 @@ let server: Server,
   url: string,
   status: number;
 let calls: { path: string; method: string; body: unknown; company: unknown }[];
+let invitationBlockedReason: string | null | undefined;
 const jar = { get: () => ({ value: "fixture-access" }), set() {}, delete() {} };
 const previous = process.env.FLEETORA_API_URL;
 test.beforeAll(async () => {
@@ -49,6 +50,7 @@ test.beforeAll(async () => {
       accessActive: true,
       offboarded: false,
       pendingInvitation: null,
+      invitationBlockedReason,
       url,
       expiresAt: "2026-12-01T12:00:00Z",
       revoked: true,
@@ -79,6 +81,7 @@ test.beforeEach(() => {
   role = "COMPANY_ADMIN";
   responseCompany = companyId;
   status = 200;
+  invitationBlockedReason = null;
   url = `https://fleetora.example.invalid/driver/activate#token=${token}`;
 });
 for (const actor of ["COMPANY_ADMIN", "OPERATIONS"])
@@ -95,6 +98,7 @@ for (const actor of ["COMPANY_ADMIN", "OPERATIONS"])
         accessActive: true,
         offboarded: false,
         pendingInvitation: null,
+        invitationBlockedReason: null,
       },
     });
     expect(
@@ -114,6 +118,37 @@ for (const actor of ["COMPANY_ADMIN", "OPERATIONS"])
       company: companyId,
     });
   });
+test("keeps duplicate-phone access readable and carries only the generic invitation block reason", async () => {
+  invitationBlockedReason = "PHONE_IN_USE";
+  expect(
+    await driverAccessForSession(jar, scope, { id: workerId, kind: "read" }),
+  ).toMatchObject({
+    status: "ready",
+    data: { invitationBlockedReason: "PHONE_IN_USE" },
+  });
+});
+test("supports older access responses during rollout without inventing a phone conflict", async () => {
+  invitationBlockedReason = undefined;
+  expect(
+    await driverAccessForSession(jar, scope, { id: workerId, kind: "read" }),
+  ).toMatchObject({
+    status: "ready",
+    data: { invitationBlockedReason: null },
+  });
+});
+test("retains an invalid-phone reason but rejects an unknown invitation decision", async () => {
+  invitationBlockedReason = "INVALID_PHONE";
+  expect(
+    await driverAccessForSession(jar, scope, { id: workerId, kind: "read" }),
+  ).toMatchObject({
+    status: "ready",
+    data: { invitationBlockedReason: "INVALID_PHONE" },
+  });
+  invitationBlockedReason = "UNKNOWN";
+  expect(
+    await driverAccessForSession(jar, scope, { id: workerId, kind: "read" }),
+  ).toEqual({ status: "unavailable" });
+});
 for (const actor of ["ACCOUNTANT", "WAREHOUSE", "MERCHANT"])
   test(`denies ${actor} before access dispatch`, async () => {
     role = actor;

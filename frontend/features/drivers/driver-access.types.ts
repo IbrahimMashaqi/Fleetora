@@ -5,6 +5,7 @@ export type DriverAccess = {
   linked: boolean;
   accessActive: boolean;
   offboarded: boolean;
+  invitationBlockedReason: "PHONE_IN_USE" | "INVALID_PHONE" | null;
   pendingInvitation: { id: string; expiresAt: string } | null;
 };
 export type DriverAccessOperation = { id: string } & (

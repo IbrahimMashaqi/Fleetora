@@ -88,12 +88,18 @@ export async function driverAccessForSession(
     const value = body.data;
     if (value.companyId !== authorized.companyId) return { status: "changed" };
     if (operation.kind === "read") {
+      // Additive rollout: older APIs omit the reason. Unknown values are not
+      // trusted as an invitation decision.
+      const invitationBlockedReason = value.invitationBlockedReason ?? null;
       if (
         value.workerId !== operation.id ||
         typeof value.phone !== "string" ||
         typeof value.linked !== "boolean" ||
         typeof value.accessActive !== "boolean" ||
-        typeof value.offboarded !== "boolean"
+        typeof value.offboarded !== "boolean" ||
+        (invitationBlockedReason !== null &&
+          invitationBlockedReason !== "PHONE_IN_USE" &&
+          invitationBlockedReason !== "INVALID_PHONE")
       )
         return { status: "unavailable" };
       const pending = value.pendingInvitation;
@@ -117,6 +123,7 @@ export async function driverAccessForSession(
           linked: value.linked,
           accessActive: value.accessActive,
           offboarded: value.offboarded,
+          invitationBlockedReason,
           pendingInvitation,
         },
       };
