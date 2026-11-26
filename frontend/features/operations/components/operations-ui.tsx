@@ -386,6 +386,11 @@ export type Field = {
 type ScalarValue = string | number | boolean | null;
 const controlStyle =
   "min-h-10 w-full rounded-md border border-[var(--control-border)] bg-surface px-3 py-2 text-start text-sm focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50";
+const lookupPlaceholders = {
+  merchants: "Choose merchant",
+  drivers: "Choose driver",
+  parcels: "Choose parcel",
+} as const;
 export function EntityPicker({ scope, field }: { scope: Scope; field: Field }) {
   const { t } = useLocale();
   const [search, setSearch] = useState("");
@@ -437,7 +442,7 @@ export function EntityPicker({ scope, field }: { scope: Scope; field: Field }) {
         required={field.required}
         className={controlStyle}
       >
-        <option value="">{t("Select a record")}</option>
+        <option value="">{t(lookupPlaceholders[field.lookup ?? "merchants"])}</option>
         {selected && !data?.items.some((row) => row.id === selected) && (
           <option value={selected}>{field.lookupLabel ?? selected}</option>
         )}

@@ -132,7 +132,7 @@ export function PricingQuoteField({
           disabled={!zones}
         >
           <option value="">
-            {zones ? t("Select a record") : t("Loading operations...")}
+            {zones ? t("Choose zone") : t("Loading operations...")}
           </option>
           {zones?.map((zone) => (
             <option key={zone.id} value={zone.id}>
@@ -248,7 +248,7 @@ export function WarehouseField({
         defaultValue=""
       >
         <option value="">
-          {warehouses ? t("Select a record") : t("Loading warehouses...")}
+          {warehouses ? t("Choose warehouse") : t("Loading warehouses...")}
         </option>
         {warehouses?.map((warehouse) => (
           <option key={warehouse.id} value={warehouse.id}>

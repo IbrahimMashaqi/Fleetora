@@ -414,7 +414,7 @@ function TariffEditor({
                   )
                 }
               >
-                <option value="">{c.choose}</option>
+                <option value="">{c.chooseZone}</option>
                 {zone && !data.page.items.some((row) => row.id === zone.id) && (
                   <option value={zone.id}>
                     {zone.city} · {zone.name}
