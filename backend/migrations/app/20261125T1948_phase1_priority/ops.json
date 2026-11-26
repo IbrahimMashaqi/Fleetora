@@ -1,0 +1,114 @@
+[
+  {
+    "id": "data.shipments.priority_low_to_normal",
+    "label": "Migrate LOW shipment priority to NORMAL (OD-10)",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "shipments"
+      }
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "set every LOW priority to NORMAL",
+        "sql": "UPDATE \"public\".\"shipments\" SET \"priority\" = 'NORMAL' WHERE \"priority\" = 'LOW'",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "ensure no LOW priority remains",
+        "sql": "SELECT NOT EXISTS (SELECT 1 FROM \"public\".\"shipments\" WHERE \"priority\" = 'LOW') AS \"result\"",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "dropCheckConstraint.shipments.shipments_priority_check_72dbae57",
+    "label": "Drop check constraint \"shipments_priority_check_72dbae57\" on \"shipments\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "shipments_priority_check_72dbae57",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"shipments_priority_check_72dbae57\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_priority_check_72dbae57",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop check constraint \"shipments_priority_check_72dbae57\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" DROP CONSTRAINT \"shipments_priority_check_72dbae57\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"shipments_priority_check_72dbae57\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_priority_check_72dbae57",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.shipments.shipments_priority_check_c94307fd",
+    "label": "Add check constraint \"shipments_priority_check_c94307fd\" on \"shipments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "shipments_priority_check_c94307fd",
+        "table": "shipments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"shipments_priority_check_c94307fd\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_priority_check_c94307fd",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"shipments_priority_check_c94307fd\"",
+        "sql": "ALTER TABLE \"public\".\"shipments\" ADD CONSTRAINT \"shipments_priority_check_c94307fd\" CHECK (\"priority\" IN ('NORMAL', 'HIGH', 'URGENT'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"shipments_priority_check_c94307fd\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "shipments_priority_check_c94307fd",
+          "public",
+          "\"public\".\"shipments\""
+        ]
+      }
+    ]
+  }
+]

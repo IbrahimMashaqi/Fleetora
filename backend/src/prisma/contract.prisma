@@ -69,7 +69,6 @@ enum ShipmentStatus {
 }
 
 enum ShipmentPriority {
-  LOW
   NORMAL
   HIGH
   URGENT

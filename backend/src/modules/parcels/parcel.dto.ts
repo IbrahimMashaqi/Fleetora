@@ -182,8 +182,8 @@ export class ParcelInputDto {
   @IsOptional() @IsString() @MaxLength(20) declaredValue?: string;
   @IsOptional() @Transform(trim) @IsString() @MaxLength(2000) notes?: string;
   @IsOptional() @IsDateString() scheduledAt?: string;
-  @IsOptional() @IsIn(['LOW', 'NORMAL', 'HIGH', 'URGENT']) priority?:
-    'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  @IsOptional() @IsIn(['NORMAL', 'HIGH', 'URGENT']) priority?:
+    'NORMAL' | 'HIGH' | 'URGENT';
 }
 export class ParcelEditDto extends ParcelInputDto {
   @IsInt() @Min(1) revision!: number;

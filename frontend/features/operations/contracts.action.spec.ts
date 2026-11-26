@@ -5,6 +5,7 @@ import {
   parseParcel,
   writeFields,
 } from "./operations-contract";
+import { parcelFields } from "./components/operation-forms";
 
 test("outgoing operations constrain routes and allowlist ownership-free fields", () => {
   expect(
@@ -47,4 +48,10 @@ test("malformed directory projections never masquerade as valid merchants or par
   expect(
     parseParcel({ id: "1", companyId: "foreign", recipientName: "private" }),
   ).toBeNull();
+});
+
+test("OD-10/BR-083: parcel priority offers only Normal, High and Urgent", () => {
+  const priority = parcelFields().find((field) => field.name === "priority");
+  expect(priority?.value).toBe("NORMAL");
+  expect(priority?.options?.map((option) => option.value)).toEqual(["NORMAL", "HIGH", "URGENT"]);
 });

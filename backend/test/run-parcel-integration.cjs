@@ -42,6 +42,19 @@ async function main() {
   const config = 'test/prisma.disposable.config.ts';
   const baseline = '9a81be706b19e625d323a75966347489edab4d41d74b73b445d7392c5989323c';
   run(process.execPath, [prisma, 'db', 'migrate', '--config', config, '--to', baseline, '--yes', '--json'], 'baseline-migrations');
+  // Data-migration fixtures: each file names the contract it is written for ("-- at: <hash>").
+  // The chain is migrated to that contract, the rows are inserted, and later migrations must
+  // carry them forward; *.migration-data.auth-integration.spec.ts asserts the outcome.
+  const fixtures = path.join(root, 'test', 'migration-fixtures');
+  for (const file of fs.existsSync(fixtures) ? fs.readdirSync(fixtures).filter(name => name.endsWith('.sql')).sort() : []) {
+    const sql = fs.readFileSync(path.join(fixtures, file), 'utf8');
+    const at = /^--\s*at:\s*([0-9a-f]{64})\s*$/m.exec(sql)?.[1];
+    if (!at) throw new Error(`${file} must name its contract with "-- at: <hash>"`);
+    run(process.execPath, [prisma, 'db', 'migrate', '--config', config, '--to', at, '--yes', '--json'], `fixture-migrate-${file}`);
+    const seed = new pg.Client({ host: '127.0.0.1', port, user: role, database });
+    await seed.connect();
+    try { await seed.query(sql); } finally { await seed.end(); }
+  }
   run(process.execPath, [prisma, 'db', 'migrate', '--config', config, '--show', '--json'], 'parcel-migration-preview');
   run(process.execPath, [prisma, 'db', 'migrate', '--config', config, '--yes', '--json'], 'parcel-migration-apply');
   run(process.execPath, [prisma, 'db', 'verify', '--config', config, '--strict', '--json'], 'strict-verification');

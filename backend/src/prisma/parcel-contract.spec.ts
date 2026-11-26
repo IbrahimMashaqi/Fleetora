@@ -46,7 +46,7 @@ describe('parcel persistence compatibility and invariants', () => {
         .foreignKeys,
     );
   });
-  it('preserves all old operational statuses, priority constraints and indexes', () => {
+  it('preserves all old operational statuses and indexes', () => {
     const old = previous.storage.namespaces.public.entries.table.shipments;
     expect(tables.shipments.indexes).toEqual(
       expect.arrayContaining(old.indexes),
@@ -58,8 +58,25 @@ describe('parcel persistence compatibility and invariants', () => {
       if (check.prefix === 'shipments_status_check')
         for (const value of check.expression.match(/'[^']+'/g) ?? [])
           expect(status?.expression).toContain(value);
-      else expect(tables.shipments.checks).toContainEqual(check);
+      // OD-10 deliberately narrows the priority check; asserted below.
+      else if (check.prefix !== 'shipments_priority_check')
+        expect(tables.shipments.checks).toContainEqual(check);
     }
+  });
+  it('OD-10/BR-083: limits stored priority to NORMAL, HIGH and URGENT', () => {
+    const priority = tables.shipments.checks.filter(
+      (check) => check.prefix === 'shipments_priority_check',
+    );
+    expect(priority).toHaveLength(1);
+    expect(priority[0].expression.match(/'[^']+'/g)?.sort()).toEqual([
+      "'HIGH'",
+      "'NORMAL'",
+      "'URGENT'",
+    ]);
+    expect(tables.shipments.columns.priority).toMatchObject({
+      nullable: false,
+      default: { kind: 'literal', value: 'NORMAL' },
+    });
   });
   it('strengthens shipment merchant/driver/warehouse relationships with company context while retaining requester identity', () => {
     for (const [column, target] of [
