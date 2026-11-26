@@ -112,10 +112,10 @@ if ($status -ne 0) {
     exit $status
 }
 
-$url = 'http://localhost:3000'
-# Compose publishes IPv4 loopback. Avoid Windows PowerShell spending the entire
-# two-second probe on localhost's IPv6 address before falling back to IPv4.
-$probeUrl = 'http://127.0.0.1:3000'
+# Compose publishes IPv4 loopback. Open that exact endpoint: localhost may resolve
+# to a separate IPv6 development server even after the Docker probe succeeds.
+$url = 'http://127.0.0.1:3000'
+$probeUrl = $url
 $clock = [System.Diagnostics.Stopwatch]::StartNew()
 Write-Host "Waiting up to 180 seconds for $url" -NoNewline
 while ($clock.Elapsed.TotalSeconds -lt 180) {

@@ -128,7 +128,7 @@ export function DriverDetails({
                 onPending={setPending}
                 onSaved={saved}
               />
-              <DriverAccessControls key={`${scope.userId}:${scope.companyId}:${id}`} id={id} scope={scope} onPending={setPending} onUpdated={saved} />
+              <DriverAccessControls key={`${scope.userId}:${scope.companyId}:${id}:${driver.phone}`} id={id} scope={scope} onPending={setPending} onUpdated={saved} />
             </div>
           ) : (
             <DriverReadError status={result.status} retry={retry} />

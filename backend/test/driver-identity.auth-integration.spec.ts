@@ -177,6 +177,75 @@ describe('BR-035/043/117/118 driver identity on disposable PostgreSQL', () => {
       status: 400,
     });
   });
+  it('loads access for duplicate-phone Workers without linking either and reports an account collision without disclosing its owner', async () => {
+    const duplicate = await prisma.Worker.create({
+      companyId: actor.orgId,
+      fullName: 'Other Worker same phone',
+      phone: '+970591234567',
+    });
+    expect(await service.overview(actor, duplicate.id)).toMatchObject({
+      linked: false,
+      invitationBlockedReason: null,
+    });
+    await service.accept({ token: tokenOf(await invite()), password });
+    const bearer = await new TokenService(jwt, config).generateAccessToken(
+      actor,
+    );
+    const response = await request(app.getHttpServer())
+      .get(`/drivers/${duplicate.id}/access`)
+      .auth(bearer, { type: 'bearer' })
+      .expect(200);
+    expect(response.body.data).toEqual({
+      companyId: actor.orgId,
+      workerId: duplicate.id,
+      phone: duplicate.phone,
+      linked: false,
+      accessActive: false,
+      offboarded: false,
+      pendingInvitation: null,
+      invitationBlockedReason: 'PHONE_IN_USE',
+    });
+    expect(await service.overview(actor, workerId)).toMatchObject({
+      linked: true,
+      invitationBlockedReason: null,
+    });
+    await expect(service.issue(actor, duplicate.id)).rejects.toMatchObject({
+      status: 409,
+    });
+    expect(
+      await prisma.db.orm.public.DriverAccount.where({
+        workerId: duplicate.id,
+      }).all(),
+    ).toEqual([]);
+    await request(app.getHttpServer())
+      .get(`/drivers/${duplicate.id}/access`)
+      .auth(await new TokenService(jwt, config).generateAccessToken(foreign), {
+        type: 'bearer',
+      })
+      .expect(404);
+  });
+  it('reports globally occupied phones without exposing a foreign account and keeps invalid legacy phones readable', async () => {
+    await service.accept({ token: tokenOf(await invite()), password });
+    const duplicate = await prisma.Worker.create({
+      companyId: foreign.orgId,
+      fullName: 'Foreign duplicate',
+      phone: '00970591234567',
+    });
+    const overview = await service.overview(foreign, duplicate.id);
+    expect(overview).toMatchObject({
+      companyId: foreign.orgId,
+      linked: false,
+      invitationBlockedReason: 'PHONE_IN_USE',
+    });
+    expect(JSON.stringify(overview)).not.toContain(workerId);
+    await prisma.Worker.where({ id: duplicate.id }).update({
+      phone: 'legacy-invalid',
+    });
+    expect(await service.overview(foreign, duplicate.id)).toMatchObject({
+      linked: false,
+      invitationBlockedReason: 'INVALID_PHONE',
+    });
+  });
   it('accepts a token only once under concurrency', async () => {
     const token = tokenOf(await invite());
     const result = await Promise.allSettled([

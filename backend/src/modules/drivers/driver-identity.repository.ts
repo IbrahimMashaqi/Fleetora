@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   HttpException,
   Inject,
@@ -168,6 +169,28 @@ export class DriverIdentityRepository {
       .where((i) => i.expiresAt.gt(Temporal.Now.instant()))
       .select('id', 'expiresAt')
       .first();
+    let invitationBlockedReason: 'PHONE_IN_USE' | 'INVALID_PHONE' | null = null;
+    let invitationPhone: string | undefined;
+    try {
+      invitationPhone = normalizeDriverPhone(worker.phone);
+    } catch (error: unknown) {
+      if (!(error instanceof BadRequestException)) throw error;
+      invitationBlockedReason = 'INVALID_PHONE';
+    }
+    if (invitationPhone) {
+      // Phone uniqueness is global. Return only the collision, never the other
+      // account's identity or company, and never infer a Worker/account link.
+      const owner = await this.prisma.db.orm.public.DriverAccount.where({
+        phone: invitationPhone,
+      })
+        .select('workerId', 'companyId')
+        .first();
+      if (
+        owner &&
+        (owner.workerId !== workerId || owner.companyId !== companyId)
+      )
+        invitationBlockedReason = 'PHONE_IN_USE';
+    }
     return {
       companyId,
       workerId,
@@ -175,6 +198,7 @@ export class DriverIdentityRepository {
       linked: !!account,
       accessActive: !!account?.user?.isActive,
       offboarded: !!worker.offboardedAt,
+      invitationBlockedReason,
       pendingInvitation: pending
         ? { id: pending.id, expiresAt: pending.expiresAt.toString() }
         : null,

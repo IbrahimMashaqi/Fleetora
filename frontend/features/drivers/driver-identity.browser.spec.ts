@@ -12,6 +12,8 @@ let server: Server,
   offboarded: boolean,
   invited: boolean;
 let writes: { path: string; method: string; body: unknown }[];
+let invitationBlockedReason: string | null;
+let driverPhone: string;
 test.beforeAll(async () => {
   server = createServer(async (req, res) => {
     const path = new URL(req.url ?? "/", "http://fixture.invalid").pathname;
@@ -61,16 +63,21 @@ test.beforeAll(async () => {
           pendingInvitation: invited
             ? { id: invitationId, expiresAt: "2026-12-01T12:00:00Z" }
             : null,
+          invitationBlockedReason,
         };
     } else if (path === `/drivers/${workerId}/offboarding`) {
       offboarded = true;
       if (body.revokeAccess) accessActive = false;
       data = { companyId, offboarded: true, accessRevoked: body.revokeAccess };
     } else if (path.startsWith("/drivers")) {
+      if (path === `/drivers/${workerId}` && req.method === "PATCH") {
+        driverPhone = body.phone;
+        invitationBlockedReason = null;
+      }
       const driver = {
         id: workerId,
         name: "Invited Driver",
-        phone: "0591234567",
+        phone: driverPhone,
         status: "OFFLINE",
         vehicle: null,
       };
@@ -103,6 +110,8 @@ test.beforeEach(() => {
   accessActive = false;
   offboarded = false;
   invited = false;
+  invitationBlockedReason = null;
+  driverPhone = "0591234567";
   writes = [];
 });
 for (const locale of ["en", "ar"] as const) {
@@ -168,6 +177,58 @@ test("invalid activation never dispatches; expired invitations show an actionabl
     page.getByRole("alert").filter({ hasText: "expired" }),
   ).toBeVisible();
 });
+for (const locale of ["en", "ar"] as const) {
+  test(`duplicate phone keeps the access panel loaded and explains the invitation block in ${locale}`, async ({
+    page,
+    context,
+  }) => {
+    invitationBlockedReason = "PHONE_IN_USE";
+    await context.addCookies([
+      { name: "fleetora_locale", value: locale, url: "http://localhost:3100" },
+      {
+        name: "fleetora_access",
+        value: "driver-operations-fixture",
+        url: "http://localhost:3100",
+        httpOnly: true,
+      },
+    ]);
+    await page.goto("/app/drivers");
+    await page.getByRole("button", { name: /Invited Driver/ }).click();
+    await expect(
+      page.getByText(
+        locale === "en"
+          ? "This phone is already used by another driver account. Edit this driver's phone before inviting."
+          : "هذا الرقم مستخدم لحساب سائق آخر. عدّل رقم هذا السائق قبل إرسال الدعوة.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name:
+          locale === "en" ? "Create driver invitation" : "إنشاء دعوة للسائق",
+        exact: true,
+      }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", {
+        name: locale === "en" ? "Offboard driver" : "إنهاء عمل السائق",
+        exact: true,
+      }),
+    ).toBeEnabled();
+    expect(writes).toEqual([]);
+    if (locale === "en") {
+      await page.getByRole("button", { name: "Edit details", exact: true }).click();
+      const editor = page.getByRole("dialog", { name: "Edit driver", exact: true });
+      await editor.getByLabel("Phone number").fill("0569876543");
+      await editor.getByRole("button", { name: "Save changes", exact: true }).click();
+      await expect(editor).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Create driver invitation", exact: true })).toBeEnabled();
+      await expect(page.getByText("This phone is already used by another driver account. Edit this driver's phone before inviting.", { exact: true })).toHaveCount(0);
+      expect(writes).toHaveLength(1);
+      expect(writes[0]).toMatchObject({ method: "PATCH", path: `/drivers/${workerId}` });
+    }
+  });
+}
 test("Operations shares an HTTPS invitation through WhatsApp and offboards with optional security revocation", async ({
   page,
   context,
