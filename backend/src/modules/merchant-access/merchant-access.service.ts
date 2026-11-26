@@ -26,6 +26,7 @@ import {
   type MerchantPermission,
 } from './merchant-access.types.js';
 import { canonicalEmail } from '../../common/utils/email.js';
+import { trustedFrontendOrigin } from '../../common/utils/frontend-url.js';
 import { MailService } from '../mail/mail.service.js';
 import type {
   AcceptMerchantInvitationDto,
@@ -66,6 +67,7 @@ const publicInvitation = (row: InvitationRow) => ({
 @Injectable()
 export class MerchantAccessService {
   private readonly saltRounds: number;
+  private readonly frontendOrigin: string;
   private readonly logger = new Logger(MerchantAccessService.name);
   constructor(
     @Inject(MerchantAccessRepository)
@@ -74,6 +76,7 @@ export class MerchantAccessService {
     @Inject(MailService) private readonly mail: MailService,
   ) {
     this.saltRounds = Number(config.get<string | number>('SALT_ROUNDS') ?? 10);
+    this.frontendOrigin = trustedFrontendOrigin(config);
     if (
       !Number.isInteger(this.saltRounds) ||
       this.saltRounds < 4 ||
@@ -209,19 +212,28 @@ export class MerchantAccessService {
         );
       },
     );
-    return { ...invitation, delivery: await this.deliver(invitation, merchantName) };
+    const activationLink = new URL('/merchant/activate', this.frontendOrigin);
+    activationLink.protocol = 'https:';
+    activationLink.hash = new URLSearchParams({ token: invitation.token }).toString();
+    const activationUrl = activationLink.toString();
+    return {
+      ...invitation,
+      activationUrl,
+      delivery: await this.deliver(invitation, merchantName, activationUrl),
+    };
   }
 
   // Runs after the invitation is committed; a mail failure never undoes it.
-  // The link and code are the merchant app's existing activation contract.
+  // The web fragment keeps the token out of HTTP requests and server logs.
   private async deliver(
     invitation: ReturnType<typeof publicInvitation> & { token: string },
     merchantName: string,
+    activationUrl: string,
   ): Promise<'EMAIL' | 'MANUAL'> {
     try {
       await this.mail.sendInvitationEmail({
         to: invitation.email,
-        url: `fleetora-merchant://app/activate?token=${invitation.token}`,
+        url: activationUrl,
         code: invitation.token,
         inviter: merchantName,
         role: invitation.role === 'OWNER' ? 'OWNER' : 'EMPLOYEE',

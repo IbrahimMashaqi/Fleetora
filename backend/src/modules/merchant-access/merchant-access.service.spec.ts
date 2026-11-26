@@ -115,7 +115,7 @@ describe('merchant invitation and access security', () => {
       providers: [
         MerchantAccessService,
         { provide: MerchantAccessRepository, useValue: repository },
-        { provide: ConfigService, useValue: { get: () => 4 } },
+        { provide: ConfigService, useValue: { get: (key: string) => key === 'SALT_ROUNDS' ? 4 : key === 'FRONTEND_URL' ? 'https://app.fleetora.test' : undefined } },
         { provide: MailService, useValue: mail },
       ],
     }).compile();
@@ -355,7 +355,7 @@ describe('merchant invitation and access security', () => {
     const admin = () =>
       orm.User.first.mockResolvedValue({ ...user, role: 'COMPANY_ADMIN' });
 
-    it('emails company-issued merchant invitations with the app activation link and code', async () => {
+    it('emails the HTTPS web activation link with a fragment token and keeps the raw code', async () => {
       admin();
       orm.Merchant.first.mockResolvedValue({ id: 'merchant', companyId: 'company', active: true, activationStatus: 'ACTIVE', name: 'Fixture Store' });
       const result = await service.issueByAdmin({ sub: 'user' }, 'merchant', {
@@ -363,10 +363,11 @@ describe('merchant invitation and access security', () => {
         role: 'EMPLOYEE',
       });
       expect(result.delivery).toBe('EMAIL');
+      expect(result).toMatchObject({ activationUrl: `https://app.fleetora.test/merchant/activate#token=${result.token}` });
       expect(mail.sendInvitationEmail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'owner@example.invalid',
-          url: `fleetora-merchant://app/activate?token=${result.token}`,
+          url: `https://app.fleetora.test/merchant/activate#token=${result.token}`,
           code: result.token,
           inviter: 'Fixture Store',
           role: 'EMPLOYEE',
@@ -383,10 +384,31 @@ describe('merchant invitation and access security', () => {
         role: 'EMPLOYEE',
       });
       expect(result.delivery).toBe('MANUAL');
+      expect(result.activationUrl).toBe(`https://app.fleetora.test/merchant/activate#token=${result.token}`);
       expect(result.token).toMatch(/^[a-f0-9]{64}$/);
       expect(orm.MerchantInvitation.create).toHaveBeenCalledTimes(1);
       expect(JSON.stringify(warn.mock.calls)).not.toContain(result.token);
       warn.mockRestore();
+    });
+
+    it('keeps the primary link HTTPS even when the development origin uses HTTP', async () => {
+      admin();
+      const developmentModule = await Test.createTestingModule({
+        providers: [
+          MerchantAccessService,
+          { provide: MerchantAccessRepository, useValue: repository },
+          { provide: MailService, useValue: mail },
+          { provide: ConfigService, useValue: new ConfigService({ SALT_ROUNDS: 4, FRONTEND_URL: 'http://app.fleetora.test' }) },
+        ],
+      }).compile();
+      const development = developmentModule.get(MerchantAccessService);
+      const result = await development.issueByAdmin({ sub: 'user' }, 'merchant', {
+        email: 'owner@example.invalid', role: 'EMPLOYEE',
+      });
+      const url = new URL(result.activationUrl);
+      expect(url.protocol).toBe('https:');
+      expect(url.search).toBe('');
+      expect(url.hash).toBe(`#token=${result.token}`);
     });
 
     it('leaves owner-issued app invitations manual', async () => {

@@ -145,6 +145,7 @@ function InvitationPanel({
   const [issued, setIssued] = useState<{
     invitation: Invitation;
     token: string;
+    activationUrl: string;
     emailed: boolean;
   }>();
   const [failure, setFailure] = useState<InvitationFailure>();
@@ -240,7 +241,7 @@ function InvitationPanel({
     }
   }
   const activationLink = issued
-    ? `fleetora-merchant://app/activate?token=${issued.token}`
+    ? issued.activationUrl
     : "";
   const stateText = {
     PENDING: copy.pending,

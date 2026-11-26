@@ -94,23 +94,12 @@ function MerchantContent({
                     {
                       label: "Status",
                       value: t(
-                        data.merchant.active ? "Active merchant" : "Inactive",
+                        data.merchant.activationStatus === "PENDING"
+                          ? "Pending owner acceptance"
+                          : data.merchant.active
+                            ? "Active merchant"
+                            : "Paused merchant",
                       ),
-                    },
-                    {
-                      // OD-13: PENDING until the owner accepts the invitation and agreement.
-                      label: "Activation",
-                      value:
-                        data.merchant.activationStatus === "PENDING" ? (
-                          t("Pending owner acceptance")
-                        ) : data.merchant.legacyActivation === true ? (
-                          t("Active before agreements")
-                        ) : (
-                          <>
-                            {t("Agreement accepted")}{" "}
-                            <DateTime value={data.merchant.agreementAcceptedAt} />
-                          </>
-                        ),
                     },
                     {
                       label: "Pickup address",
@@ -201,7 +190,7 @@ function MerchantContent({
               </Panel>
               {permissions.viewFinance && (
                 <>
-                  <Panel title="Balances by currency">
+                  <Panel title="Balance">
                     <DataTable
                       items={data.balances.map((row) => ({
                         ...row,

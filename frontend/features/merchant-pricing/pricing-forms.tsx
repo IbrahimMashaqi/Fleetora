@@ -222,7 +222,7 @@ function PlanSelector({
                 )
               }
             >
-              <option value="">{c.choose}</option>
+              <option value="">{c.choosePlan}</option>
               {selected &&
                 !data.page.items.some((plan) => plan.id === selected.id) && (
                   <option value={selected.id}>{selected.name}</option>

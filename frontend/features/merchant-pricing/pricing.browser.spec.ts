@@ -264,6 +264,7 @@ test("creates a plan and saves an explicit named promotion tariff", async ({
     name: `Zone tariffs: ${plan.name}`,
     exact: true,
   });
+  await expect(tariffDialog.getByLabel("Destination zone", { exact: true }).locator('option[value=""]')).toHaveText("Choose zone");
   await tariffDialog
     .getByLabel("Destination zone", { exact: true })
     .selectOption(zoneId);
@@ -309,6 +310,7 @@ test("selects a business merchant and assigns a same-currency plan", async ({
     name: `Assign plan: ${merchant.name}`,
     exact: true,
   });
+  await expect(dialog.getByLabel("Commercial plan", { exact: true }).locator('option[value=""]')).toHaveText("Choose plan");
   await dialog
     .getByLabel("Commercial plan", { exact: true })
     .selectOption(planId);

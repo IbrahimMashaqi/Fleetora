@@ -12,9 +12,9 @@ async function render(code?: string) {
   const service = new MailService({ sendMail } as unknown as ConstructorParameters<typeof MailService>[0]);
   await service.sendInvitationEmail({
     to: 'person@example.invalid',
-    url: 'https://app.fleetora.test/auth/accept-invitation#token=' + 'a'.repeat(64),
+    url: `https://app.fleetora.test/${code ? 'merchant/activate' : 'auth/accept-invitation'}#token=${code ?? 'a'.repeat(64)}`,
     inviter: 'Fixture Logistics',
-    role: 'ACCOUNTANT',
+    role: code ? 'OWNER' : 'ACCOUNTANT',
     expiresAt: '2026-11-27T10:15:30.123Z',
     code,
   });
@@ -41,6 +41,10 @@ describe('invitation email', () => {
     const { html } = await render('b'.repeat(64));
     expect(html).toContain('invitation code');
     expect(html).toContain('b'.repeat(64));
+    expect(html).toContain(`href='https://app.fleetora.test/merchant/activate#token=${'b'.repeat(64)}'`);
+    expect(html).not.toContain('?token=');
+    expect(html).toContain('Install or open the Fleetora Merchant app');
+    expect(html).toContain('ثبّت أو افتح تطبيق Fleetora Merchant');
   });
 
   it('escapes inviter names', async () => {

@@ -775,6 +775,9 @@ for (const locale of ["en", "ar"] as const)
         "dir",
         locale === "ar" ? "rtl" : "ltr",
       );
+      await expect(page.getByLabel(t("Drivers"), { exact: true }).locator('option[value=""]')).toHaveText(
+        locale === "ar" ? "اختر السائق" : "Choose driver",
+      );
       await page
         .getByRole("button", { name: t("Create parcel"), exact: true })
         .click();
@@ -785,6 +788,12 @@ for (const locale of ["en", "ar"] as const)
       await expect(
         dialog.getByLabel(t("Recipient name"), { exact: true }),
       ).toBeVisible();
+      await expect(dialog.getByLabel(t("Merchants"), { exact: true }).locator('option[value=""]')).toHaveText(
+        locale === "ar" ? "اختر التاجر" : "Choose merchant",
+      );
+      await expect(dialog.getByLabel(t("Destination zone"), { exact: true }).locator('option[value=""]')).toHaveText(
+        locale === "ar" ? "اختر المنطقة" : "Choose zone",
+      );
       await page.screenshot({
         path: testInfo.outputPath(
           `operations-${locale}-${mobile ? "mobile" : "desktop"}.png`,
