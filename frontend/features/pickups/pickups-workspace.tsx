@@ -83,7 +83,11 @@ function Status({ value }: { value: Pickup["status"] }) {
 }
 export function PickupsWorkspace() {
   const { user } = useProtectedSession();
-  if (user.role !== "COMPANY_ADMIN" || !user.company || !user.orgId)
+  if (
+    !["COMPANY_ADMIN", "OPERATIONS", "WAREHOUSE"].includes(user.role) ||
+    !user.company ||
+    !user.orgId
+  )
     return <ErrorState status="forbidden" />;
   return (
     <PickupDirectory
@@ -166,7 +170,13 @@ function PickupDirectory({ scope }: { scope: Scope }) {
                         : c("Warehouse drop-off", "تسليم المستودع")}
                     </td>
                     <td className="p-4">
-                      <p>{formatPickupWindow(p.preferredFrom, p.preferredTo, locale)}</p>
+                      <p>
+                        {formatPickupWindow(
+                          p.preferredFrom,
+                          p.preferredTo,
+                          locale,
+                        )}
+                      </p>
                     </td>
                     <td className="p-4">
                       <Status value={p.status} />
@@ -238,6 +248,8 @@ function PickupDialog({
   close(): void;
 }) {
   const c = useCopy();
+  const { user } = useProtectedSession();
+  const warehouseOnly = user.role === "WAREHOUSE";
   const { locale } = useLocale();
   const ref = useRef<HTMLDialogElement>(null),
     locked = useRef(false);
@@ -247,7 +259,7 @@ function PickupDialog({
   const result = usePickups(scope, { action: "detail", id }, version);
   const [mode, setMode] = useState<
     "CONFIRM" | "PROPOSE" | "CANCEL" | "RECEIPTS"
-  >("CONFIRM");
+  >(warehouseOnly ? "RECEIPTS" : "CONFIRM");
   useEffect(() => {
     ref.current?.showModal();
   }, []);
@@ -413,122 +425,131 @@ function PickupDialog({
             feedback.status !== "ready" && (
               <ErrorState status={feedback.status} />
             )}
-          {!["RECEIVED", "CANCELLED"].includes(result.pickup.status) && (
-            <form onSubmit={submit} className="space-y-4">
-              <div>
-                <Label htmlFor="pickup-action">{c("Action", "الإجراء")}</Label>
-                <select
-                  id="pickup-action"
-                  className={control}
-                  value={mode}
-                  disabled={pending}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    if (
-                      value === "CONFIRM" ||
-                      value === "PROPOSE" ||
-                      value === "CANCEL" ||
-                      value === "RECEIPTS"
-                    )
-                      setMode(value);
-                  }}
-                >
-                  <option value="CONFIRM">
-                    {c("Confirm a window", "تأكيد وقت")}
-                  </option>
-                  <option value="PROPOSE">
-                    {c("Propose another window", "اقتراح وقت بديل")}
-                  </option>
-                  {result.pickup.status === "CONFIRMED" && (
-                    <option value="RECEIPTS">
-                      {c("Record physical receipt", "تسجيل الاستلام الفعلي")}
-                    </option>
-                  )}
-                  <option value="CANCEL">
-                    {c("Cancel request", "إلغاء الطلب")}
-                  </option>
-                </select>
-              </div>
-              {mode === "RECEIPTS" ? (
-                <div className="space-y-3">
-                  <p className="text-sm">
-                    {c(
-                      "Choose only the parcels you have physically checked. Missing and discrepant entries require notes.",
-                      "حدد فقط الطرود التي تحققت منها فعليًا. يلزم توضيح للطرود الناقصة أو المختلفة.",
-                    )}
-                  </p>
-                  {result.pickup.parcels
-                    ?.filter((p) => p.receipt === "PENDING")
-                    .map((p) => (
-                      <ReceiptFields
-                        key={p.id}
-                        shipmentId={p.shipmentId}
-                        pending={pending}
-                      />
-                    ))}
-                </div>
-              ) : mode !== "CANCEL" ? (
-                <>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <Label htmlFor="pickup-from">
-                        {c("Window start", "بداية الوقت")}
-                      </Label>
-                      <Input
-                        id="pickup-from"
-                        name="from"
-                        type="datetime-local"
-                        required
-                        disabled={pending}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="pickup-to">
-                        {c("Window end", "نهاية الوقت")}
-                      </Label>
-                      <Input
-                        id="pickup-to"
-                        name="to"
-                        type="datetime-local"
-                        required
-                        disabled={pending}
-                      />
-                    </div>
-                  </div>
-                  {/* Drop-offs come to the warehouse; no driver is dispatched. */}
-                  {result.pickup.method !== "WAREHOUSE_DROPOFF" && (
-                    <EntityPicker
-                      scope={scope}
-                      field={{
-                        name: "workerId",
-                        label: "Drivers",
-                        lookup: "drivers",
-                        lookupQuery: { active: "true" },
-                      }}
-                    />
-                  )}
-                </>
-              ) : (
+          {!["RECEIVED", "CANCELLED"].includes(result.pickup.status) &&
+            (!warehouseOnly || result.pickup.status === "CONFIRMED") && (
+              <form onSubmit={submit} className="space-y-4">
                 <div>
-                  <Label htmlFor="pickup-reason">
-                    {c("Cancellation reason", "سبب الإلغاء")}
+                  <Label htmlFor="pickup-action">
+                    {c("Action", "الإجراء")}
                   </Label>
-                  <Input
-                    id="pickup-reason"
-                    name="reason"
-                    required
-                    maxLength={500}
+                  <select
+                    id="pickup-action"
+                    className={control}
+                    value={mode}
                     disabled={pending}
-                  />
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      if (
+                        value === "CONFIRM" ||
+                        value === "PROPOSE" ||
+                        value === "CANCEL" ||
+                        value === "RECEIPTS"
+                      )
+                        setMode(value);
+                    }}
+                  >
+                    {!warehouseOnly && (
+                      <option value="CONFIRM">
+                        {c("Confirm a window", "تأكيد وقت")}
+                      </option>
+                    )}
+                    {!warehouseOnly && (
+                      <option value="PROPOSE">
+                        {c("Propose another window", "اقتراح وقت بديل")}
+                      </option>
+                    )}
+                    {result.pickup.status === "CONFIRMED" && (
+                      <option value="RECEIPTS">
+                        {c("Record physical receipt", "تسجيل الاستلام الفعلي")}
+                      </option>
+                    )}
+                    {!warehouseOnly && (
+                      <option value="CANCEL">
+                        {c("Cancel request", "إلغاء الطلب")}
+                      </option>
+                    )}
+                  </select>
                 </div>
-              )}
-              <Button type="submit" disabled={pending}>
-                {pending
-                  ? c("Saving…", "جارٍ الحفظ…")
-                  : c("Save reviewed action", "حفظ الإجراء المراجع")}
-              </Button>
-            </form>
-          )}
+                {mode === "RECEIPTS" ? (
+                  <div className="space-y-3">
+                    <p className="text-sm">
+                      {c(
+                        "Choose only the parcels you have physically checked. Missing and discrepant entries require notes.",
+                        "حدد فقط الطرود التي تحققت منها فعليًا. يلزم توضيح للطرود الناقصة أو المختلفة.",
+                      )}
+                    </p>
+                    {result.pickup.parcels
+                      ?.filter((p) => p.receipt === "PENDING")
+                      .map((p) => (
+                        <ReceiptFields
+                          key={p.id}
+                          shipmentId={p.shipmentId}
+                          pending={pending}
+                        />
+                      ))}
+                  </div>
+                ) : mode !== "CANCEL" ? (
+                  <>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label htmlFor="pickup-from">
+                          {c("Window start", "بداية الوقت")}
+                        </Label>
+                        <Input
+                          id="pickup-from"
+                          name="from"
+                          type="datetime-local"
+                          required
+                          disabled={pending}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="pickup-to">
+                          {c("Window end", "نهاية الوقت")}
+                        </Label>
+                        <Input
+                          id="pickup-to"
+                          name="to"
+                          type="datetime-local"
+                          required
+                          disabled={pending}
+                        />
+                      </div>
+                    </div>
+                    {/* Drop-offs come to the warehouse; no driver is dispatched. */}
+                    {result.pickup.method !== "WAREHOUSE_DROPOFF" && (
+                      <EntityPicker
+                        scope={scope}
+                        field={{
+                          name: "workerId",
+                          label: "Drivers",
+                          lookup: "drivers",
+                          lookupQuery: { active: "true" },
+                        }}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <div>
+                    <Label htmlFor="pickup-reason">
+                      {c("Cancellation reason", "سبب الإلغاء")}
+                    </Label>
+                    <Input
+                      id="pickup-reason"
+                      name="reason"
+                      required
+                      maxLength={500}
+                      disabled={pending}
+                    />
+                  </div>
+                )}
+                <Button type="submit" disabled={pending}>
+                  {pending
+                    ? c("Saving…", "جارٍ الحفظ…")
+                    : c("Save reviewed action", "حفظ الإجراء المراجع")}
+                </Button>
+              </form>
+            )}
         </>
       )}
     </dialog>

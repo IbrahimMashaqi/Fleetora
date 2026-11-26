@@ -71,6 +71,7 @@ type AuthorizedSession =
 async function authorizeWarehouseSession(
   jar: SessionCookies,
   expected: WarehouseScope,
+  write = false,
 ): Promise<AuthorizedSession> {
   const access = jar.get(accessCookie)?.value;
   const session = await resolveSession({
@@ -85,7 +86,11 @@ async function authorizeWarehouseSession(
   if (session.tokens) setSessionTokens(jar, session.tokens);
   if (session.status !== "ready") return { status: "unavailable" };
   if (
-    session.user.role !== "COMPANY_ADMIN" ||
+    (write
+      ? session.user.role !== "COMPANY_ADMIN"
+      : !["COMPANY_ADMIN", "OPERATIONS", "WAREHOUSE"].includes(
+          session.user.role,
+        )) ||
     !session.user.company ||
     !session.user.orgId
   )
@@ -128,7 +133,8 @@ export async function readWarehousesForSession(
     if (response.status === 400) return { status: "invalid" };
     if (!response.ok) return { status: "unavailable" };
     const body = await readBackendBody(response);
-    if (!object(body) || body.success !== true) return { status: "unavailable" };
+    if (!object(body) || body.success !== true)
+      return { status: "unavailable" };
     const data = body.data;
     if (!object(data) || typeof data.companyId !== "string" || !data.companyId)
       return { status: "unavailable" };
@@ -195,7 +201,7 @@ export async function writeWarehouseForSession(
 ): Promise<WarehouseWriteResult> {
   const operation = validWrite(submitted);
   if (!operation) return { status: "invalid" };
-  const authorized = await authorizeWarehouseSession(jar, expected);
+  const authorized = await authorizeWarehouseSession(jar, expected, true);
   if (authorized.status !== "ready") return authorized;
   const { bearer, companyId } = authorized;
   let dispatched = false;

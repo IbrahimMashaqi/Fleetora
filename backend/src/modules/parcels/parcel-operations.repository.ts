@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -11,6 +12,7 @@ import { randomUUID } from 'node:crypto';
 import type { TokenPayload } from '../auth/token/token.payload.js';
 import {
   assertActiveMerchant,
+  amount,
   assertRevision,
   assertTransition,
   capabilities,
@@ -119,7 +121,9 @@ export class ParcelOperationsRepository {
       companyId,
       merchant: wire(merchant),
       statistics: rows[0],
-      balances: await this.ledger.balances(companyId, id),
+      balances: capabilities(actor.role).viewFinance
+        ? await this.ledger.balances(companyId, id)
+        : [],
     };
   }
   async saveMerchant(
@@ -300,12 +304,19 @@ export class ParcelOperationsRepository {
       companyId,
       parcel: wire(parcel),
       merchant: merchant ? wire(merchant) : null,
-      collection: collection ? collectionWire(collection) : null,
+      collection:
+        capabilities(actor.role).viewFinance && collection
+          ? collectionWire(collection)
+          : null,
       returnRecord,
       events,
       attempts,
       worker,
-      allowedTransitions: TRANSITIONS[parcel.status] ?? [],
+      allowedTransitions: (TRANSITIONS[parcel.status] ?? []).filter(
+        (status) =>
+          capabilities(actor.role).manageParcels ||
+          RECEIVING_STATUSES.includes(status),
+      ),
       capabilities: capabilities(actor.role),
     };
   }
@@ -325,6 +336,29 @@ export class ParcelOperationsRepository {
         .offset((q.page - 1) * q.pageSize)
         .limit(q.pageSize + 1)
         .all(),
+      q,
+    );
+  }
+  async zones(actor: TokenPayload, q: PageDto) {
+    const companyId = company(actor, 'manageParcels');
+    const rows = await this.store.orm.DeliveryZone.where({
+      companyId,
+      active: true,
+    })
+      .orderBy([
+        (zone) => zone.city.asc(),
+        (zone) => zone.name.asc(),
+        (zone) => zone.id.asc(),
+      ])
+      .offset((q.page - 1) * q.pageSize)
+      .limit(q.pageSize + 1)
+      .all();
+    return page(
+      companyId,
+      rows.map(({ baseFeeMinor, ...zone }) => ({
+        ...zone,
+        baseFee: amount(baseFeeMinor, zone.currency),
+      })),
       q,
     );
   }
@@ -562,31 +596,37 @@ export class ParcelOperationsRepository {
     return updated;
   }
   async transition(actor: TokenPayload, id: string, input: TransitionDto) {
-    await this.store.write(actor, 'manageParcels', async (tx, companyId) => {
-      const parcel = await this.find(tx, id, companyId);
-      assertRevision(parcel.revision, input.revision);
-      if (input.status === 'DELIVERED' || input.status === 'FAILED_DELIVERY')
-        await this.recordAttempt(
-          tx,
-          actor,
-          parcel,
-          input.status === 'DELIVERED' ? 'DELIVERED' : 'FAILED',
-          input.status === 'FAILED_DELIVERY' ? input.note : undefined,
-          input.note,
-        );
-      else
-        await this.change(
-          tx,
-          actor,
-          parcel,
-          input.status,
-          input.note,
-          false,
-          RECEIVING_STATUSES.includes(input.status)
-            ? await this.receivingWarehouse(tx, companyId, input.warehouseId)
-            : undefined,
-        );
-    });
+    await this.store.write(
+      actor,
+      RECEIVING_STATUSES.includes(input.status)
+        ? 'warehouseOperations'
+        : 'manageParcels',
+      async (tx, companyId) => {
+        const parcel = await this.find(tx, id, companyId);
+        assertRevision(parcel.revision, input.revision);
+        if (input.status === 'DELIVERED' || input.status === 'FAILED_DELIVERY')
+          await this.recordAttempt(
+            tx,
+            actor,
+            parcel,
+            input.status === 'DELIVERED' ? 'DELIVERED' : 'FAILED',
+            input.status === 'FAILED_DELIVERY' ? input.note : undefined,
+            input.note,
+          );
+        else
+          await this.change(
+            tx,
+            actor,
+            parcel,
+            input.status,
+            input.note,
+            false,
+            RECEIVING_STATUSES.includes(input.status)
+              ? await this.receivingWarehouse(tx, companyId, input.warehouseId)
+              : undefined,
+          );
+      },
+    );
     return this.parcelResult(actor, id);
   }
   private async receivingWarehouse(
@@ -609,7 +649,12 @@ export class ParcelOperationsRepository {
       const parcel = await this.find(tx, id, companyId);
       assertRevision(parcel.revision, input.revision);
       if (
-        !['RECEIVED_FROM_MERCHANT', 'AT_WAREHOUSE', 'ASSIGNED', 'FAILED_DELIVERY'].includes(parcel.status)
+        ![
+          'RECEIVED_FROM_MERCHANT',
+          'AT_WAREHOUSE',
+          'ASSIGNED',
+          'FAILED_DELIVERY',
+        ].includes(parcel.status)
       )
         throw new ConflictException('Parcel cannot be assigned in this state');
       if (parcel.custody === 'DRIVER' && parcel.workerId !== input.workerId)
@@ -698,52 +743,65 @@ export class ParcelOperationsRepository {
     await this.change(tx, actor, parcel, target, reason ?? note);
   }
   async location(actor: TokenPayload, id: string, input: LocationDto) {
-    await this.store.write(actor, 'manageParcels', async (tx, companyId) => {
-      const parcel = await this.find(tx, id, companyId);
-      assertRevision(parcel.revision, input.revision);
-      if (
-        ['DELIVERED', 'RETURNED_TO_MERCHANT', 'CANCELLED', 'RETURNED'].includes(
-          parcel.status,
+    await this.store.write(
+      actor,
+      'warehouseOperations',
+      async (tx, companyId) => {
+        const parcel = await this.find(tx, id, companyId);
+        if (
+          actor.role === 'WAREHOUSE' &&
+          input.custody !== 'WAREHOUSE' &&
+          !(parcel.custody === 'WAREHOUSE' && input.custody === 'DRIVER')
         )
-      )
-        throw new ConflictException('Terminal parcel custody is fixed');
-      if (input.custody === 'CUSTOMER' || input.custody === 'MERCHANT')
-        throw new BadRequestException(
-          'Use completion or merchant return for this custody',
+          throw new ForbiddenException('Warehouse custody action required');
+        assertRevision(parcel.revision, input.revision);
+        if (
+          [
+            'DELIVERED',
+            'RETURNED_TO_MERCHANT',
+            'CANCELLED',
+            'RETURNED',
+          ].includes(parcel.status)
+        )
+          throw new ConflictException('Terminal parcel custody is fixed');
+        if (input.custody === 'CUSTOMER' || input.custody === 'MERCHANT')
+          throw new BadRequestException(
+            'Use completion or merchant return for this custody',
+          );
+        if (input.custody === 'DRIVER' && !parcel.workerId)
+          throw new ConflictException('Assign a driver first');
+        if (
+          input.custody === 'WAREHOUSE' &&
+          ![
+            'AT_WAREHOUSE',
+            'RETURNED_TO_WAREHOUSE',
+            'ASSIGNED',
+            'FAILED_DELIVERY',
+            'RETURN_IN_PROGRESS',
+          ].includes(parcel.status)
+        )
+          throw new ConflictException('Record warehouse receipt first');
+        await tx.orm.public.Shipment.where({
+          companyId,
+          id,
+          revision: parcel.revision,
+        }).update({
+          custody: input.custody,
+          locationLabel: input.locationLabel,
+          locationSource: input.locationSource,
+          locationUpdatedAt: now(),
+          responsibleActorId: actor.sub,
+          revision: parcel.revision + 1,
+        });
+        await this.store.event(
+          tx,
+          await this.find(tx, id, companyId),
+          actor,
+          'CUSTODY_RECORDED',
+          input.note,
         );
-      if (input.custody === 'DRIVER' && !parcel.workerId)
-        throw new ConflictException('Assign a driver first');
-      if (
-        input.custody === 'WAREHOUSE' &&
-        ![
-          'AT_WAREHOUSE',
-          'RETURNED_TO_WAREHOUSE',
-          'ASSIGNED',
-          'FAILED_DELIVERY',
-          'RETURN_IN_PROGRESS',
-        ].includes(parcel.status)
-      )
-        throw new ConflictException('Record warehouse receipt first');
-      await tx.orm.public.Shipment.where({
-        companyId,
-        id,
-        revision: parcel.revision,
-      }).update({
-        custody: input.custody,
-        locationLabel: input.locationLabel,
-        locationSource: input.locationSource,
-        locationUpdatedAt: now(),
-        responsibleActorId: actor.sub,
-        revision: parcel.revision + 1,
-      });
-      await this.store.event(
-        tx,
-        await this.find(tx, id, companyId),
-        actor,
-        'CUSTODY_RECORDED',
-        input.note,
-      );
-    });
+      },
+    );
     return this.parcelResult(actor, id);
   }
   async returns(actor: TokenPayload, q: PageDto) {
@@ -760,7 +818,9 @@ export class ParcelOperationsRepository {
     if (q.from) query = query.where((r) => r.createdAt.gte(instant(q.from!)));
     if (q.to) query = query.where((r) => r.createdAt.lte(instant(q.to!, true)));
     const rows = await query
-      .include('shipment', (s) => s.where({ companyId }).select(...RETURN_PARCEL_FIELDS))
+      .include('shipment', (s) =>
+        s.where({ companyId }).select(...RETURN_PARCEL_FIELDS),
+      )
       .orderBy([(r) => r.createdAt.desc(), (r) => r.id.desc()])
       .offset((q.page - 1) * q.pageSize)
       .limit(q.pageSize + 1)
@@ -781,27 +841,32 @@ export class ParcelOperationsRepository {
     return this.parcelResult(actor, input.parcelId);
   }
   // Shared transactional use case for approved merchant cancellation requests.
-  async startReturnIn(tx: ParcelTransaction, actor: TokenPayload, companyId: string, input: ReturnInputDto) {
-      const parcel = await this.find(tx, input.parcelId, companyId);
-      assertRevision(parcel.revision, input.revision);
-      if (input.reason === 'OTHER' && !input.note?.trim())
-        throw new BadRequestException('Other return reason requires a note');
-      await this.change(
-        tx,
-        actor,
-        parcel,
-        'RETURN_IN_PROGRESS',
-        input.note ?? input.reason,
-        true,
-      );
-      await tx.orm.public.ParcelReturn.create({
-        companyId,
-        shipmentId: parcel.id,
-        reason: input.reason,
-        note: input.note ?? null,
-        status: 'RETURN_IN_PROGRESS',
-        initiatedBy: actor.sub,
-      });
+  async startReturnIn(
+    tx: ParcelTransaction,
+    actor: TokenPayload,
+    companyId: string,
+    input: ReturnInputDto,
+  ) {
+    const parcel = await this.find(tx, input.parcelId, companyId);
+    assertRevision(parcel.revision, input.revision);
+    if (input.reason === 'OTHER' && !input.note?.trim())
+      throw new BadRequestException('Other return reason requires a note');
+    await this.change(
+      tx,
+      actor,
+      parcel,
+      'RETURN_IN_PROGRESS',
+      input.note ?? input.reason,
+      true,
+    );
+    await tx.orm.public.ParcelReturn.create({
+      companyId,
+      shipmentId: parcel.id,
+      reason: input.reason,
+      note: input.note ?? null,
+      status: 'RETURN_IN_PROGRESS',
+      initiatedBy: actor.sub,
+    });
   }
   async returnTransition(
     actor: TokenPayload,
@@ -810,7 +875,7 @@ export class ParcelOperationsRepository {
   ) {
     const parcelId = await this.store.write(
       actor,
-      'manageReturns',
+      'advanceReturns',
       async (tx, companyId) => {
         if (
           !['RETURNED_TO_WAREHOUSE', 'RETURNED_TO_MERCHANT'].includes(

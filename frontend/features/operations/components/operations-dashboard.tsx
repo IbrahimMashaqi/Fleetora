@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useProtectedSession } from "@/features/auth/session/session-context";
 import { Button } from "@/components/ui/button";
 import { useLocale, type TranslationKey } from "@/lib/i18n";
 import { useOperations } from "../use-operations";
@@ -59,6 +60,8 @@ function Dashboard({
   query: Record<string, string>;
 }) {
   const { t, locale } = useLocale();
+  const { user } = useProtectedSession();
+  const finance = user.role === "COMPANY_ADMIN" || user.role === "ACCOUNTANT";
   const dashboard = useOperations(scope, { resource: "dashboard", query });
   return (
     <>
@@ -77,7 +80,10 @@ function Dashboard({
             <div className="space-y-6">
               <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                 {Object.entries(metrics).map(([key, metric]) => (
-                  <div key={key} className="relative rounded-lg border bg-surface p-4 transition-colors hover:border-primary/50 focus-within:border-primary focus-within:outline-2 focus-within:outline-primary motion-reduce:transition-none">
+                  <div
+                    key={key}
+                    className="relative rounded-lg border bg-surface p-4 transition-colors hover:border-primary/50 focus-within:border-primary focus-within:outline-2 focus-within:outline-primary motion-reduce:transition-none"
+                  >
                     <dt className="text-xs leading-5 text-muted-foreground">
                       {t(metric.label)}
                     </dt>
@@ -131,52 +137,58 @@ function Dashboard({
                   ]}
                 />
               </Panel>
-              <Panel title="Balances by currency">
-                <DataTable
-                  items={data.money.map((row) => ({
-                    ...row,
-                    id: valueText(row, "currency"),
-                  }))}
-                  columns={[
-                    {
-                      label: "Currency",
-                      render: (row) => valueText(row, "currency"),
-                    },
-                    {
-                      label: "Expected COD",
-                      render: (row) => <Money row={row} field="expectedCod" />,
-                    },
-                    {
-                      label: "Collected COD",
-                      render: (row) => <Money row={row} field="collectedCod" />,
-                    },
-                    {
-                      label: "Uncollected COD",
-                      render: (row) => (
-                        <Money row={row} field="uncollectedCod" />
-                      ),
-                    },
-                    {
-                      label: "Unremitted driver cash",
-                      render: (row) => (
-                        <Money row={row} field="unremittedCash" />
-                      ),
-                    },
-                    {
-                      label: "Merchant payables",
-                      render: (row) => (
-                        <Money row={row} field="merchantPayables" />
-                      ),
-                    },
-                    {
-                      label: "Settled merchant amounts",
-                      render: (row) => (
-                        <Money row={row} field="settledAmounts" />
-                      ),
-                    },
-                  ]}
-                />
-              </Panel>
+              {finance && (
+                <Panel title="Balances by currency">
+                  <DataTable
+                    items={data.money.map((row) => ({
+                      ...row,
+                      id: valueText(row, "currency"),
+                    }))}
+                    columns={[
+                      {
+                        label: "Currency",
+                        render: (row) => valueText(row, "currency"),
+                      },
+                      {
+                        label: "Expected COD",
+                        render: (row) => (
+                          <Money row={row} field="expectedCod" />
+                        ),
+                      },
+                      {
+                        label: "Collected COD",
+                        render: (row) => (
+                          <Money row={row} field="collectedCod" />
+                        ),
+                      },
+                      {
+                        label: "Uncollected COD",
+                        render: (row) => (
+                          <Money row={row} field="uncollectedCod" />
+                        ),
+                      },
+                      {
+                        label: "Unremitted driver cash",
+                        render: (row) => (
+                          <Money row={row} field="unremittedCash" />
+                        ),
+                      },
+                      {
+                        label: "Merchant payables",
+                        render: (row) => (
+                          <Money row={row} field="merchantPayables" />
+                        ),
+                      },
+                      {
+                        label: "Settled merchant amounts",
+                        render: (row) => (
+                          <Money row={row} field="settledAmounts" />
+                        ),
+                      },
+                    ]}
+                  />
+                </Panel>
+              )}
               <div className="grid gap-6 lg:grid-cols-2">
                 <Panel title="Status distribution">
                   <ul className="space-y-3">

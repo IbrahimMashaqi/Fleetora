@@ -29,6 +29,7 @@ export async function pricingForSession(
   jar: Jar,
   scope: Scope,
   operation: PricingOperation,
+  operational = false,
 ): Promise<PricingResult> {
   const prepared = preparePricingOperation(operation);
   if (!prepared) return { status: "invalid" };
@@ -44,7 +45,13 @@ export async function pricingForSession(
   if (session.status === "refresh-rejected") return { status: "changed" };
   if (session.tokens) setSessionTokens(jar, session.tokens);
   if (session.status !== "ready") return { status: "unavailable" };
-  if (session.user.role !== "COMPANY_ADMIN" || !session.user.company)
+  if (
+    !session.user.company ||
+    (operational
+      ? !["COMPANY_ADMIN", "OPERATIONS"].includes(session.user.role) ||
+        !["zones", "quote"].includes(operation.kind)
+      : session.user.role !== "COMPANY_ADMIN")
+  )
     return { status: "forbidden" };
   if (
     !scope ||
@@ -58,7 +65,13 @@ export async function pricingForSession(
   const writing = prepared.method !== "GET" && !prepared.readOnly;
   let dispatched = false;
   try {
-    const endpoint = getBackendEndpoint(prepared.path);
+    const endpoint = getBackendEndpoint(
+      operational &&
+        session.user.role === "OPERATIONS" &&
+        operation.kind === "zones"
+        ? `parcels/zones?page=${operation.page}&pageSize=25`
+        : prepared.path,
+    );
     if (!endpoint) return { status: "unavailable" };
     dispatched = true;
     const response = await requestBackend(endpoint, {

@@ -16,7 +16,9 @@ export function OperationsWorkspace({
   if (
     !user.company ||
     !user.orgId ||
-    !["COMPANY_ADMIN", "ACCOUNTANT"].includes(user.role)
+    !["COMPANY_ADMIN", "ACCOUNTANT", "OPERATIONS", "WAREHOUSE"].includes(
+      user.role,
+    )
   )
     return <ErrorState status="forbidden" />;
   return (
@@ -59,14 +61,20 @@ export function PageIntro({
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b pb-6">
       <div className="min-w-0">
-        <h2 className="text-2xl font-semibold leading-8 tracking-tight">{t(title)}</h2>
+        <h2 className="text-2xl font-semibold leading-8 tracking-tight">
+          {t(title)}
+        </h2>
         {description && (
           <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
             {t(description)}
           </p>
         )}
       </div>
-      {children && <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">{children}</div>}
+      {children && (
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

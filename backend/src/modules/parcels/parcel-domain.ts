@@ -123,7 +123,12 @@ export function collectionTotal(
   payer: string,
   pricingMode = 'LEGACY',
 ) {
-  return goods + (pricingMode !== 'FINAL_INCLUSIVE' && payer === 'CUSTOMER' ? delivery + service : 0n);
+  return (
+    goods +
+    (pricingMode !== 'FINAL_INCLUSIVE' && payer === 'CUSTOMER'
+      ? delivery + service
+      : 0n)
+  );
 }
 export function assertFullAmount(actual: bigint, expected: bigint) {
   if (actual !== expected || actual <= 0n)
@@ -139,12 +144,24 @@ export function assertRevision(actual: number, expected: number) {
 }
 export function capabilities(role: string) {
   const admin = role === 'COMPANY_ADMIN',
+    operations = admin || role === 'OPERATIONS',
+    warehouse = operations || role === 'WAREHOUSE',
     finance = admin || role === 'ACCOUNTANT';
   return {
-    view: finance,
+    view: finance || warehouse,
     manageMerchants: admin,
-    manageParcels: admin,
-    manageReturns: admin,
+    manageParcels: operations,
+    manageReturns: operations,
+    warehouseOperations: warehouse,
+    advanceReturns: warehouse,
+    viewPickups: warehouse,
+    reviewPickups: operations,
+    receivePickups: warehouse,
+    manageDrivers: operations,
+    viewWarehouses: warehouse,
+    manageWarehouses: admin,
+    manageVehicles: admin,
+    viewVehicles: operations,
     collect: finance,
     remit: finance,
     viewFinance: finance,

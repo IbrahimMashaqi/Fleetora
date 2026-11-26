@@ -200,7 +200,9 @@ function Directory({
             },
             {
               label: "Expected customer total",
-              render: (row) => <Money row={row} field="expectedCustomerTotal" />,
+              render: (row) => (
+                <Money row={row} field="expectedCustomerTotal" />
+              ),
             },
           ]
         : resource === "returns"
@@ -450,7 +452,7 @@ function Directory({
                         </Button>
                       )
                     ) : (
-                      permissions.manageReturns &&
+                      permissions.advanceReturns &&
                       valueText(row, "status") !== "RETURNED_TO_MERCHANT" && (
                         <Button
                           variant="outline"

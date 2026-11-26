@@ -28,7 +28,7 @@ export class DriversService {
   private companyId(actor: TokenPayload | undefined): string {
     if (!actor?.sub) throw new UnauthorizedException();
     if (
-      actor.role !== 'COMPANY_ADMIN' ||
+      !['COMPANY_ADMIN', 'OPERATIONS'].includes(actor.role) ||
       typeof actor.orgId !== 'string' ||
       !actor.orgId.trim()
     ) {

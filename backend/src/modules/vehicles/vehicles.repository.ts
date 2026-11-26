@@ -9,6 +9,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { company, type Capability } from '../parcels/parcel-domain.js';
 import { or, not } from '@prisma/orm-postgres/orm-client';
 import type { TokenPayload } from '../auth/token/token.payload.js';
 import type {
@@ -33,8 +34,11 @@ export async function lockedFleetWrite<T>(
   prisma: PrismaService,
   actor: TokenPayload,
   operation: (tx: FleetTransaction, companyId: string) => Promise<T>,
+  capability?: Capability,
 ): Promise<T> {
-  const companyId = fleetCompany(actor);
+  const companyId = capability
+    ? company(actor, capability)
+    : fleetCompany(actor);
   return prisma.db.transaction(async (tx) => {
     await tx.execute(
       prisma.db.raw
@@ -51,18 +55,15 @@ export async function lockedFleetWrite<T>(
     const user = await tx.orm.public.User.where({ id: actor.sub })
       .select('id', 'role', 'companyId', 'isActive', 'isEmailVerified')
       .first();
-    const company = await tx.orm.public.Company.where({ id: companyId })
+    const tenant = await tx.orm.public.Company.where({ id: companyId })
       .select('id', 'suspended')
       .first();
-    if (
-      !user?.isActive ||
-      !user.isEmailVerified ||
-      !company ||
-      company.suspended
-    )
+    if (!user?.isActive || !user.isEmailVerified || !tenant || tenant.suspended)
       throw new UnauthorizedException();
-    if (user.role !== 'COMPANY_ADMIN' || user.companyId !== companyId)
+    if (user.role !== actor.role || user.companyId !== companyId)
       throw new ForbiddenException('Session context changed');
+    if (capability) company({ ...actor, role: user.role }, capability);
+    else fleetCompany({ ...actor, role: user.role });
     return operation(tx, companyId);
   });
 }
@@ -105,9 +106,10 @@ export class VehiclesRepository {
   private async write<T>(
     actor: TokenPayload,
     operation: (tx: FleetTransaction, companyId: string) => Promise<T>,
+    capability: Capability = 'manageVehicles',
   ): Promise<T> {
     try {
-      return await lockedFleetWrite(this.prisma, actor, operation);
+      return await lockedFleetWrite(this.prisma, actor, operation, capability);
     } catch (error: unknown) {
       if (
         error &&
@@ -211,53 +213,57 @@ export class VehiclesRepository {
     id: string,
     input: AssignmentDto,
   ): Promise<void> {
-    return this.write(actor, async (tx, companyId) => {
-      await tx.execute(
-        this.prisma.db.raw
-          .sql`SELECT "id" FROM "workers" WHERE "id"=${id} AND "companyId"=${companyId} FOR UPDATE`
-          .affectedCount()
-          .build(),
-      );
-      const driver = await tx.orm.public.Worker.where({ id, companyId })
-        .select('id', 'vehicleId')
-        .first();
-      if (!driver) throw new NotFoundException('Driver or vehicle not found');
-      if (input.vehicleId) {
+    return this.write(
+      actor,
+      async (tx, companyId) => {
         await tx.execute(
           this.prisma.db.raw
-            .sql`SELECT "id" FROM "vehicles" WHERE "id"=${input.vehicleId} AND "companyId"=${companyId} FOR UPDATE`
+            .sql`SELECT "id" FROM "workers" WHERE "id"=${id} AND "companyId"=${companyId} FOR UPDATE`
             .affectedCount()
             .build(),
         );
-        if (
-          !(await tx.orm.public.Vehicle.where({
-            id: input.vehicleId,
+        const driver = await tx.orm.public.Worker.where({ id, companyId })
+          .select('id', 'vehicleId')
+          .first();
+        if (!driver) throw new NotFoundException('Driver or vehicle not found');
+        if (input.vehicleId) {
+          await tx.execute(
+            this.prisma.db.raw
+              .sql`SELECT "id" FROM "vehicles" WHERE "id"=${input.vehicleId} AND "companyId"=${companyId} FOR UPDATE`
+              .affectedCount()
+              .build(),
+          );
+          if (
+            !(await tx.orm.public.Vehicle.where({
+              id: input.vehicleId,
+              companyId,
+            })
+              .select('id')
+              .first())
+          )
+            throw new NotFoundException('Driver or vehicle not found');
+        }
+        if (driver.vehicleId !== input.expectedVehicleId)
+          throw new ConflictException(
+            'Assignment changed. Reload the driver before trying again',
+          );
+        if (input.vehicleId) {
+          const assigned = await tx.orm.public.Worker.where({
             companyId,
+            vehicleId: input.vehicleId,
           })
             .select('id')
-            .first())
-        )
-          throw new NotFoundException('Driver or vehicle not found');
-      }
-      if (driver.vehicleId !== input.expectedVehicleId)
-        throw new ConflictException(
-          'Assignment changed. Reload the driver before trying again',
-        );
-      if (input.vehicleId) {
-        const assigned = await tx.orm.public.Worker.where({
+            .first();
+          if (assigned && assigned.id !== id)
+            throw new ConflictException('This vehicle is already assigned');
+        }
+        await tx.orm.public.Worker.where({
+          id,
           companyId,
-          vehicleId: input.vehicleId,
-        })
-          .select('id')
-          .first();
-        if (assigned && assigned.id !== id)
-          throw new ConflictException('This vehicle is already assigned');
-      }
-      await tx.orm.public.Worker.where({
-        id,
-        companyId,
-        vehicleId: input.expectedVehicleId,
-      }).update({ vehicleId: input.vehicleId });
-    });
+          vehicleId: input.expectedVehicleId,
+        }).update({ vehicleId: input.vehicleId });
+      },
+      'manageDrivers',
+    );
   }
 }

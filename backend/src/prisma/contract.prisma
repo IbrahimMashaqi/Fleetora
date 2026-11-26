@@ -16,6 +16,8 @@ enum UserRole {
   COMPANY_ADMIN 
   MERCHANT 
   ACCOUNTANT 
+  OPERATIONS
+  WAREHOUSE
 }
 
 enum MembershipStatus {
@@ -113,6 +115,7 @@ model Company {
   merchantImports MerchantImport[]
   merchantSettlementRequests MerchantSettlementRequest[] @relation("MerchantSettlementRequestCompany")
   staffInvitations StaffInvitation[]
+  staffAccessEvents StaffAccessEvent[]
 
   id        String   @id @default(uuid())
   name      String
@@ -154,6 +157,19 @@ model Company {
   currencyShipments Shipment[] @relation("ShipmentCompanyCurrency")
   @@unique([id,currency])
   @@check(expression: "\"currency\" IN ('ILS','USD','EUR','JOD')", name:"company_currency")
+}
+
+model StaffAccessEvent {
+  id String @id @default(uuid())
+  companyId String
+  actorId String
+  subjectId String
+  action String
+  details Json
+  createdAt DateTime @default(now())
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  @@index([companyId,createdAt])
+  @@map("staff_access_events")
 }
 
 model User {
@@ -864,7 +880,7 @@ model StaffInvitation {
   createdAt DateTime @default(now())
   company Company @relation(fields:[companyId], references:[id], onDelete:Restrict)
   @@index([companyId,createdAt], name:"staff_invitations_company_created")
-  @@check(expression:"\"role\" IN ('COMPANY_ADMIN','ACCOUNTANT') AND NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL) AND ((\"acceptedAt\" IS NULL AND \"acceptedById\" IS NULL) OR (\"acceptedAt\" IS NOT NULL AND \"acceptedById\" IS NOT NULL)) AND ((\"revokedAt\" IS NULL AND \"revokedById\" IS NULL) OR (\"revokedAt\" IS NOT NULL AND \"revokedById\" IS NOT NULL))", name:"staff_invitation_state")
+  @@check(expression:"\"role\" IN ('COMPANY_ADMIN','ACCOUNTANT','OPERATIONS','WAREHOUSE') AND NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL) AND ((\"acceptedAt\" IS NULL AND \"acceptedById\" IS NULL) OR (\"acceptedAt\" IS NOT NULL AND \"acceptedById\" IS NOT NULL)) AND ((\"revokedAt\" IS NULL AND \"revokedById\" IS NULL) OR (\"revokedAt\" IS NOT NULL AND \"revokedById\" IS NOT NULL))", name:"staff_invitation_state")
   @@map("staff_invitations")
 }
 model MerchantAccessEvent {

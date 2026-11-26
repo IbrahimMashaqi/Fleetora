@@ -34,7 +34,9 @@ const object = (value: unknown): value is Record<string, unknown> =>
 const isState = (value: unknown): value is StaffInvitation["state"] =>
   states.some((state) => state === value);
 const isRole = (value: unknown): value is StaffRole =>
-  value === "COMPANY_ADMIN" || value === "ACCOUNTANT";
+  ["COMPANY_ADMIN", "ACCOUNTANT", "OPERATIONS", "WAREHOUSE"].includes(
+    String(value),
+  );
 
 function parseMember(value: unknown): StaffMember | null {
   if (
@@ -182,12 +184,23 @@ function validWrite(operation: StaffWrite): StaffWrite | null {
     return { action: "revoke", id: operation.id };
   if (
     operation.action === "setActive" &&
-    Object.keys(operation).every((key) => ["action", "id", "active"].includes(key)) &&
+    Object.keys(operation).every((key) =>
+      ["action", "id", "active"].includes(key),
+    ) &&
     typeof operation.id === "string" &&
     uuid.test(operation.id) &&
     typeof operation.active === "boolean"
   )
     return { action: "setActive", id: operation.id, active: operation.active };
+  if (
+    operation.action === "setRole" &&
+    Object.keys(operation).every((key) =>
+      ["action", "id", "role"].includes(key),
+    ) &&
+    uuid.test(operation.id) &&
+    isRole(operation.role)
+  )
+    return { action: "setRole", id: operation.id, role: operation.role };
   return null;
 }
 
@@ -208,7 +221,7 @@ export async function writeStaffForSession(
         ? "company/staff/invitations"
         : operation.action === "revoke"
           ? `company/staff/invitations/${operation.id}`
-          : `company/staff/members/${operation.id}/active`,
+          : `company/staff/members/${operation.id}/${operation.action === "setRole" ? "role" : "active"}`,
     );
     if (!endpoint) return { status: "unavailable" };
     dispatched = true;
@@ -224,7 +237,9 @@ export async function writeStaffForSession(
           ? { email: operation.email, role: operation.role }
           : operation.action === "setActive"
             ? { active: operation.active }
-            : undefined,
+            : operation.action === "setRole"
+              ? { role: operation.role }
+              : undefined,
       bearer,
       expectedCompany: companyId,
     });
@@ -241,9 +256,13 @@ export async function writeStaffForSession(
     if (!object(body) || body.success !== true || !object(body.data))
       return { status: "uncertain" };
     if (body.data.companyId !== companyId) return { status: "changed" };
-    if (operation.action === "setActive") {
+    if (operation.action === "setActive" || operation.action === "setRole") {
       const member = parseMember(body.data.member);
-      return member && member.id === operation.id && member.active === operation.active
+      return member &&
+        member.id === operation.id &&
+        (operation.action === "setActive"
+          ? member.active === operation.active
+          : member.role === operation.role)
         ? { status: "updated", member }
         : { status: "uncertain" };
     }

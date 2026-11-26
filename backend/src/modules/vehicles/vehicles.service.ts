@@ -1,3 +1,4 @@
+import { company } from '../parcels/parcel-domain.js';
 import { vehicleCatalog } from './vehicle-catalog.js';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { TokenPayload } from '../auth/token/token.payload.js';
@@ -10,7 +11,7 @@ export class VehiclesService {
     @Inject(VehiclesRepository) private readonly repository: VehiclesRepository,
   ) {}
   async list(actor: TokenPayload, query: VehicleQueryDto) {
-    const companyId = fleetCompany(actor);
+    const companyId = company(actor, 'viewVehicles');
     const rows = await this.repository.list(companyId, query);
     return {
       companyId,
@@ -24,7 +25,7 @@ export class VehiclesService {
     };
   }
   async details(actor: TokenPayload, id: string) {
-    const companyId = fleetCompany(actor);
+    const companyId = company(actor, 'viewVehicles');
     const row = await this.repository.find(companyId, id);
     if (!row) throw new NotFoundException('Vehicle not found');
     return { companyId, vehicle: publicVehicle(row, companyId) };

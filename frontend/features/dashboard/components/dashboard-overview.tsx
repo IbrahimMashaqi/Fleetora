@@ -28,7 +28,7 @@ export function DashboardOverview({ user }: { user: SessionUser }) {
     ? workspaceLinks
     : user.role === "ACCOUNTANT"
       ? user.company ? accountantLinks : accountLinks
-      : user.role === "MERCHANT" ? accountLinks : [];
+      : user.role === "OPERATIONS" ? workspaceLinks.slice(0, 2) : user.role === "WAREHOUSE" ? [workspaceLinks[0]] : user.role === "MERCHANT" ? accountLinks : [];
 
   return (
     <div className="w-full space-y-6">

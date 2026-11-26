@@ -120,7 +120,7 @@ async function authorizeDriverSession(
   if (session.tokens) setSessionTokens(jar, session.tokens);
   if (session.status !== "ready") return { status: "unavailable" };
   if (
-    session.user.role !== "COMPANY_ADMIN" ||
+    !["COMPANY_ADMIN", "OPERATIONS"].includes(session.user.role) ||
     !session.user.company ||
     !session.user.orgId
   )

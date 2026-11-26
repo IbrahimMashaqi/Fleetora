@@ -1,5 +1,11 @@
-export type StaffRole = "COMPANY_ADMIN" | "ACCOUNTANT";
-export const staffRoles: readonly StaffRole[] = ["ACCOUNTANT", "COMPANY_ADMIN"];
+export type StaffRole =
+  "COMPANY_ADMIN" | "ACCOUNTANT" | "OPERATIONS" | "WAREHOUSE";
+export const staffRoles: readonly StaffRole[] = [
+  "ACCOUNTANT",
+  "COMPANY_ADMIN",
+  "OPERATIONS",
+  "WAREHOUSE",
+];
 export type StaffMember = {
   id: string;
   fullName: string;
@@ -7,7 +13,8 @@ export type StaffMember = {
   role: StaffRole;
   active: boolean;
 };
-export type StaffInvitationState = "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
+export type StaffInvitationState =
+  "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
 export type StaffInvitation = {
   id: string;
   email: string;
@@ -22,6 +29,7 @@ export type StaffReadResult =
 export type StaffWrite =
   | { action: "issue"; email: string; role: StaffRole }
   | { action: "revoke"; id: string }
+  | { action: "setRole"; id: string; role: StaffRole }
   | { action: "setActive"; id: string; active: boolean };
 export type StaffWriteFailure =
   | "unauthenticated"
@@ -33,7 +41,12 @@ export type StaffWriteFailure =
   | "unavailable"
   | "uncertain";
 export type StaffWriteResult =
-  | { status: "issued"; invitation: StaffInvitation; token: string; emailed: boolean }
+  | {
+      status: "issued";
+      invitation: StaffInvitation;
+      token: string;
+      emailed: boolean;
+    }
   | { status: "revoked" }
   | { status: "updated"; member: StaffMember }
   | { status: StaffWriteFailure };

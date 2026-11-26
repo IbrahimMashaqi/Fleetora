@@ -17,6 +17,8 @@ const capabilities = Object.fromEntries(
     "manageMerchants",
     "manageParcels",
     "manageReturns",
+    "advanceReturns",
+    "warehouseOperations",
     "collect",
     "remit",
     "viewFinance",

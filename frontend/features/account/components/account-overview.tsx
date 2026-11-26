@@ -13,7 +13,7 @@ export function AccountOverview() {
       ? t("Platform administrator")
       : user.role === "MERCHANT"
         ? t("Merchant")
-        : t("Accountant");
+        : user.role === "OPERATIONS" ? t("Operations") : user.role === "WAREHOUSE" ? t("Warehouse staff") : t("Accountant");
   const details = [
     { label: t("Display name"), value: user.name },
     { label: t("Email"), value: user.email ?? t("Email not provided") },

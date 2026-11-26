@@ -31,6 +31,7 @@ import {
   AcceptStaffInvitationDto,
   StaffInvitationDto,
   StaffMemberStatusDto,
+  StaffMemberRoleDto,
 } from './staff.dto.js';
 import { StaffService, hashStaffToken } from './staff.service.js';
 
@@ -79,6 +80,17 @@ export class StaffController {
   ) {
     this.context(actor, expected);
     return this.staff.revoke(actor, id);
+  }
+
+  @Put('members/:id/role')
+  setRole(
+    @GetCurrentUser() actor: TokenPayload,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() input: StaffMemberRoleDto,
+    @Headers('x-fleetora-company-context') expected: string | undefined,
+  ) {
+    this.context(actor, expected);
+    return this.staff.setRole(actor, id, input);
   }
 
   @Put('members/:id/active')

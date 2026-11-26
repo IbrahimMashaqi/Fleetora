@@ -108,7 +108,9 @@ export async function operationsForSession(
   if (session.tokens) setSessionTokens(jar, session.tokens);
   if (session.status !== "ready") return { status: "unavailable" };
   if (
-    !["COMPANY_ADMIN", "ACCOUNTANT"].includes(session.user.role) ||
+    !["COMPANY_ADMIN", "ACCOUNTANT", "OPERATIONS", "WAREHOUSE"].includes(
+      session.user.role,
+    ) ||
     !session.user.company
   )
     return { status: "forbidden" };

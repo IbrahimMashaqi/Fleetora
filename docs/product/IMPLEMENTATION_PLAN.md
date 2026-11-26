@@ -15,6 +15,10 @@
 
 ## Phase 2 — Staff roles and driver identity
 
+- **Approved split (2026-11-26):** Phase 2a now: built-in staff roles (BR-042 built-in part, BR-043), driver phone/password identity linked explicitly to existing Workers (BR-035), suspension and access/offboarding controls (BR-117, BR-118). Phase 2b deferred: company custom roles (BR-042 custom part) and delegation (BR-044). No driver app in 2a.
+- **2a rollout:** additive role/check expansion; existing Admin/Accountant identities retain current access, Workers stay unlinked until invited. Persisted actor enforcement on requests and inside write transactions; role assignment keeps one role and the last-admin guard. Separate staff and driver changes into reviewable PRs when needed.
+- **2a verification:** role allow/deny matrix, persisted-role drift and privilege escalation, cross-company IDs, last-admin concurrency; driver phone normalization/uniqueness, invitation expiry/replay/revocation/concurrent acceptance, session revocation, suspension/offboarding task rejection and unchanged custody/COD history. Disposable PostgreSQL migration/strict verification only; no shared database migration.
+
 - **Goal:** missing company roles on top of the existing capability map, and a driver login identity plugged into the existing verifier seam.
 - **Rule IDs:** §3.1 (Operations, Warehouse staff roles), FR-SE-01 (driver), BR-027, BR-035.
 - **Reuses:** `UserRole`, `capabilities()` in `be/parcels/parcel-domain.ts`, `be/auth/*`, `DriverIdentityVerifier` seam in `be/fleet/driver-telemetry.service.ts`, `Worker`.
