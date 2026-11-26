@@ -53,7 +53,7 @@ export type DriverInput = { name: string; phone: string };
 export type DriverWrite =
   | { kind: "create"; input: DriverInput }
   | { kind: "edit"; id: string; input: DriverInput }
-  | { kind: "suspension"; id: string; suspended: boolean };
+  | { kind: "suspension"; id: string; suspended: boolean; reason?: string };
 export type DriverWriteResult =
   | { status: "saved"; data: Driver }
   | {
@@ -64,7 +64,8 @@ export type DriverWriteResult =
         | "invalid"
         | "not-found"
         | "unavailable"
-        | "uncertain";
+        | "uncertain"
+        | "conflict";
     };
 // Mirrors the backend DTO so obvious mistakes are caught before submission.
 export const driverPhonePattern = /^\+?[0-9][0-9 ()-]{5,38}[0-9]$/;

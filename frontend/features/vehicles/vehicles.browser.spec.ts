@@ -87,7 +87,9 @@ test.beforeAll(async () => {
       vehicle: vehicles.find((v) => v.id === assigned) ?? null,
     };
     let data: unknown;
-    if (url.pathname.startsWith("/drivers")) {
+    if (url.pathname.startsWith('/drivers/') && url.pathname.endsWith('/access') && req.method === 'GET') {
+      data = { companyId: user.orgId, workerId: driverId, phone: driver.phone, linked: false, accessActive: false, offboarded: false, pendingInvitation: null };
+    } else if (url.pathname.startsWith("/drivers")) {
       if (writing) {
         assigned = body.vehicleId;
         driver.vehicle = vehicles.find((v) => v.id === assigned) ?? null;

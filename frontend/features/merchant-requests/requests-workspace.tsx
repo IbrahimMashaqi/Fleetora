@@ -21,7 +21,7 @@ export function MerchantRequestsWorkspace() {
   if (
     !user.company ||
     !user.orgId ||
-    !["COMPANY_ADMIN", "ACCOUNTANT"].includes(user.role)
+    !["COMPANY_ADMIN", "ACCOUNTANT", "OPERATIONS"].includes(user.role)
   )
     return <ErrorState status="forbidden" />;
   const scope = { userId: user.id, companyId: user.orgId };
@@ -30,10 +30,10 @@ export function MerchantRequestsWorkspace() {
       key={`${user.id}:${user.orgId}:${user.role}`}
       className="mx-auto max-w-5xl space-y-6"
     >
-      {user.role === "COMPANY_ADMIN" && (
+      {["COMPANY_ADMIN", "OPERATIONS"].includes(user.role) && (
         <RequestQueue scope={scope} kind="changes" />
       )}
-      <RequestQueue scope={scope} kind="settlements" />
+      {user.role !== "OPERATIONS" && <RequestQueue scope={scope} kind="settlements" />}
     </div>
   );
 }

@@ -35,31 +35,39 @@ export function useOneTimeTokenFragment(
   );
 
   useEffect(() => {
-    const url = new URL(window.location.href);
-    const rawFragmentToken = new URLSearchParams(url.hash.slice(1)).get("token");
-    const hadFragment = Boolean(url.hash);
-    if (legacyTokenInQuery) url.searchParams.delete("token");
-
-    const locationKey = `${url.pathname}${url.search}`;
-    const previous = snapshotRef.current;
-    const rawCandidate = legacyTokenInQuery
-      ? null
-      : rawFragmentToken ??
-        (previous.scope === scope && previous.locationKey === locationKey
-          ? previous.token
-          : null);
-    const token = rawCandidate && validToken.test(rawCandidate) ? rawCandidate : "";
-    snapshotRef.current = { ready: true, token, scope, locationKey };
-
-    url.hash = "";
-    if (legacyTokenInQuery || hadFragment) {
-      window.history.replaceState(
-        window.history.state,
-        "",
-        `${url.pathname}${url.search}`,
+    function captureFragment() {
+      const url = new URL(window.location.href);
+      const rawFragmentToken = new URLSearchParams(url.hash.slice(1)).get(
+        "token",
       );
+      const hadFragment = Boolean(url.hash);
+      if (legacyTokenInQuery) url.searchParams.delete("token");
+
+      const locationKey = `${url.pathname}${url.search}`;
+      const previous = snapshotRef.current;
+      const rawCandidate = legacyTokenInQuery
+        ? null
+        : (rawFragmentToken ??
+          (previous.scope === scope && previous.locationKey === locationKey
+            ? previous.token
+            : null));
+      const token =
+        rawCandidate && validToken.test(rawCandidate) ? rawCandidate : "";
+      snapshotRef.current = { ready: true, token, scope, locationKey };
+
+      url.hash = "";
+      if (legacyTokenInQuery || hadFragment) {
+        window.history.replaceState(
+          window.history.state,
+          "",
+          `${url.pathname}${url.search}`,
+        );
+      }
+      window.dispatchEvent(new Event(tokenFragmentChangedEvent));
     }
-    window.dispatchEvent(new Event(tokenFragmentChangedEvent));
+    captureFragment();
+    window.addEventListener("hashchange", captureFragment);
+    return () => window.removeEventListener("hashchange", captureFragment);
   }, [legacyTokenInQuery, scope]);
 
   return snapshot.scope === scope ? snapshot : emptySnapshot;

@@ -18,6 +18,7 @@ enum UserRole {
   ACCOUNTANT 
   OPERATIONS
   WAREHOUSE
+  DRIVER
 }
 
 enum MembershipStatus {
@@ -116,6 +117,9 @@ model Company {
   merchantSettlementRequests MerchantSettlementRequest[] @relation("MerchantSettlementRequestCompany")
   staffInvitations StaffInvitation[]
   staffAccessEvents StaffAccessEvent[]
+  driverAccounts DriverAccount[]
+  driverInvitations DriverInvitation[]
+  driverAccessEvents DriverAccessEvent[]
 
   id        String   @id @default(uuid())
   name      String
@@ -159,6 +163,54 @@ model Company {
   @@check(expression: "\"currency\" IN ('ILS','USD','EUR','JOD')", name:"company_currency")
 }
 
+model DriverAccount {
+  id String @id @default(uuid())
+  userId String @unique
+  workerId String @unique
+  companyId String
+  phone String @unique
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId,companyId], references: [id,companyId], onDelete: Restrict)
+  worker Worker @relation(fields: [workerId,companyId], references: [id,companyId], onDelete: Restrict)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  @@check(expression: "\"phone\" ~ '^\\+(9705[69][0-9]{7}|9725[0-9]{8})$'", name:"driver_phone_e164")
+  @@index([companyId])
+  @@unique([userId,companyId])
+  @@unique([workerId,companyId])
+  @@map("driver_accounts")
+}
+
+model DriverInvitation {
+  id String @id @default(uuid())
+  companyId String
+  workerId String
+  phone String
+  tokenHash String @unique
+  issuedById String
+  expiresAt DateTime
+  acceptedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  worker Worker @relation(fields: [workerId,companyId], references: [id,companyId], onDelete: Restrict)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  @@index([companyId,workerId])
+  @@check(expression: "NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL)", name:"driver_invitation_state")
+  @@map("driver_invitations")
+}
+
+model DriverAccessEvent {
+  id String @id @default(uuid())
+  companyId String
+  workerId String
+  actorId String
+  action String
+  details Json
+  createdAt DateTime @default(now())
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  @@index([companyId,workerId,createdAt])
+  @@map("driver_access_events")
+}
+
 model StaffAccessEvent {
   id String @id @default(uuid())
   companyId String
@@ -173,6 +225,7 @@ model StaffAccessEvent {
 }
 
 model User {
+  driverAccount DriverAccount?
   @@unique([id,companyId])
   merchantMembership MerchantMembership?
 
@@ -187,6 +240,7 @@ model User {
   verificationTokenExpiresAt DateTime?
   isEmailVerified Boolean @default(false)
   isActive Boolean @default(true)
+  authVersion Int @default(0)
   createdAt DateTime @default(now())
   updatedAt temporal.updatedAt()  
 
@@ -247,6 +301,9 @@ model PlatformAdminGrant {
 }
 
 model Worker {
+  driverAccount DriverAccount?
+  driverInvitations DriverInvitation[]
+  offboardedAt DateTime?
   pickupRequests PickupRequest[]
 
   id          String       @id @default(uuid())

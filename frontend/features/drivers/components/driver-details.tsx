@@ -9,6 +9,7 @@ import { useDriverRead } from "../use-driver-read";
 import { DriverReadError } from "./driver-feedback";
 import { DriverEditor } from "./driver-editor";
 import { DriverSuspension } from "./driver-suspension";
+import { DriverAccessControls } from "./driver-access";
 import { useLocale } from "@/lib/i18n";
 
 export function DriverDetails({
@@ -127,6 +128,7 @@ export function DriverDetails({
                 onPending={setPending}
                 onSaved={saved}
               />
+              <DriverAccessControls key={`${scope.userId}:${scope.companyId}:${id}`} id={id} scope={scope} onPending={setPending} onUpdated={saved} />
             </div>
           ) : (
             <DriverReadError status={result.status} retry={retry} />

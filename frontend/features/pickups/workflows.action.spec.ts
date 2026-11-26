@@ -208,6 +208,19 @@ test("accountants may review settlement requests but never parcel amendments", a
     ).status,
   ).toBe("ready");
 });
+
+test('Operations can review parcel requests without accessing settlement requests', async () => {
+  role = 'OPERATIONS'; body = { companyId, items: [] };
+  expect((await requestsForSession(jar, scope, { kind: 'changes', action: 'list' })).status).toBe('ready');
+  expect(await requestsForSession(jar, scope, { kind: 'settlements', action: 'list' })).toEqual({ status: 'forbidden' });
+  expect(requests.map(request => request.path)).toEqual(['/parcel-requests?page=1&pageSize=25']);
+});
+
+test('Warehouse cannot access either merchant request queue', async () => {
+  role = 'WAREHOUSE'; body = { companyId, items: [] };
+  for (const kind of ['changes', 'settlements'] as const) expect(await requestsForSession(jar, scope, { kind, action: 'list' })).toEqual({ status: 'forbidden' });
+  expect(requests).toEqual([]);
+});
 test("does not claim merchant request review succeeded on an uncertain response", async () => {
   status = 503;
   expect(

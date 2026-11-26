@@ -16,6 +16,7 @@ import {
 } from "../drivers.types";
 
 export const driverWriteMessages = {
+  conflict: "Revoke login access before changing a linked phone, then reissue the driver invitation.",
   invalid: "Check the driver name and phone number, then try again.",
   unavailable: "Drivers could not be saved right now. Please try again.",
   unauthenticated: "Sign in again to continue.",

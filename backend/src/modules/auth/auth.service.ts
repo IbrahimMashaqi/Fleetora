@@ -264,6 +264,7 @@ export class AuthService {
   async refreshTokens(
     userId: string,
     refreshToken: string,
+    driverSession = false,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -279,6 +280,7 @@ export class AuthService {
       userId,
       async (user, saveRefreshToken, companyIsActive) => {
         if (!user) throw new UnauthorizedException('Access Denied: User not found');
+        if ((user.role === 'DRIVER') !== driverSession) throw new UnauthorizedException('Session principal changed');
         if (!user.isActive || !companyIsActive) {
           throw new UnauthorizedException('Access Denied: Account is inactive');
         }
@@ -301,6 +303,7 @@ export class AuthService {
           email: user.email ?? '',
           role: user.role,
           orgId: user.companyId ?? '',
+          ...(user.role === 'DRIVER' ? { sessionVersion: user.authVersion } : {}),
         };
         const [accessToken, newRefreshToken] = await Promise.all([
           this.tokenService.generateAccessToken(payload),

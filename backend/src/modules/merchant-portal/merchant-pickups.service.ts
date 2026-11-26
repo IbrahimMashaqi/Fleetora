@@ -293,6 +293,7 @@ export class MerchantPickupsService {
           input.workerId &&
           !(await tx.orm.public.Worker.where({ id: input.workerId, companyId })
             .where((w) => not(w.status.eq('SUSPENDED')))
+            .where(w => w.offboardedAt.isNull())
             .first())
         )
           throw new NotFoundException('Eligible pickup driver not found');

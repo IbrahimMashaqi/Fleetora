@@ -103,7 +103,7 @@ type AuthorizedSession =
   | { status: "ready"; bearer: string; companyId: string }
   | { status: "unauthenticated" | "forbidden" | "changed" | "unavailable" };
 
-async function authorizeDriverSession(
+export async function authorizeDriverSession(
   jar: SessionCookies,
   expected: DriverScope,
 ): Promise<AuthorizedSession> {
@@ -238,12 +238,15 @@ function validWrite(operation: DriverWrite): DriverWrite | null {
     operation.kind === "suspension" &&
     typeof operation.id === "string" &&
     uuid.test(operation.id) &&
-    typeof operation.suspended === "boolean"
+    typeof operation.suspended === "boolean" &&
+    (!operation.suspended || (typeof operation.reason === 'string' && operation.reason.trim().length > 0)) &&
+    (operation.reason === undefined || (typeof operation.reason === 'string' && operation.reason.trim().length > 0 && operation.reason.length <= 500))
   )
     return {
       kind: "suspension",
       id: operation.id,
       suspended: operation.suspended,
+      ...(operation.reason !== undefined ? { reason: operation.reason.trim() } : {}),
     };
   return null;
 }
@@ -278,7 +281,7 @@ export async function writeDriverForSession(
             : "PUT",
       body:
         operation.kind === "suspension"
-          ? { suspended: operation.suspended }
+          ? { suspended: operation.suspended, ...(operation.reason !== undefined ? { reason: operation.reason } : {}) }
           : { name: operation.input.name, phone: operation.input.phone },
       bearer,
       expectedCompany: companyId,
@@ -291,6 +294,7 @@ export async function writeDriverForSession(
     if (response.status === 400) return { status: "invalid" };
     if (response.status === 404 && operation.kind !== "create")
       return { status: "not-found" };
+    if (response.status === 409) return { status: "conflict" };
     if (!response.ok) return { status: "uncertain" };
     const body = await readBackendBody(response);
     if (!object(body) || body.success !== true || !object(body.data))

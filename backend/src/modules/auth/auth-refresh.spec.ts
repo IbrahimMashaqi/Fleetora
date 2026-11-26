@@ -85,7 +85,7 @@ describe('real JWT authentication HTTP contracts (in-memory persistence)', () =>
     user = {
       id: userId, companyId, fullName: 'Fixture User', email: 'refresh@example.invalid',
       password: await bcrypt.hash(password, 4), role: 'COMPANY_ADMIN',
-      isActive: true, isEmailVerified: true, refreshToken: null,
+      isActive: true, isEmailVerified: true, refreshToken: null, authVersion: 0,
       verificationToken: null, verificationTokenExpiresAt: null,
       createdAt: Temporal.Now.instant(), updatedAt: Temporal.Now.instant(),
     };

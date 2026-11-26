@@ -34,11 +34,14 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
     ) {
       throw new UnauthorizedException();
     }
+    if ((payload.role === 'DRIVER') !== (user.role === 'DRIVER')) throw new UnauthorizedException();
+    if (user.role === 'DRIVER' && (payload.sessionVersion !== user.authVersion || !(await this.authRepository.hasDriverIdentity(user.id, user.companyId)))) throw new UnauthorizedException();
     return {
       sub: user.id,
       email: user.email ?? '',
       role: user.role,
       orgId: user.companyId ?? '',
+      ...(user.role === 'DRIVER' ? { sessionVersion: user.authVersion } : {}),
     };
   }
 }

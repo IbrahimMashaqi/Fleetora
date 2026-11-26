@@ -96,6 +96,7 @@ export async function requestsForSession(
     path,
     method: operation.action === "review" ? "POST" : "GET",
     accountant: operation.kind === "settlements",
+    operations: operation.kind === "changes",
     ...(operation.kind === "changes" && operation.action === "review"
       ? {
           body: {

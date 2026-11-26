@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { unstable_rethrow } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { withSessionLock } from "@/lib/auth/session-lock";
 import { useLocale } from "@/lib/i18n";
 import { writeDriverAction } from "../drivers.action";
@@ -22,6 +24,7 @@ export function DriverSuspension({
   const { t } = useLocale();
   const suspended = driver.status === "SUSPENDED";
   const [confirming, setConfirming] = useState(false);
+  const [reason, setReason] = useState('');
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<DriverWriteResult | null>(null);
   const busy = useRef(false);
@@ -34,7 +37,7 @@ export function DriverSuspension({
   }, []);
 
   async function save(next: boolean) {
-    if (busy.current || result?.status === "uncertain") return;
+    if (busy.current || result?.status === "uncertain" || (next && !reason.trim())) return;
     busy.current = true;
     setPending(true);
     onPending(true);
@@ -45,6 +48,7 @@ export function DriverSuspension({
           kind: "suspension",
           id: driver.id,
           suspended: next,
+          ...(next ? { reason: reason.trim() } : {}),
         }),
       );
       if (!active.current) return;
@@ -90,13 +94,16 @@ export function DriverSuspension({
               { name: driver.name },
             )}
           </p>
+          <div className="space-y-2">
+            <Label htmlFor="driver-suspension-reason">{t('Suspension reason')}</Label>
+            <Input id="driver-suspension-reason" value={reason} onChange={event => setReason(event.target.value)} required maxLength={500} disabled={locked} autoFocus />
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="destructive"
               size="sm"
-              autoFocus
-              disabled={locked}
+              disabled={locked || !reason.trim()}
               onClick={() => void save(true)}
             >
               {pending ? t("Suspending...") : t("Confirm suspension")}
@@ -108,6 +115,7 @@ export function DriverSuspension({
               disabled={pending}
               onClick={() => {
                 setConfirming(false);
+                setReason('');
                 setResult(null);
               }}
             >

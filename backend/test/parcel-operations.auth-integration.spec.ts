@@ -15,6 +15,7 @@ import { ParcelDashboardRepository } from '../src/modules/parcels/parcel-dashboa
 import { PageDto } from '../src/modules/parcels/parcel.dto.js';
 import { money } from '../src/modules/parcels/parcel-domain.js';
 import { DriversRepository } from '../src/modules/drivers/drivers.repository.js';
+import { DriverIdentityRepository } from '../src/modules/drivers/driver-identity.repository.js';
 import type { TokenPayload } from '../src/modules/auth/token/token.payload.js';
 import {
   AuthPostgresTestGuard,
@@ -345,6 +346,7 @@ describe('parcel operations on disposable PostgreSQL', () => {
       async () => {
         await guard.verify(() => readAuthPostgresIdentity(prisma));
         for (const companyId of fixtureCompanies) {
+          await prisma.db.orm.public.DriverAccessEvent.where({ companyId }).deleteAll();
           await prisma.db.orm.public.SettlementPayment.where({
             companyId,
           }).deleteAll();
@@ -775,7 +777,7 @@ describe('parcel operations on disposable PostgreSQL', () => {
     const own = await parcel(await merchant());
     await transition(own, 'RECEIVED_FROM_MERCHANT');
     await transition(own, 'AT_WAREHOUSE');
-    await drivers.setSuspended(actor, driverId, true);
+    await drivers.setSuspended(actor, driverId, true, 'Documented operational review');
     const before = await revision(own);
     await expect(
       ops.assignment(actor, own, { revision: before, workerId: driverId }),
@@ -792,6 +794,30 @@ describe('parcel operations on disposable PostgreSQL', () => {
       status: 'ASSIGNED',
     });
   });
+  it('BR-117/118 offboarding blocks new assignment without changing existing custody, COD or history', async () => {
+    const identity = new DriverIdentityRepository(prisma);
+    const merchantId = await merchant();
+    const { id: existing, collectionId } = await collected(merchantId);
+    const beforeParcel = await prisma.Shipment.where({ id: existing }).first();
+    const beforeCollection = await prisma.db.orm.public.CodCollection.where({ id: collectionId }).first();
+    const beforeHistory = await prisma.ShipmentHistory.where({ shipmentId: existing }).all();
+    const next = await parcel(merchantId);
+    await transition(next, 'RECEIVED_FROM_MERCHANT'); await transition(next, 'AT_WAREHOUSE');
+    const result = await Promise.allSettled([
+      identity.offboard(actor, driverId, false),
+      ops.assignment(actor, next, { revision: await revision(next), workerId: driverId }),
+    ]);
+    expect(result[0].status).toBe('fulfilled');
+    // An assignment serialized before offboarding remains an existing obligation.
+    // Every subsequent new task is rejected, regardless of which writer won.
+    const later = await parcel(merchantId);
+    await transition(later, 'RECEIVED_FROM_MERCHANT'); await transition(later, 'AT_WAREHOUSE');
+    await expect(ops.assignment(actor, later, { revision: await revision(later), workerId: driverId })).rejects.toMatchObject({ status: 404 });
+    expect(await prisma.Shipment.where({ id: existing }).first()).toEqual(beforeParcel);
+    expect(await prisma.db.orm.public.CodCollection.where({ id: collectionId }).first()).toEqual(beforeCollection);
+    expect(await prisma.ShipmentHistory.where({ shipmentId: existing }).all()).toEqual(beforeHistory);
+  });
+
   it('enforces accountant permissions and persisted user role changes', async () => {
     const merchantId = await merchant();
     const id = await parcel(merchantId);

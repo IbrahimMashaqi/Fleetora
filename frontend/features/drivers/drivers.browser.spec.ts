@@ -116,6 +116,10 @@ test.beforeAll(async () => {
         .end(JSON.stringify({ message: "private upstream detail" }));
       return;
     }
+    if (url.pathname.endsWith('/access')) {
+      response.end(JSON.stringify({ success: true, data: { companyId: requestUser.orgId, workerId: url.pathname.split('/')[2], phone: record.phone, linked: false, accessActive: false, offboarded: false, pendingInvitation: null } }));
+      return;
+    }
     const page = Number(url.searchParams.get("page") ?? 1);
     const data =
       url.pathname === "/drivers"
@@ -230,7 +234,7 @@ test("adds, edits, suspends, and reactivates a driver record", async ({
   await expect(details.getByText("Lina Haddad", { exact: true })).toBeVisible();
   await expect(details.getByText("Offline", { exact: true })).toBeVisible();
   await expect(
-    page.getByRole("main").getByText("Lina Haddad", { exact: true }),
+    page.getByRole("list", { name: "Drivers", exact: true }).getByText("Lina Haddad", { exact: true }),
   ).toBeVisible();
 
   await details.getByRole("button", { name: "Edit details" }).click();
@@ -251,6 +255,8 @@ test("adds, edits, suspends, and reactivates a driver record", async ({
   await details.getByRole("button", { name: "Keep active" }).click();
   expect(writes.filter((write) => write.method === "PUT")).toEqual([]);
   await details.getByRole("button", { name: "Suspend driver" }).click();
+  await expect(details.getByRole("button", { name: "Confirm suspension" })).toBeDisabled();
+  await details.getByLabel("Suspension reason").fill('Documented operational review');
   await details.getByRole("button", { name: "Confirm suspension" }).click();
   await expect(details.getByText("Suspended", { exact: true })).toBeVisible();
   await details.getByRole("button", { name: "Reactivate driver" }).click();
@@ -273,7 +279,7 @@ test("adds, edits, suspends, and reactivates a driver record", async ({
       method: "PUT",
       path: "/drivers/66666666-6666-4666-8666-666666666666/suspension",
       context: "company-a",
-      body: { suspended: true },
+      body: { suspended: true, reason: 'Documented operational review' },
     },
     {
       method: "PUT",
