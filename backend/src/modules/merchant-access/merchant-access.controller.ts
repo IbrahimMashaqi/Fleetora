@@ -24,10 +24,12 @@ import {
   AcceptMerchantInvitationDto,
   CompanyMerchantInvitationDto,
   MerchantInvitationDto,
+  PreviewMerchantInvitationDto,
   UpdateMerchantEmployeeDto,
 } from './merchant-access.dto.js';
 import { MerchantAccessService } from './merchant-access.service.js';
 import { MerchantAccessGuard } from './merchant-access.guard.js';
+import { INVITATION_PREVIEW_LIMITER } from './merchant-access.types.js';
 import type { MerchantIdentity } from './merchant-access.types.js';
 
 @ApiTags('merchant-access')
@@ -40,6 +42,8 @@ export class MerchantAccessController {
     private readonly access: MerchantAccessService,
     @Inject(InMemoryRecoveryRateLimiter)
     private readonly limiter: InMemoryRecoveryRateLimiter,
+    @Inject(INVITATION_PREVIEW_LIMITER)
+    private readonly previewLimiter: InMemoryRecoveryRateLimiter,
   ) {}
 
   @Get('me')
@@ -85,6 +89,18 @@ export class MerchantAccessController {
     return this.access.revoke(actor, id);
   }
 
+  /** OD-13: what the invitee is accepting (the agreement for a PENDING merchant's OWNER). */
+  @Public()
+  @Post('invitations/preview')
+  @Header('Cache-Control', 'no-store')
+  previewInvitation(
+    @Body() input: PreviewMerchantInvitationDto,
+    @Req() request: Pick<Request, 'ip'>,
+  ) {
+    this.throttle(this.previewLimiter, request, input.token);
+    return this.access.previewInvitation(input);
+  }
+
   @Public()
   @Post('invitations/accept')
   @Header('Cache-Control', 'no-store')
@@ -92,9 +108,18 @@ export class MerchantAccessController {
     @Body() input: AcceptMerchantInvitationDto,
     @Req() request: Pick<Request, 'ip'>,
   ) {
-    const limit = this.limiter.consume(
+    this.throttle(this.limiter, request, input.token);
+    return this.access.accept(input);
+  }
+
+  private throttle(
+    limiter: InMemoryRecoveryRateLimiter,
+    request: Pick<Request, 'ip'>,
+    token: string,
+  ) {
+    const limit = limiter.consume(
       request.ip ?? 'unknown',
-      `merchant-invitation:${createHash('sha256').update(input.token).digest('hex')}`,
+      `merchant-invitation:${createHash('sha256').update(token).digest('hex')}`,
     );
     if (!limit.allowed)
       throw new HttpException(
@@ -104,7 +129,6 @@ export class MerchantAccessController {
         },
         HttpStatus.TOO_MANY_REQUESTS,
       );
-    return this.access.accept(input);
   }
 }
 

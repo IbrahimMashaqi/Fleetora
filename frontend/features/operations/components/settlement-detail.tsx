@@ -198,6 +198,8 @@ function PreviewContent({
               name: "merchantId",
               label: "Merchants",
               lookup: "merchants",
+              // OD-13: only ACTIVE merchants can be settled.
+              lookupQuery: { activationStatus: "ACTIVE" },
               required: true,
               value: merchantId,
               span: true,

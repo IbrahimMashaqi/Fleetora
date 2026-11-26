@@ -40,6 +40,8 @@ const merchant = {
   serviceFee: "0.00",
   feePayer: "MERCHANT",
   active: true,
+  activationStatus: "ACTIVE",
+  legacyActivation: true,
   revision: 1,
 };
 let server: Server;

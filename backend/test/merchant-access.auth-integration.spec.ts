@@ -66,6 +66,16 @@ describe('merchant identity on disposable PostgreSQL', () => {
       actor: { sub: user.id },
     };
   }
+  /** OD-13: what the invitee was shown, echoed back as explicit acceptance. */
+  async function agree(token: string) {
+    const preview = await service.previewInvitation({ token });
+    return preview.requiresAgreement && preview.agreement
+      ? {
+          acceptAgreement: true,
+          agreementRevision: preview.agreement.merchantRevision,
+        }
+      : {};
+  }
   async function activate(role: 'OWNER' | 'EMPLOYEE' = 'OWNER') {
     const invitation = await service.issueByAdmin(admin, merchantId, {
       email: email(),
@@ -75,6 +85,7 @@ describe('merchant identity on disposable PostgreSQL', () => {
       token: invitation.token,
       name: 'Invited person',
       password,
+      ...(await agree(invitation.token)),
     });
     const user = await prisma.User.where({ email: result.email }).first();
     if (!user) throw new Error('Accepted identity was not persisted');
@@ -203,9 +214,13 @@ describe('merchant identity on disposable PostgreSQL', () => {
       email: email(),
       role: 'OWNER',
     });
+    const [firstTerms, secondTerms] = [
+      await agree(first.token),
+      await agree(second.token),
+    ];
     const results = await Promise.allSettled([
-      service.accept({ token: first.token, name: 'Owner one', password }),
-      service.accept({ token: second.token, name: 'Owner two', password }),
+      service.accept({ token: first.token, name: 'Owner one', password, ...firstTerms }),
+      service.accept({ token: second.token, name: 'Owner two', password, ...secondTerms }),
     ]);
     expect(
       results.filter((result) => result.status === 'fulfilled'),
@@ -217,6 +232,19 @@ describe('merchant identity on disposable PostgreSQL', () => {
       status: 'ACTIVE',
     }).all();
     expect(owners).toHaveLength(1);
+    const merchant = await prisma.db.orm.public.Merchant.where({
+      id: merchantId,
+    }).first();
+    expect(merchant).toMatchObject({
+      activationStatus: 'ACTIVE',
+      agreementAcceptedById: owners[0].userId,
+    });
+    const accepted = await prisma.db.orm.public.MerchantAccessEvent.where({
+      companyId,
+      merchantId,
+      action: 'AGREEMENT_ACCEPTED',
+    }).all();
+    expect(accepted).toHaveLength(1);
   });
 
   it('consumes a token atomically when the same acceptance races', async () => {
@@ -269,6 +297,7 @@ describe('merchant identity on disposable PostgreSQL', () => {
     await service.accept({
       token: invitation.token,
       password: 'ExistingPass1',
+      ...(await agree(invitation.token)),
     });
     expect(await prisma.User.where({ id: existing.id }).first()).toMatchObject({
       password: storedPassword,
@@ -371,7 +400,11 @@ describe('merchant identity on disposable PostgreSQL', () => {
     await expect(
       service.accept({ token: invitation.token, name: 'Imposter', password: 'AttackerPass1' }),
     ).rejects.toMatchObject({ status: 401 });
-    await service.accept({ token: invitation.token, password: 'ExistingPass1' });
+    await service.accept({
+      token: invitation.token,
+      password: 'ExistingPass1',
+      ...(await agree(invitation.token)),
+    });
     expect(await prisma.User.where({ id: legacy.id }).first()).toMatchObject({
       email: legacyEmail,
       companyId,
@@ -437,6 +470,191 @@ describe('merchant identity on disposable PostgreSQL', () => {
           event.actorId === owner.user.id,
       ),
     ).toBe(true);
+  });
+
+  describe('OD-13 merchant activation (BR-002, BR-093)', () => {
+    const merchantRow = () =>
+      prisma.db.orm.public.Merchant.where({ id: merchantId }).first();
+
+    it('keeps a staff-created merchant PENDING and requires the agreement to activate', async () => {
+      expect(await merchantRow()).toMatchObject({
+        activationStatus: 'PENDING',
+        legacyActivation: false,
+        agreementAcceptedAt: null,
+        agreementTerms: null,
+      });
+      const invitation = await service.issueByAdmin(admin, merchantId, {
+        email: email(),
+        role: 'OWNER',
+      });
+      const preview = await service.previewInvitation({ token: invitation.token });
+      expect(preview).toMatchObject({
+        role: 'OWNER',
+        merchantName: 'Fixture merchant',
+        activationStatus: 'PENDING',
+        requiresAgreement: true,
+        agreement: {
+          currency: 'ILS',
+          plan: null,
+          deliveryFee: '15.00',
+          returnFee: '5.00',
+          serviceFee: '0.00',
+          feePayer: 'MERCHANT',
+          returnFeePolicy: 'ON_MERCHANT_HANDOFF',
+        },
+      });
+      expect(JSON.stringify(preview)).not.toMatch(/tokenHash|password/);
+      // Accepting the invitation without accepting the agreement activates nothing.
+      await expect(
+        service.accept({ token: invitation.token, name: 'Owner', password }),
+      ).rejects.toMatchObject({ status: 400 });
+      await expect(
+        service.accept({
+          token: invitation.token,
+          name: 'Owner',
+          password,
+          acceptAgreement: false,
+          agreementRevision: preview.agreement?.merchantRevision,
+        }),
+      ).rejects.toMatchObject({ status: 400 });
+      expect(await merchantRow()).toMatchObject({ activationStatus: 'PENDING' });
+      expect(await prisma.User.where({ email: invitation.email }).first()).toBeNull();
+    });
+
+    it('activates on owner acceptance and stores the accepted terms snapshot', async () => {
+      const before = await merchantRow();
+      const { actor, user } = await activate();
+      const after = await merchantRow();
+      expect(after).toMatchObject({
+        activationStatus: 'ACTIVE',
+        legacyActivation: false,
+        agreementAcceptedById: user.id,
+        revision: (before?.revision ?? 0) + 1,
+        agreementTerms: {
+          merchantRevision: before?.revision,
+          currency: 'ILS',
+          deliveryFee: '15.00',
+          returnFee: '5.00',
+        },
+      });
+      expect(after?.agreementAcceptedAt).not.toBeNull();
+      await expect(service.resolve(actor, 'PARCEL_VIEW')).resolves.toMatchObject({
+        merchantId,
+        owner: true,
+      });
+      const audit = await service.activity(actor);
+      expect(audit.items.map((event) => event.action)).toContain('AGREEMENT_ACCEPTED');
+    });
+
+    it('rejects acceptance of terms that changed after they were shown', async () => {
+      const invitation = await service.issueByAdmin(admin, merchantId, {
+        email: email(),
+        role: 'OWNER',
+      });
+      const shown = await agree(invitation.token);
+      const current = await merchantRow();
+      await prisma.db.orm.public.Merchant.where({ id: merchantId }).update({
+        deliveryFeeMinor: 2500n,
+        revision: (current?.revision ?? 0) + 1,
+      });
+      await expect(
+        service.accept({ token: invitation.token, name: 'Owner', password, ...shown }),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(await merchantRow()).toMatchObject({ activationStatus: 'PENDING' });
+      const fresh = await agree(invitation.token);
+      await service.accept({ token: invitation.token, name: 'Owner', password, ...fresh });
+      expect(await merchantRow()).toMatchObject({
+        activationStatus: 'ACTIVE',
+        agreementTerms: { deliveryFee: '25.00' },
+      });
+    });
+
+    it('does not let an employee acceptance activate a PENDING merchant', async () => {
+      const invitation = await service.issueByAdmin(admin, merchantId, {
+        email: email(),
+        role: 'EMPLOYEE',
+      });
+      expect(await service.previewInvitation({ token: invitation.token })).toMatchObject({
+        requiresAgreement: false,
+        agreement: null,
+      });
+      const accepted = await service.accept({
+        token: invitation.token,
+        name: 'Early employee',
+        password,
+        acceptAgreement: true,
+      });
+      expect(await merchantRow()).toMatchObject({ activationStatus: 'PENDING' });
+      const employee = await prisma.User.where({ email: accepted.email }).first();
+      if (!employee) throw new Error('Employee identity not persisted');
+      await expect(
+        service.resolve({ sub: employee.id }, 'PARCEL_VIEW'),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('activates only the invited merchant of its own company (cross-tenant)', async () => {
+      await activate();
+      expect(
+        await prisma.db.orm.public.Merchant.where({ id: foreignMerchantId }).first(),
+      ).toMatchObject({ activationStatus: 'PENDING' });
+      const foreignInvite = await service.issueByAdmin(foreignAdmin, foreignMerchantId, {
+        email: email(),
+        role: 'OWNER',
+      });
+      // A revision that was never shown for this merchant never activates it.
+      await expect(
+        service.accept({
+          token: foreignInvite.token,
+          name: 'Foreign owner',
+          password,
+          acceptAgreement: true,
+          agreementRevision: 999,
+        }),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(
+        await prisma.db.orm.public.Merchant.where({ id: foreignMerchantId }).first(),
+      ).toMatchObject({ activationStatus: 'PENDING' });
+      await expect(
+        service.previewInvitation({ token: 'f'.repeat(64) }),
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it('lets exactly one of a concurrent terms edit and acceptance win on the same revision', async () => {
+      const invitation = await service.issueByAdmin(admin, merchantId, {
+        email: email(),
+        role: 'OWNER',
+      });
+      const shown = await agree(invitation.token);
+      const revision = (await merchantRow())?.revision ?? 0;
+      const [edit, accept] = await Promise.allSettled([
+        prisma.db.transaction(async (tx) => {
+          await tx.execute(
+            prisma.db.raw
+              .sql`SELECT "id" FROM "merchants" WHERE "id"=${merchantId} FOR UPDATE`
+              .affectedCount()
+              .build(),
+          );
+          const updated = await tx.orm.public.Merchant.where({
+            id: merchantId,
+            revision,
+          }).update({ deliveryFeeMinor: 9900n, revision: revision + 1 });
+          if (!updated) throw new Error('stale revision');
+        }),
+        service.accept({ token: invitation.token, name: 'Owner', password, ...shown }),
+      ]);
+      const row = await merchantRow();
+      if (accept.status === 'fulfilled') {
+        // Acceptance won: the edit lost its revision; the snapshot has the shown fee.
+        expect(edit.status).toBe('rejected');
+        expect(row).toMatchObject({
+          activationStatus: 'ACTIVE',
+          agreementTerms: { deliveryFee: '15.00' },
+        });
+      } else {
+        expect(edit.status).toBe('fulfilled');
+        expect(row).toMatchObject({ activationStatus: 'PENDING' });
+      }
+    });
   });
 
   it('enforces tenant-matching merchant membership foreign keys in PostgreSQL', async () => {

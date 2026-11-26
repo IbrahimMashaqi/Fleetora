@@ -151,12 +151,23 @@ describe('merchant app -> actual Nest HTTP -> PostgreSQL -> company operations',
         })
         .expect(201),
     );
+    // OD-13: the invitee sees the agreement, and an OWNER of a PENDING merchant accepts it.
+    const preview = data(
+      await api()
+        .post('/merchant/invitations/preview')
+        .send({ token: invitation.token })
+        .expect(201),
+    );
+    const agreement = preview.agreement as { merchantRevision?: number } | null;
     await api()
       .post('/merchant/invitations/accept')
       .send({
         token: invitation.token,
         name: 'Fictional merchant owner',
         password,
+        ...(preview.requiresAgreement === true && agreement
+          ? { acceptAgreement: true, agreementRevision: agreement.merchantRevision }
+          : {}),
       })
       .expect(201);
     const login = data(

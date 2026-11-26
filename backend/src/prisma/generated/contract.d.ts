@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'c8a9d6da8ad8dccf886dbbbdc8ef3564762b631b3fcc5c988586be2b5daa9a2c'>;
+  StorageHashBase<'708f9e2ed66bf132dfef0f2d340877256f07cf5e8d8c71398a4a29290afe4280'>;
 export type ExecutionHash =
   ExecutionHashBase<'136efae69fcefa90706b18d368032752b32d01366a8d36768a8029e128deee87'>;
 export type ProfileHash =
@@ -357,6 +357,11 @@ export type FieldOutputTypes = {
       readonly longitude: CodecTypes['pg/float8@1']['output'] | null;
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
       readonly active: CodecTypes['pg/bool@1']['output'];
+      readonly activationStatus: CodecTypes['pg/text@1']['output'];
+      readonly legacyActivation: CodecTypes['pg/bool@1']['output'];
+      readonly agreementAcceptedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly agreementAcceptedById: CodecTypes['pg/text@1']['output'] | null;
+      readonly agreementTerms: CodecTypes['pg/json@1']['output'] | null;
       readonly currency: CodecTypes['pg/text@1']['output'];
       readonly deliveryFeeMinor: CodecTypes['pg/int8@1']['output'];
       readonly returnFeeMinor: CodecTypes['pg/int8@1']['output'];
@@ -898,6 +903,11 @@ export type FieldInputTypes = {
       readonly longitude: CodecTypes['pg/float8@1']['input'] | null;
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
       readonly active: CodecTypes['pg/bool@1']['input'];
+      readonly activationStatus: CodecTypes['pg/text@1']['input'];
+      readonly legacyActivation: CodecTypes['pg/bool@1']['input'];
+      readonly agreementAcceptedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly agreementAcceptedById: CodecTypes['pg/text@1']['input'] | null;
+      readonly agreementTerms: CodecTypes['pg/json@1']['input'] | null;
       readonly currency: CodecTypes['pg/text@1']['input'];
       readonly deliveryFeeMinor: CodecTypes['pg/int8@1']['input'];
       readonly returnFeeMinor: CodecTypes['pg/int8@1']['input'];
@@ -1557,7 +1567,11 @@ export type StorageColumnTypes = {
       readonly to: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
     };
     readonly merchants: {
+      readonly activationStatus: CodecTypes['pg/text@1']['output'];
       readonly active: CodecTypes['pg/bool@1']['output'];
+      readonly agreementAcceptedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+      readonly agreementAcceptedById: CodecTypes['pg/text@1']['output'] | null;
+      readonly agreementTerms: CodecTypes['pg/json@1']['output'] | null;
       readonly city: CodecTypes['pg/text@1']['output'];
       readonly companyId: CodecTypes['pg/text@1']['output'];
       readonly contactName: CodecTypes['pg/text@1']['output'];
@@ -1567,6 +1581,7 @@ export type StorageColumnTypes = {
       readonly feePayer: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly latitude: CodecTypes['pg/float8@1']['output'] | null;
+      readonly legacyActivation: CodecTypes['pg/bool@1']['output'];
       readonly longitude: CodecTypes['pg/float8@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly notes: CodecTypes['pg/text@1']['output'] | null;
@@ -2098,7 +2113,11 @@ export type StorageColumnInputTypes = {
       readonly to: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
     };
     readonly merchants: {
+      readonly activationStatus: CodecTypes['pg/text@1']['input'];
       readonly active: CodecTypes['pg/bool@1']['input'];
+      readonly agreementAcceptedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
+      readonly agreementAcceptedById: CodecTypes['pg/text@1']['input'] | null;
+      readonly agreementTerms: CodecTypes['pg/json@1']['input'] | null;
       readonly city: CodecTypes['pg/text@1']['input'];
       readonly companyId: CodecTypes['pg/text@1']['input'];
       readonly contactName: CodecTypes['pg/text@1']['input'];
@@ -2108,6 +2127,7 @@ export type StorageColumnInputTypes = {
       readonly feePayer: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly latitude: CodecTypes['pg/float8@1']['input'] | null;
+      readonly legacyActivation: CodecTypes['pg/bool@1']['input'];
       readonly longitude: CodecTypes['pg/float8@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly notes: CodecTypes['pg/text@1']['input'] | null;
@@ -2835,6 +2855,11 @@ export namespace Models {
     longitude: CodecTypes['pg/float8@1']['output'] | null;
     notes: CodecTypes['pg/text@1']['output'] | null;
     active: CodecTypes['pg/bool@1']['output'];
+    activationStatus: CodecTypes['pg/text@1']['output'];
+    legacyActivation: CodecTypes['pg/bool@1']['output'];
+    agreementAcceptedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
+    agreementAcceptedById: CodecTypes['pg/text@1']['output'] | null;
+    agreementTerms: CodecTypes['pg/json@1']['output'] | null;
     currency: CodecTypes['pg/text@1']['output'];
     deliveryFeeMinor: CodecTypes['pg/int8@1']['output'];
     returnFeeMinor: CodecTypes['pg/int8@1']['output'];
@@ -5580,6 +5605,39 @@ type ContractBase = Omit<
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/bool@1', true>;
                   };
+                };
+                readonly activationStatus: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'PENDING'>;
+                  };
+                };
+                readonly legacyActivation: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly agreementAcceptedAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: true;
+                };
+                readonly agreementAcceptedById: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly agreementTerms: {
+                  readonly nativeType: 'json';
+                  readonly codecId: 'pg/json@1';
+                  readonly nullable: true;
                 };
                 readonly currency: {
                   readonly nativeType: 'text';
@@ -9455,6 +9513,29 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
+              readonly activationStatus: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly legacyActivation: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly agreementAcceptedAt: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+              readonly agreementAcceptedById: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly agreementTerms: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/json@1' };
+              };
               readonly currency: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -9679,6 +9760,11 @@ type ContractBase = Omit<
                 readonly longitude: { readonly column: 'longitude' };
                 readonly notes: { readonly column: 'notes' };
                 readonly active: { readonly column: 'active' };
+                readonly activationStatus: { readonly column: 'activationStatus' };
+                readonly legacyActivation: { readonly column: 'legacyActivation' };
+                readonly agreementAcceptedAt: { readonly column: 'agreementAcceptedAt' };
+                readonly agreementAcceptedById: { readonly column: 'agreementAcceptedById' };
+                readonly agreementTerms: { readonly column: 'agreementTerms' };
                 readonly currency: { readonly column: 'currency' };
                 readonly deliveryFeeMinor: { readonly column: 'deliveryFeeMinor' };
                 readonly returnFeeMinor: { readonly column: 'returnFeeMinor' };

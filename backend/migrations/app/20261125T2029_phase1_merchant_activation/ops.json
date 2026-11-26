@@ -1,0 +1,282 @@
+[
+  {
+    "id": "column.public.merchants.activationStatus",
+    "label": "Add column \"activationStatus\" to \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "activationStatus",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"activationStatus\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "activationStatus"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"activationStatus\"",
+        "sql": "ALTER TABLE \"public\".\"merchants\" ADD COLUMN \"activationStatus\" text DEFAULT 'PENDING' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"activationStatus\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "activationStatus"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.merchants.agreementAcceptedAt",
+    "label": "Add column \"agreementAcceptedAt\" to \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "agreementAcceptedAt",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"agreementAcceptedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "agreementAcceptedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"agreementAcceptedAt\"",
+        "sql": "ALTER TABLE \"public\".\"merchants\" ADD COLUMN \"agreementAcceptedAt\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"agreementAcceptedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "agreementAcceptedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.merchants.agreementAcceptedById",
+    "label": "Add column \"agreementAcceptedById\" to \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "agreementAcceptedById",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"agreementAcceptedById\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "agreementAcceptedById"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"agreementAcceptedById\"",
+        "sql": "ALTER TABLE \"public\".\"merchants\" ADD COLUMN \"agreementAcceptedById\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"agreementAcceptedById\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "agreementAcceptedById"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.merchants.agreementTerms",
+    "label": "Add column \"agreementTerms\" to \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "agreementTerms",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"agreementTerms\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "agreementTerms"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"agreementTerms\"",
+        "sql": "ALTER TABLE \"public\".\"merchants\" ADD COLUMN \"agreementTerms\" json"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"agreementTerms\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "agreementTerms"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.merchants.legacyActivation",
+    "label": "Add column \"legacyActivation\" to \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "legacyActivation",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"legacyActivation\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "legacyActivation"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"legacyActivation\"",
+        "sql": "ALTER TABLE \"public\".\"merchants\" ADD COLUMN \"legacyActivation\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"legacyActivation\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "merchants",
+          "legacyActivation"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data.merchants.legacy_activation",
+    "label": "Mark existing merchants ACTIVE (legacy, no recorded acceptance)",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "merchants"
+      }
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "activate every pre-existing merchant as legacy",
+        "sql": "UPDATE \"public\".\"merchants\" SET \"activationStatus\" = 'ACTIVE', \"legacyActivation\" = true",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "ensure no pre-existing merchant was left PENDING",
+        "sql": "SELECT NOT EXISTS (SELECT 1 FROM \"public\".\"merchants\" WHERE \"activationStatus\" <> 'ACTIVE' OR NOT \"legacyActivation\") AS \"result\"",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.merchants.merchant_activation_state_35cfd541",
+    "label": "Add check constraint \"merchant_activation_state_35cfd541\" on \"merchants\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "merchant_activation_state_35cfd541",
+        "table": "merchants"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"merchant_activation_state_35cfd541\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_activation_state_35cfd541",
+          "public",
+          "\"public\".\"merchants\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"merchant_activation_state_35cfd541\"",
+        "sql": "ALTER TABLE \"public\".\"merchants\" ADD CONSTRAINT \"merchant_activation_state_35cfd541\" CHECK ((\"activationStatus\" = 'PENDING' AND NOT \"legacyActivation\" AND \"agreementAcceptedAt\" IS NULL AND \"agreementAcceptedById\" IS NULL AND \"agreementTerms\" IS NULL) OR (\"activationStatus\" = 'ACTIVE' AND ((\"legacyActivation\" AND \"agreementAcceptedAt\" IS NULL AND \"agreementAcceptedById\" IS NULL AND \"agreementTerms\" IS NULL) OR (NOT \"legacyActivation\" AND \"agreementAcceptedAt\" IS NOT NULL AND \"agreementAcceptedById\" IS NOT NULL AND \"agreementTerms\" IS NOT NULL))))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"merchant_activation_state_35cfd541\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "merchant_activation_state_35cfd541",
+          "public",
+          "\"public\".\"merchants\""
+        ]
+      }
+    ]
+  }
+]

@@ -102,6 +102,8 @@ export function parcelFields(
       name: "merchantId",
       label: "Merchants",
       lookup: "merchants",
+      // OD-13: only ACTIVE merchants can receive parcels.
+      lookupQuery: { activationStatus: "ACTIVE" },
       required: true,
       value: row?.merchantId ?? merchantId ?? "",
       lookupLabel: merchantName,

@@ -525,3 +525,100 @@ class PageResult<T> {
   final int pageSize;
   final bool hasNext;
 }
+
+/// OD-13: the merchant agreement an OWNER accepts to activate a PENDING merchant:
+/// a snapshot of the commercial terms set by the delivery company.
+/// Parsed by hand (no generated serializer) and strictly typed.
+class AgreementTerms {
+  const AgreementTerms({
+    required this.merchantRevision,
+    required this.currency,
+    required this.planName,
+    required this.deliveryFee,
+    required this.returnFee,
+    required this.serviceFee,
+    required this.pricingDiscount,
+    required this.feePayer,
+    required this.returnFeePolicy,
+  });
+  final int merchantRevision;
+  final String currency;
+  final String? planName;
+  final String deliveryFee;
+  final String returnFee;
+  final String serviceFee;
+  final String pricingDiscount;
+  final String feePayer;
+  final String returnFeePolicy;
+
+  factory AgreementTerms.fromJson(Map<String, Object?> json) {
+    final plan = json['plan'];
+    final revision = json['merchantRevision'];
+    if (revision is! int || revision < 1) {
+      throw const FormatException('Invalid agreement revision');
+    }
+    if (plan != null && (plan is! Map || plan['name'] is! String)) {
+      throw const FormatException('Invalid agreement plan');
+    }
+    String text(String key) {
+      final value = json[key];
+      if (value is! String || value.isEmpty) {
+        throw FormatException('Invalid agreement $key');
+      }
+      return value;
+    }
+
+    return AgreementTerms(
+      merchantRevision: revision,
+      currency: text('currency'),
+      planName: plan == null ? null : (plan as Map)['name'] as String,
+      deliveryFee: text('deliveryFee'),
+      returnFee: text('returnFee'),
+      serviceFee: text('serviceFee'),
+      pricingDiscount: text('pricingDiscount'),
+      feePayer: text('feePayer'),
+      returnFeePolicy: text('returnFeePolicy'),
+    );
+  }
+}
+
+/// OD-13: what accepting an invitation means for this invitee.
+class InvitationPreview {
+  const InvitationPreview({
+    required this.role,
+    required this.merchantName,
+    required this.companyName,
+    required this.requiresAgreement,
+    required this.agreement,
+  });
+  final String role;
+  final String merchantName;
+  final String companyName;
+  final bool requiresAgreement;
+  final AgreementTerms? agreement;
+
+  factory InvitationPreview.fromJson(Map<String, Object?> json) {
+    final role = json['role'],
+        merchantName = json['merchantName'],
+        companyName = json['companyName'],
+        requiresAgreement = json['requiresAgreement'],
+        agreement = json['agreement'];
+    if (role is! String ||
+        merchantName is! String ||
+        companyName is! String ||
+        requiresAgreement is! bool ||
+        (requiresAgreement && agreement is! Map<String, Object?>) ||
+        (!requiresAgreement && agreement != null)) {
+      throw const FormatException('Invalid invitation preview');
+    }
+    return InvitationPreview(
+      role: role,
+      merchantName: merchantName,
+      companyName: companyName,
+      requiresAgreement: requiresAgreement,
+      agreement: requiresAgreement
+          ? AgreementTerms.fromJson(agreement as Map<String, Object?>)
+          : null,
+    );
+  }
+}

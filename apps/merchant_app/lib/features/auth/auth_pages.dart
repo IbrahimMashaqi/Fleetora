@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/localization/copy.dart';
 import '../../app/localization/locale_state.dart';
 import '../../core/authentication/session.dart';
+import '../../core/networking/models.dart';
 import '../../core/widgets/feedback.dart';
 import 'activation_link.dart';
 
@@ -141,9 +142,13 @@ class _ActivationPageState extends ConsumerState<ActivationPage> {
       _password = TextEditingController();
   bool _busy = false, _done = false;
   Object? _error;
+  // OD-13: the agreement shown for this invitation and the explicit acceptance of it.
+  InvitationPreview? _preview;
+  bool _agreed = false, _agreementMissing = false;
   @override
   void initState() {
     super.initState();
+    _token.addListener(_forgetPreview);
     final token = widget.initialToken;
     if (token != null && validInvitationToken(token)) {
       _token.text = token;
@@ -157,8 +162,17 @@ class _ActivationPageState extends ConsumerState<ActivationPage> {
     }
   }
 
+  void _forgetPreview() {
+    if (_preview == null) return;
+    setState(() {
+      _preview = null;
+      _agreed = false;
+    });
+  }
+
   @override
   void dispose() {
+    _token.removeListener(_forgetPreview);
     _token.dispose();
     _name.dispose();
     _password.dispose();
@@ -172,14 +186,41 @@ class _ActivationPageState extends ConsumerState<ActivationPage> {
       _error = null;
     });
     try {
-      await ref
-          .read(apiProvider)
-          .activate(_token.text.trim(), _name.text.trim(), _password.text);
+      final api = ref.read(apiProvider);
+      final token = _token.text.trim();
+      var preview = _preview;
+      if (preview == null) {
+        preview = await api.previewInvitation(token);
+        if (!mounted) return;
+        setState(() => _preview = preview);
+        // The owner of a pending merchant reviews the agreement before activating.
+        if (preview.requiresAgreement) return;
+      }
+      final agreement = preview.agreement;
+      if (preview.requiresAgreement && !_agreed) {
+        setState(() => _agreementMissing = true);
+        return;
+      }
+      await api.activate(
+        token,
+        _name.text.trim(),
+        _password.text,
+        acceptedAgreementRevision: preview.requiresAgreement
+            ? agreement?.merchantRevision
+            : null,
+      );
       _token.clear();
       _password.clear();
       if (mounted) setState(() => _done = true);
     } on Object catch (error) {
-      if (mounted) setState(() => _error = error);
+      if (mounted) {
+        setState(() {
+          _error = error;
+          // Terms may have changed since they were shown: review them again.
+          _preview = null;
+          _agreed = false;
+        });
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -234,12 +275,27 @@ class _ActivationPageState extends ConsumerState<ActivationPage> {
                       ? null
                       : context.tr('invalidPassword'),
                 ),
+                if (_preview?.agreement case final agreement?) ...[
+                  const SizedBox(height: 24),
+                  _AgreementCard(
+                    agreement: agreement,
+                    accepted: _agreed,
+                    missing: _agreementMissing,
+                    enabled: !_busy,
+                    onChanged: (value) => setState(() {
+                      _agreed = value;
+                      _agreementMissing = false;
+                    }),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 if (_error != null) ErrorNotice(error: _error!),
                 SubmitButton(
                   busy: _busy,
                   onPressed: _submit,
-                  label: context.tr('activate'),
+                  label: context.tr(
+                    _preview == null ? 'agreementReview' : 'activate',
+                  ),
                 ),
               ],
             ),
@@ -251,4 +307,89 @@ class _ActivationPageState extends ConsumerState<ActivationPage> {
       ],
     ),
   );
+}
+
+/// OD-13 (BR-002, BR-093): the terms the owner accepts to activate the merchant.
+class _AgreementCard extends StatelessWidget {
+  const _AgreementCard({
+    required this.agreement,
+    required this.accepted,
+    required this.missing,
+    required this.enabled,
+    required this.onChanged,
+  });
+  final AgreementTerms agreement;
+  final bool accepted, missing, enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    String money(String value) => '$value ${agreement.currency}';
+    final rows = <(String, String)>[
+      (context.tr('agreementCurrency'), agreement.currency),
+      (
+        context.tr('agreementPlan'),
+        agreement.planName ?? context.tr('agreementNoPlan'),
+      ),
+      (context.tr('agreementDeliveryFee'), money(agreement.deliveryFee)),
+      (context.tr('agreementReturnFee'), money(agreement.returnFee)),
+      (context.tr('agreementServiceFee'), money(agreement.serviceFee)),
+      (context.tr('agreementDiscount'), money(agreement.pricingDiscount)),
+      (
+        context.tr('agreementFeePayer'),
+        context.tr('agreementPayer_${agreement.feePayer}'),
+      ),
+      (
+        context.tr('agreementReturnPolicy'),
+        context.tr('agreementReturn_${agreement.returnFeePolicy}'),
+      ),
+    ];
+    return Card(
+      key: const Key('merchant-agreement'),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(context.tr('agreementTitle'), style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(context.tr('agreementHelp')),
+            const SizedBox(height: 12),
+            for (final (label, value) in rows)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: Text(label)),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        value,
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            CheckboxListTile(
+              key: const Key('accept-agreement'),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              value: accepted,
+              onChanged: enabled ? (value) => onChanged(value ?? false) : null,
+              title: Text(context.tr('acceptAgreement')),
+            ),
+            if (missing)
+              Text(
+                context.tr('agreementRequired'),
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }

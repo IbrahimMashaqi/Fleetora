@@ -10,6 +10,7 @@ import { shipmentFilter } from './parcel-filters.js';
 import { randomUUID } from 'node:crypto';
 import type { TokenPayload } from '../auth/token/token.payload.js';
 import {
+  assertActiveMerchant,
   assertRevision,
   assertTransition,
   capabilities,
@@ -83,6 +84,8 @@ export class ParcelOperationsRepository {
         ),
       );
     if (q.active !== undefined) query = query.where({ active: q.active });
+    if (q.activationStatus)
+      query = query.where({ activationStatus: q.activationStatus });
     return page(
       companyId,
       (
@@ -352,6 +355,7 @@ export class ParcelOperationsRepository {
           active: true,
         }).first();
         if (!merchant) throw new NotFoundException('Active merchant not found');
+        assertActiveMerchant(merchant);
         const old = id ? await this.find(tx, id, companyId) : null;
         if (old) {
           // D1: legacy snapshots stay fixed; they are never re-priced by an edit.

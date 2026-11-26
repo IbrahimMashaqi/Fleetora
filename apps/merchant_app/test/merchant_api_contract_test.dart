@@ -49,6 +49,71 @@ void main() {
     expect(requests.single.headers.containsKey('Authorization'), isFalse);
   });
 
+  group('OD-13 merchant agreement', () {
+    final agreement = {
+      'merchantRevision': 3,
+      'currency': 'ILS',
+      'plan': {'id': 'plan', 'name': 'Standard', 'revision': 2},
+      'deliveryFee': '15.00',
+      'returnFee': '5.00',
+      'serviceFee': '0.00',
+      'pricingDiscount': '0.00',
+      'feePayer': 'MERCHANT',
+      'returnFeePolicy': 'ON_MERCHANT_HANDOFF',
+    };
+    test('previews the agreement without bearer and parses it strictly', () async {
+      response = {
+        'email': 'owner@example.invalid',
+        'role': 'OWNER',
+        'companyName': 'Fixture Delivery',
+        'merchantName': 'Fixture Shop',
+        'activationStatus': 'PENDING',
+        'requiresAgreement': true,
+        'agreement': agreement,
+      };
+      await client.restore();
+      final preview = await api.previewInvitation('fixture-invitation');
+      expect(requests.single.path, '/merchant/invitations/preview');
+      expect(requests.single.data, {'token': 'fixture-invitation'});
+      expect(requests.single.headers.containsKey('Authorization'), isFalse);
+      expect(preview.requiresAgreement, isTrue);
+      expect(preview.agreement?.merchantRevision, 3);
+      expect(preview.agreement?.planName, 'Standard');
+      expect(preview.agreement?.deliveryFee, '15.00');
+    });
+    test('rejects a preview that requires an agreement but omits it', () async {
+      response = {
+        'role': 'OWNER',
+        'companyName': 'Fixture Delivery',
+        'merchantName': 'Fixture Shop',
+        'requiresAgreement': true,
+        'agreement': null,
+      };
+      await client.restore();
+      expect(
+        () => api.previewInvitation('fixture-invitation'),
+        throwsA(isA<FormatException>()),
+      );
+    });
+    test('activation sends explicit acceptance of the shown agreement revision', () async {
+      response = {'accepted': true, 'email': 'owner@example.invalid'};
+      await client.restore();
+      await api.activate(
+        'fixture-invitation',
+        'Owner',
+        'fixture-password',
+        acceptedAgreementRevision: 3,
+      );
+      expect(requests.single.data, {
+        'token': 'fixture-invitation',
+        'name': 'Owner',
+        'password': 'fixture-password',
+        'acceptAgreement': true,
+        'agreementRevision': 3,
+      });
+    });
+  });
+
   test('employee update accepts public membership fields without private account data', () async {
     response = {
       'id': 'membership',

@@ -45,6 +45,8 @@ const merchant = {
   longitude: null,
   notes: null,
   active: true,
+  activationStatus: "ACTIVE",
+  legacyActivation: true,
   currency: "ILS",
   deliveryFee: "15.00",
   feePayer: "MERCHANT",

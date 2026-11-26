@@ -6,6 +6,16 @@ import {
 } from '@nestjs/common';
 import type { TokenPayload } from '../auth/token/token.payload.js';
 export const CURRENCIES = { ILS: 2, USD: 2, EUR: 2, JOD: 3 } as const;
+/**
+ * OD-13 (BR-002, BR-093): no parcels, COD or settlements before the merchant is ACTIVE,
+ * i.e. its OWNER accepted the invitation and agreement (or it predates OD-13).
+ */
+export function assertActiveMerchant(merchant: { activationStatus: string }) {
+  if (merchant.activationStatus !== 'ACTIVE')
+    throw new ConflictException(
+      'Merchant is pending activation: its owner must accept the invitation and agreement',
+    );
+}
 export type Currency = keyof typeof CURRENCIES;
 export const TRANSITIONS: Record<string, readonly string[]> = {
   CREATED: ['RECEIVED_FROM_MERCHANT', 'CANCELLED'],

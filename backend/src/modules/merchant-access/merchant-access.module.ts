@@ -10,6 +10,7 @@ import {
   MerchantAccessController,
 } from './merchant-access.controller.js';
 import { MerchantAccessGuard } from './merchant-access.guard.js';
+import { INVITATION_PREVIEW_LIMITER } from './merchant-access.types.js';
 
 @Module({
   imports: [ConfigModule, PrismaModule, AuthModule],
@@ -18,6 +19,12 @@ import { MerchantAccessGuard } from './merchant-access.guard.js';
     MerchantAccessService,
     MerchantAccessGuard,
     InMemoryRecoveryRateLimiter,
+    // OD-13: the read-only agreement preview has its own budget (same limits), so
+    // previewing does not consume the acceptance attempts of the same source.
+    {
+      provide: INVITATION_PREVIEW_LIMITER,
+      useClass: InMemoryRecoveryRateLimiter,
+    },
   ],
   controllers: [MerchantAccessController, CompanyMerchantInvitationController],
   exports: [MerchantAccessService, MerchantAccessGuard],
