@@ -151,7 +151,7 @@ test("edits and suspends through the matching endpoints", async () => {
   const suspended = await writeDriverForSession(jar, scope, {
     kind: "suspension",
     id,
-    suspended: true,
+    suspended: true, reason: 'Documented operational review',
   });
   expect(suspended).toMatchObject({ status: "saved", data: { status: "SUSPENDED" } });
   expect(seen.filter((item) => item.method !== "GET")).toEqual([
@@ -165,19 +165,21 @@ test("edits and suspends through the matching endpoints", async () => {
       method: "PUT",
       path: `/drivers/${id}/suspension`,
       context: "company-a",
-      body: { suspended: true },
+      body: { suspended: true, reason: 'Documented operational review' },
     },
   ]);
 });
 
-for (const operation of [
+for (const [index, operation] of [
+  { kind: "suspension", id, suspended: true },
+  { kind: "suspension", id, suspended: true, reason: "  " },
   { kind: "create", input: { name: "A", phone: "0599000001" } },
   { kind: "create", input: { name: "Valid Name", phone: "call me" } },
   { kind: "edit", id: "not-a-uuid", input: { name: "Valid", phone: "0599000001" } },
   { kind: "suspension", id, suspended: "yes" },
   { kind: "delete", id },
-])
-  test(`rejects invalid write before contacting the backend: ${JSON.stringify(operation).slice(0, 50)}`, async () => {
+].entries())
+  test(`rejects invalid write ${index} before contacting the backend: ${JSON.stringify(operation).slice(0, 50)}`, async () => {
     const result = await writeDriverForSession(
       jar,
       scope,
@@ -191,7 +193,7 @@ test("refuses a stale scope without dispatching the write", async () => {
   const result = await writeDriverForSession(
     jar,
     { userId: "admin", companyId: "company-b" },
-    { kind: "suspension", id, suspended: true },
+    { kind: "suspension", id, suspended: true, reason: 'Documented operational review' },
   );
   expect(result).toEqual({ status: "changed" });
   expect(seen.map((item) => item.path)).toEqual(["/auth/session"]);
@@ -202,7 +204,7 @@ test("refuses non company-admin sessions without dispatching the write", async (
   const result = await writeDriverForSession(jar, scope, {
     kind: "suspension",
     id,
-    suspended: true,
+    suspended: true, reason: 'Documented operational review',
   });
   expect(result).toEqual({ status: "forbidden" });
   expect(seen).toHaveLength(1);
@@ -213,6 +215,7 @@ test("maps backend failures and mismatched responses", async () => {
     [{ method: "PUT", path: `/drivers/${id}/suspension`, status: 404 }, "not-found"],
     [{ method: "PUT", path: `/drivers/${id}/suspension`, status: 403 }, "forbidden"],
     [{ method: "PUT", path: `/drivers/${id}/suspension`, status: 400 }, "invalid"],
+    [{ method: "PUT", path: `/drivers/${id}/suspension`, status: 409 }, "conflict"],
     [{ method: "PUT", path: `/drivers/${id}/suspension`, status: 500 }, "uncertain"],
     [
       {
@@ -241,7 +244,7 @@ test("maps backend failures and mismatched responses", async () => {
     const result = await writeDriverForSession(jar, scope, {
       kind: "suspension",
       id,
-      suspended: true,
+      suspended: true, reason: 'Documented operational review',
     });
     expect(result.status).toBe(status);
   }

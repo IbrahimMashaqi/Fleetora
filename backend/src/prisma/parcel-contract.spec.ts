@@ -11,7 +11,10 @@ describe('parcel persistence compatibility and invariants', () => {
     )) {
       if (name === 'users') {
         // Phase1 adds an explicitly required tenant-aware merchant identity key.
-        expect(tables.users.columns).toEqual(table.columns);
+        const { authVersion, ...columns } = tables.users.columns;
+        expect(authVersion).toMatchObject({ nativeType: 'int4', nullable: false });
+        expect(authVersion).toHaveProperty('default');
+        expect(columns).toEqual(table.columns);
         expect(tables.users.primaryKey).toEqual(table.primaryKey);
         expect(tables.users.foreignKeys).toEqual(table.foreignKeys);
         expect(tables.users.indexes).toEqual(expect.arrayContaining(table.indexes));
@@ -29,6 +32,10 @@ describe('parcel persistence compatibility and invariants', () => {
           ...table.uniques,
           { columns: ['id', 'currency'] },
         ]);
+      } else if (name === 'workers') {
+        const { offboardedAt, ...columns } = tables.workers.columns;
+        expect(offboardedAt.nullable).toBe(true);
+        expect({ ...tables.workers, columns }).toEqual(table);
       } else if (!['shipments', 'shipment_history', 'warehouses'].includes(name))
         expect(current[name], name).toEqual(table);
     }

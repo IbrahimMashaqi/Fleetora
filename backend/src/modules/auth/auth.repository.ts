@@ -42,6 +42,11 @@ export class AuthRepository {
     return this.prisma.User.where({ id: userId }).first();
   }
 
+  async hasDriverIdentity(userId: string, companyId: string | null) {
+    if (!companyId) return false;
+    return !!await this.prisma.db.orm.public.DriverAccount.where({ userId, companyId }).select('id').first();
+  }
+
   async findSessionContextById(userId: string) {
     return this.prisma.User.where({ id: userId })
       .select(

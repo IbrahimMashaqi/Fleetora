@@ -18,7 +18,7 @@ import { FleetEvents } from './fleet-events.js';
 import { assertTelemetryOrder, validateTelemetry } from './telemetry-policy.js';
 import { instantToMs } from '../../common/utils/temporal.js';
 
-/** Implemented only by a future trusted driver-auth adapter, never request bodies. */
+/** Trusted adapter verifies signed, persisted driver identity; never request bodies. */
 export interface DriverIdentityVerifier {
   verify(
     proof: unknown,
@@ -85,6 +85,10 @@ export class DriverTelemetryService {
           .select('id', 'status')
           .first();
         if (!company || company.suspended) throw new UnauthorizedException();
+        // Driver access changes also lock this company. Recheck after taking the
+        // lock so a verifier result cannot survive concurrent security revocation.
+        const current = await this.identity.verify(proof);
+        if (current.workerId !== actor.workerId || current.companyId !== actor.companyId) throw new UnauthorizedException();
         if (!worker) throw new NotFoundException('Driver not found');
         if (worker.status === 'SUSPENDED')
           throw new ForbiddenException('Driver is suspended');

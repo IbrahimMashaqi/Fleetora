@@ -5,6 +5,7 @@ import {
   Matches,
   MaxLength,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 
 const trim = ({ value }: { value: unknown }) =>
@@ -30,4 +31,12 @@ export class DriverInputDto {
 export class DriverSuspensionDto {
   @IsBoolean()
   suspended!: boolean;
+
+  @ValidateIf((input: DriverSuspensionDto) => input.suspended || input.reason !== undefined)
+  @Transform(trim)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
+  @Matches(/\S/)
+  reason?: string;
 }

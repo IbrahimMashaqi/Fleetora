@@ -4,6 +4,7 @@ export type UserRole =
   | 'MERCHANT'
   | 'OPERATIONS'
   | 'WAREHOUSE'
+  | 'DRIVER'
   | 'ACCOUNTANT';
 
 export interface TokenPayload {
@@ -11,4 +12,5 @@ export interface TokenPayload {
   email: string;
   role: UserRole;
   orgId: string;
+  sessionVersion?: number;
 }

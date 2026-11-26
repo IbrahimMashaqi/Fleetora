@@ -1,4 +1,6 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { normalizeDriverPhone } from './driver-phone.js';
+import { Temporal } from 'temporal-polyfill';
 import { or } from '@prisma/orm-postgres/orm-client';
 import type { TokenPayload } from '../auth/token/token.payload.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -88,7 +90,11 @@ export class DriversRepository {
       this.prisma,
       actor,
       async (tx, companyId) => {
-        await this.lockDriver(tx, id, companyId);
+        const worker = await this.lockDriver(tx, id, companyId);
+        const account = await tx.orm.public.DriverAccount.where({ companyId, workerId: id }).include('user', user => user.select('isActive')).first();
+        if (account && normalizeDriverPhone(input.phone) !== account.phone && account.user?.isActive)
+          throw new ConflictException('Revoke driver access before changing the login phone');
+        if (worker.phone !== input.phone) await tx.orm.public.DriverInvitation.where({ companyId, workerId: id }).where(i => i.acceptedAt.isNull()).where(i => i.revokedAt.isNull()).update({ revokedAt: Temporal.Now.instant() });
         await tx.orm.public.Worker.where({ id, companyId }).update({
           fullName: input.name,
           phone: input.phone,
@@ -104,16 +110,22 @@ export class DriversRepository {
     actor: TokenPayload,
     id: string,
     suspended: boolean,
+    reason?: string,
   ): Promise<void> {
     await lockedFleetWrite(
       this.prisma,
       actor,
       async (tx, companyId) => {
         const driver = await this.lockDriver(tx, id, companyId);
+        if ((suspended && !reason?.trim()) || (reason !== undefined && (!reason.trim() || reason.length > 500)))
+          throw new BadRequestException('A documented suspension reason is required (1 to 500 characters)');
         if (suspended === (driver.status === 'SUSPENDED')) return;
         await tx.orm.public.Worker.where({ id, companyId }).update({
           status: suspended ? 'SUSPENDED' : 'OFFLINE',
         });
+        await tx.orm.public.DriverAccessEvent.create({ companyId, workerId: id, actorId: actor.sub,
+          action: suspended ? 'DRIVER_SUSPENDED' : 'DRIVER_REACTIVATED',
+          details: { previousStatus: driver.status, reason: reason?.trim() ?? null } });
       },
       'manageDrivers',
     );
@@ -131,7 +143,7 @@ export class DriversRepository {
         .build(),
     );
     const driver = await tx.orm.public.Worker.where({ id, companyId })
-      .select('id', 'status')
+      .select('id', 'status', 'phone')
       .first();
     if (!driver) throw new NotFoundException('Driver not found');
     return driver;

@@ -415,6 +415,8 @@ describe('staff invitations against disposable PostgreSQL', () => {
     expect(listed?.active).toBe(false);
 
     await service.setActive(actor, accountantId, true);
+    const events = await prisma.db.orm.public.StaffAccessEvent.where({ companyId, subjectId: accountantId }).all();
+    expect(events.map(event => event.action).sort()).toEqual(['STAFF_DEACTIVATED', 'STAFF_REACTIVATED']);
     expect(await member(accountantId)).toEqual({
       isActive: true,
       refreshToken: null,

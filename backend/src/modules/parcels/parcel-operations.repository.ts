@@ -183,7 +183,7 @@ export class ParcelOperationsRepository {
     let query = this.store.orm.Worker.where({ companyId });
     // Pickers ask for eligible drivers only; suspended drivers never qualify.
     if (q.active === true)
-      query = query.where((w) => not(w.status.eq('SUSPENDED')));
+      query = query.where((w) => not(w.status.eq('SUSPENDED'))).where(w => w.offboardedAt.isNull());
     if (q.search)
       query = query.where((w) =>
         or(
@@ -665,9 +665,9 @@ export class ParcelOperationsRepository {
         companyId,
         id: input.workerId,
       })
-        .select('id', 'status', 'fullName')
+        .select('id', 'status', 'fullName', 'offboardedAt')
         .first();
-      if (!driver || driver.status === 'SUSPENDED')
+      if (!driver || driver.status === 'SUSPENDED' || driver.offboardedAt)
         throw new NotFoundException('Eligible company driver not found');
       const previousDriver = parcel.workerId
         ? await tx.orm.public.Worker.where({ companyId, id: parcel.workerId })

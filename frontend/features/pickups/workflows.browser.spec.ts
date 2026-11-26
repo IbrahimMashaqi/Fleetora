@@ -402,6 +402,16 @@ test("Arabic mobile dialogs fit the viewport and changed sessions hide previous 
   expect(writes).toEqual([]);
 });
 
+test('Operations sees only parcel requests and never dispatches financial request reads', async ({ page }) => {
+  sessionRole = 'OPERATIONS';
+  await page.goto('/app/requests');
+  await expect(page.getByRole('button', { name: 'Review financial impact', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mark reviewed', exact: true })).toHaveCount(0);
+  const own = requested.filter(request => request.bearer === accessToken).map(request => request.path);
+  expect(own).toContain('/parcel-requests');
+  expect(own.filter(path => path.startsWith('/merchant-settlement-requests'))).toEqual([]);
+});
+
 test("accountant sees only the settlement-request queue without errors or parcel-change calls", async ({
   page,
 }) => {
