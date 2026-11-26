@@ -4,7 +4,7 @@ import { unstable_rethrow } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { useLocale } from "@/lib/i18n";
 import { withSessionLock } from "@/lib/auth/session-lock";
-import { pricingAction } from "@/features/merchant-pricing/pricing.action";
+import { operationalPricingAction as pricingAction } from "@/features/merchant-pricing/pricing.action";
 import type { Quote, Zone } from "@/features/merchant-pricing/pricing-contract";
 import { readWarehousesAction } from "@/features/warehouses/warehouses.action";
 import type { Warehouse } from "@/features/warehouses/warehouses.types";
@@ -103,7 +103,8 @@ export function PricingQuoteField({
           })
           .catch((error) => {
             unstable_rethrow(error);
-            if (current === request.current) setState({ status: "unavailable" });
+            if (current === request.current)
+              setState({ status: "unavailable" });
           });
       }, 350);
     };

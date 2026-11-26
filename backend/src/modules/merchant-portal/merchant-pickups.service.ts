@@ -263,14 +263,14 @@ export class MerchantPickupsService {
   async companyList(actor: TokenPayload, q: MerchantPageDto) {
     return this.companyStore.write(
       actor,
-      'manageParcels',
+      'viewPickups',
       async (_tx, companyId) => this.scopedList({ companyId }, q),
     );
   }
   async companyDetails(actor: TokenPayload, id: string) {
     return this.companyStore.write(
       actor,
-      'manageParcels',
+      'viewPickups',
       async (_tx, companyId) => this.detail({ companyId }, id),
     );
   }
@@ -279,7 +279,7 @@ export class MerchantPickupsService {
       this.validate(() => requireWindow(input.from, input.to, true));
     await this.companyStore.write(
       actor,
-      'manageParcels',
+      'reviewPickups',
       async (tx, companyId) => {
         const pickup = await tx.orm.public.PickupRequest.where({
           id,
@@ -356,7 +356,7 @@ export class MerchantPickupsService {
   async receive(actor: TokenPayload, id: string, input: PickupReceiptDto) {
     await this.companyStore.write(
       actor,
-      'manageParcels',
+      'receivePickups',
       async (tx, companyId) => {
         const pickup = await tx.orm.public.PickupRequest.where({
           id,

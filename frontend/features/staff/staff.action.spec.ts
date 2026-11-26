@@ -15,9 +15,15 @@ let responseCompany: string;
 let status: number;
 let disconnected: boolean;
 let delivery: string | undefined;
-let requests: { path: string; method: string; body: unknown; context?: string | string[] }[];
+let requests: {
+  path: string;
+  method: string;
+  body: unknown;
+  context?: string | string[];
+}[];
 const jar = {
-  get: (name: string) => (name.includes("access") ? { value: "fixture-access" } : undefined),
+  get: (name: string) =>
+    name.includes("access") ? { value: "fixture-access" } : undefined,
   set() {},
   delete() {},
 };
@@ -55,7 +61,14 @@ test.beforeAll(async () => {
             email: null,
             role,
             orgId: role === "PLATFORM_ADMIN" ? null : sessionCompany,
-            company: role === "PLATFORM_ADMIN" ? null : { id: sessionCompany, name: "Fixture company" , currency: "ILS" },
+            company:
+              role === "PLATFORM_ADMIN"
+                ? null
+                : {
+                    id: sessionCompany,
+                    name: "Fixture company",
+                    currency: "ILS",
+                  },
           },
         }),
       );
@@ -80,28 +93,36 @@ test.beforeAll(async () => {
               : req.method === "PUT"
                 ? {
                     companyId: responseCompany,
-                    member: { id: invitationId, fullName: "Fixture Accountant", email: "a@example.com", role: "ACCOUNTANT", active: JSON.parse(raw).active, password: "private" },
-                  }
-              : {
-                  companyId: responseCompany,
-                  members: [
-                    {
-                      id: userId,
-                      fullName: "Fixture administrator",
-                      email: "admin@example.com",
-                      role: "COMPANY_ADMIN",
-                      active: true,
-                      password: "private-password",
+                    member: {
+                      id: invitationId,
+                      fullName: "Fixture Accountant",
+                      email: "a@example.com",
+                      role: JSON.parse(raw).role ?? "ACCOUNTANT",
+                      active: JSON.parse(raw).active ?? true,
+                      password: "private",
                     },
-                  ],
-                  invitations: [{ ...invitation, tokenHash: "private-hash" }],
-                },
+                  }
+                : {
+                    companyId: responseCompany,
+                    members: [
+                      {
+                        id: userId,
+                        fullName: "Fixture administrator",
+                        email: "admin@example.com",
+                        role: "COMPANY_ADMIN",
+                        active: true,
+                        password: "private-password",
+                      },
+                    ],
+                    invitations: [{ ...invitation, tokenHash: "private-hash" }],
+                  },
       }),
     );
   });
   await new Promise<void>((resolve) => backend.listen(0, "127.0.0.1", resolve));
   const address = backend.address();
-  if (!address || typeof address === "string") throw new Error("Fixture address unavailable");
+  if (!address || typeof address === "string")
+    throw new Error("Fixture address unavailable");
   process.env.FLEETORA_API_URL = `http://127.0.0.1:${address.port}`;
 });
 test.afterAll(async () => {
@@ -174,7 +195,12 @@ test("issues an invitation with normalized email and the session company context
 });
 
 test("revokes only the selected invitation", async () => {
-  expect(await writeStaffForSession(jar, scope, { action: "revoke", id: invitationId })).toEqual({
+  expect(
+    await writeStaffForSession(jar, scope, {
+      action: "revoke",
+      id: invitationId,
+    }),
+  ).toEqual({
     status: "revoked",
   });
   expect(requests[1]).toMatchObject({
@@ -184,65 +210,147 @@ test("revokes only the selected invitation", async () => {
   });
 });
 
-for (const denied of ["ACCOUNTANT", "MERCHANT", "PLATFORM_ADMIN"])
+for (const denied of [
+  "ACCOUNTANT",
+  "OPERATIONS",
+  "WAREHOUSE",
+  "MERCHANT",
+  "PLATFORM_ADMIN",
+])
   test(`denies ${denied} before any staff request is dispatched`, async () => {
     role = denied;
-    expect(await readStaffForSession(jar, scope)).toEqual({ status: "forbidden" });
+    expect(await readStaffForSession(jar, scope)).toEqual({
+      status: "forbidden",
+    });
     expect(
-      await writeStaffForSession(jar, scope, { action: "issue", email: "x@example.com", role: "ACCOUNTANT" }),
+      await writeStaffForSession(jar, scope, {
+        action: "issue",
+        email: "x@example.com",
+        role: "ACCOUNTANT",
+      }),
     ).toEqual({ status: "forbidden" });
-    expect(requests.map((request) => request.path)).toEqual(["/auth/session", "/auth/session"]);
+    expect(requests.map((request) => request.path)).toEqual([
+      "/auth/session",
+      "/auth/session",
+    ]);
   });
 
 test("fences a session company change before dispatch and a foreign company in responses", async () => {
   sessionCompany = "20000000-0000-4000-8000-000000000001";
   expect(
-    await writeStaffForSession(jar, scope, { action: "issue", email: "x@example.com", role: "ACCOUNTANT" }),
+    await writeStaffForSession(jar, scope, {
+      action: "issue",
+      email: "x@example.com",
+      role: "ACCOUNTANT",
+    }),
   ).toEqual({ status: "changed" });
   expect(requests).toHaveLength(1);
   sessionCompany = companyId;
   responseCompany = "20000000-0000-4000-8000-000000000001";
   expect(await readStaffForSession(jar, scope)).toEqual({ status: "changed" });
   expect(
-    await writeStaffForSession(jar, scope, { action: "revoke", id: invitationId }),
+    await writeStaffForSession(jar, scope, {
+      action: "revoke",
+      id: invitationId,
+    }),
   ).toEqual({ status: "changed" });
 });
 
 test("rejects forged roles, extra authority fields and path injection without dispatch", async () => {
   for (const operation of [
     { action: "issue", email: "x@example.com", role: "PLATFORM_ADMIN" },
-    { action: "issue", email: "x@example.com", role: "ACCOUNTANT", companyId: "foreign" },
+    {
+      action: "issue",
+      email: "x@example.com",
+      role: "ACCOUNTANT",
+      companyId: "foreign",
+    },
     { action: "issue", email: "not-an-email", role: "ACCOUNTANT" },
     { action: "revoke", id: "../foreign" },
   ])
     expect(
-      await writeStaffForSession(jar, scope, operation as Parameters<typeof writeStaffForSession>[2]),
+      await writeStaffForSession(
+        jar,
+        scope,
+        operation as Parameters<typeof writeStaffForSession>[2],
+      ),
     ).toEqual({ status: "invalid" });
   expect(requests).toHaveLength(0);
 });
 
+for (const next of [
+  "COMPANY_ADMIN",
+  "OPERATIONS",
+  "WAREHOUSE",
+  "ACCOUNTANT",
+] as const) {
+  test(`assigns one ${next} role through the scoped endpoint`, async () => {
+    expect(
+      await writeStaffForSession(jar, scope, {
+        action: "setRole",
+        id: invitationId,
+        role: next,
+      }),
+    ).toMatchObject({
+      status: "updated",
+      member: { id: invitationId, role: next, active: true },
+    });
+    expect(requests.at(-1)).toMatchObject({
+      method: "PUT",
+      path: `/company/staff/members/${invitationId}/role`,
+      body: { role: next },
+      context: companyId,
+    });
+  });
+}
+
 test("maps conflicts and dropped connections without claiming success", async () => {
   status = 409;
   expect(
-    await writeStaffForSession(jar, scope, { action: "issue", email: "x@example.com", role: "ACCOUNTANT" }),
+    await writeStaffForSession(jar, scope, {
+      action: "issue",
+      email: "x@example.com",
+      role: "ACCOUNTANT",
+    }),
   ).toEqual({ status: "conflict" });
   status = 404;
-  expect(await writeStaffForSession(jar, scope, { action: "revoke", id: invitationId })).toEqual({
+  expect(
+    await writeStaffForSession(jar, scope, {
+      action: "revoke",
+      id: invitationId,
+    }),
+  ).toEqual({
     status: "not-found",
   });
   status = 200;
   disconnected = true;
   expect(
-    await writeStaffForSession(jar, scope, { action: "issue", email: "x@example.com", role: "ACCOUNTANT" }),
+    await writeStaffForSession(jar, scope, {
+      action: "issue",
+      email: "x@example.com",
+      role: "ACCOUNTANT",
+    }),
   ).toEqual({ status: "uncertain" });
-  expect(await readStaffForSession(jar, scope)).toEqual({ status: "unavailable" });
+  expect(await readStaffForSession(jar, scope)).toEqual({
+    status: "unavailable",
+  });
 });
 
 test("deactivates and reactivates a member with the company context", async () => {
-  const result = await writeStaffForSession(jar, scope, { action: "setActive", id: invitationId, active: false });
+  const result = await writeStaffForSession(jar, scope, {
+    action: "setActive",
+    id: invitationId,
+    active: false,
+  });
   expect(result).toEqual({
     status: "updated",
-    member: { id: invitationId, fullName: "Fixture Accountant", email: "a@example.com", role: "ACCOUNTANT", active: false },
+    member: {
+      id: invitationId,
+      fullName: "Fixture Accountant",
+      email: "a@example.com",
+      role: "ACCOUNTANT",
+      active: false,
+    },
   });
   expect(requests[1]).toMatchObject({
     path: `/company/staff/members/${invitationId}/active`,
@@ -252,7 +360,13 @@ test("deactivates and reactivates a member with the company context", async () =
   });
   expect(JSON.stringify(result)).not.toContain("private");
   status = 409;
-  expect(await writeStaffForSession(jar, scope, { action: "setActive", id: invitationId, active: false })).toEqual({
+  expect(
+    await writeStaffForSession(jar, scope, {
+      action: "setActive",
+      id: invitationId,
+      active: false,
+    }),
+  ).toEqual({
     status: "conflict",
   });
 });
@@ -261,10 +375,19 @@ test("rejects malformed member status writes without dispatch", async () => {
   for (const operation of [
     { action: "setActive", id: "../x", active: false },
     { action: "setActive", id: invitationId, active: "no" },
-    { action: "setActive", id: invitationId, active: false, role: "COMPANY_ADMIN" },
+    {
+      action: "setActive",
+      id: invitationId,
+      active: false,
+      role: "COMPANY_ADMIN",
+    },
   ])
     expect(
-      await writeStaffForSession(jar, scope, operation as Parameters<typeof writeStaffForSession>[2]),
+      await writeStaffForSession(
+        jar,
+        scope,
+        operation as Parameters<typeof writeStaffForSession>[2],
+      ),
     ).toEqual({ status: "invalid" });
   expect(requests).toHaveLength(0);
 });
@@ -272,10 +395,18 @@ test("rejects malformed member status writes without dispatch", async () => {
 test("reports whether the invitation email was sent", async () => {
   delivery = "EMAIL";
   expect(
-    await writeStaffForSession(jar, scope, { action: "issue", email: "accountant@example.com", role: "ACCOUNTANT" }),
+    await writeStaffForSession(jar, scope, {
+      action: "issue",
+      email: "accountant@example.com",
+      role: "ACCOUNTANT",
+    }),
   ).toMatchObject({ status: "issued", emailed: true, token });
   delivery = undefined;
   expect(
-    await writeStaffForSession(jar, scope, { action: "issue", email: "accountant@example.com", role: "ACCOUNTANT" }),
+    await writeStaffForSession(jar, scope, {
+      action: "issue",
+      email: "accountant@example.com",
+      role: "ACCOUNTANT",
+    }),
   ).toMatchObject({ status: "issued", emailed: false, token });
 });

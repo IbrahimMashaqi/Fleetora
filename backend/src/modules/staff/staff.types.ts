@@ -1,6 +1,11 @@
 import type { Models } from '../../prisma/generated/contract.d';
 
-export const STAFF_ROLES = ['COMPANY_ADMIN', 'ACCOUNTANT'] as const;
+export const STAFF_ROLES = [
+  'COMPANY_ADMIN',
+  'ACCOUNTANT',
+  'OPERATIONS',
+  'WAREHOUSE',
+] as const;
 export type StaffRole = (typeof STAFF_ROLES)[number];
 export const isStaffRole = (value: unknown): value is StaffRole =>
   STAFF_ROLES.some((role) => role === value);
@@ -16,10 +21,7 @@ export type StaffInvitationRow = Pick<
   | 'revokedAt'
 >;
 export type StaffInvitationState =
-  | 'PENDING'
-  | 'ACCEPTED'
-  | 'REVOKED'
-  | 'EXPIRED';
+  'PENDING' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED';
 export type StaffInvitation = {
   id: string;
   email: string;

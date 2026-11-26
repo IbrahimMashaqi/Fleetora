@@ -60,3 +60,8 @@ export class StaffMemberStatusDto {
   @IsBoolean()
   active!: boolean;
 }
+
+export class StaffMemberRoleDto {
+  @IsIn(STAFF_ROLES)
+  role!: StaffRole;
+}

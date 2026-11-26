@@ -18,6 +18,7 @@ import { MailService } from '../mail/mail.service.js';
 import type {
   AcceptStaffInvitationDto,
   StaffInvitationDto,
+  StaffMemberRoleDto,
 } from './staff.dto.js';
 import { StaffRepository } from './staff.repository.js';
 import {
@@ -171,6 +172,27 @@ export class StaffService {
     };
   }
 
+  async setRole(
+    actor: TokenPayload,
+    memberId: string,
+    input: StaffMemberRoleDto,
+  ) {
+    const companyId = fleetCompany(actor);
+    const member = await this.repository.setRole(actor, memberId, input.role);
+    if (!member || !isStaffRole(member.role))
+      throw new NotFoundException('Team member not found');
+    return {
+      companyId,
+      member: {
+        id: member.id,
+        fullName: member.fullName,
+        email: member.email,
+        role: member.role,
+        active: member.isActive,
+      },
+    };
+  }
+
   async accept(input: AcceptStaffInvitationDto) {
     if (!/^[a-f0-9]{64}$/.test(input.token))
       throw new BadRequestException(INVALID_INVITATION);
@@ -189,6 +211,10 @@ export class StaffService {
       { fullName, passwordHash },
     );
     if (!accepted) throw new BadRequestException(INVALID_INVITATION);
-    return { accepted: true as const, email: accepted.email, role: accepted.role };
+    return {
+      accepted: true as const,
+      email: accepted.email,
+      role: accepted.role,
+    };
   }
 }

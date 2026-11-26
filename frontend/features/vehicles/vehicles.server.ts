@@ -141,7 +141,14 @@ export async function fleetForSession(
   if (session.status === "refresh-rejected") return { status: "changed" };
   if (session.tokens) setSessionTokens(jar, session.tokens);
   if (session.status !== "ready") return { status: "unavailable" };
-  if (session.user.role !== "COMPANY_ADMIN" || !session.user.company)
+  if (
+    (session.user.role !== "COMPANY_ADMIN" &&
+      !(
+        session.user.role === "OPERATIONS" &&
+        (operation.kind === "list" || operation.kind === "assign")
+      )) ||
+    !session.user.company
+  )
     return { status: "forbidden" };
   if (
     !expected ||

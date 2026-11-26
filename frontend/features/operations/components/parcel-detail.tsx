@@ -125,29 +125,31 @@ function ParcelContent({
                 {t("Refresh")}
               </Button>
               {/* Legacy-priced parcels keep their stored fees and cannot be re-priced. */}
-              {permissions.manageParcels && status === "CREATED" && parcel.pricingMode === "FINAL_INCLUSIVE" && (
-                <Button
-                  onClick={() =>
-                    operate(
-                      "Edit parcel",
-                      "edit",
-                      parcelFields(
-                        parcel,
-                        data.merchant
-                          ? valueText(data.merchant, "name")
-                          : undefined,
-                      ),
-                      undefined,
-                      {
-                        conflict:
-                          "The price changed. Review the updated quote and save again.",
-                      },
-                    )
-                  }
-                >
-                  {t("Edit parcel")}
-                </Button>
-              )}
+              {permissions.manageParcels &&
+                status === "CREATED" &&
+                parcel.pricingMode === "FINAL_INCLUSIVE" && (
+                  <Button
+                    onClick={() =>
+                      operate(
+                        "Edit parcel",
+                        "edit",
+                        parcelFields(
+                          parcel,
+                          data.merchant
+                            ? valueText(data.merchant, "name")
+                            : undefined,
+                        ),
+                        undefined,
+                        {
+                          conflict:
+                            "The price changed. Review the updated quote and save again.",
+                        },
+                      )
+                    }
+                  >
+                    {t("Edit parcel")}
+                  </Button>
+                )}
             </PageIntro>
             {saved && (
               <p
@@ -298,7 +300,10 @@ function ParcelContent({
                 <DetailsGrid
                   entries={[
                     {
-                      label: parcel.pricingMode === "FINAL_INCLUSIVE" ? "Final customer payable" : "COD goods amount",
+                      label:
+                        parcel.pricingMode === "FINAL_INCLUSIVE"
+                          ? "Final customer payable"
+                          : "COD goods amount",
                       value: <Money row={parcel} field="codAmount" />,
                     },
                     {
@@ -413,7 +418,7 @@ function ParcelContent({
                   )}
                 </p>
               )}
-            {permissions.manageParcels && (
+            {(permissions.manageParcels || permissions.warehouseOperations) && (
               <div className="my-6 flex flex-wrap gap-3 rounded-lg border bg-surface p-5">
                 {transitions.length > 0 && (
                   <Button
@@ -448,9 +453,10 @@ function ParcelContent({
                     {t("Change status")}
                   </Button>
                 )}
-                {["AT_WAREHOUSE", "ASSIGNED", "FAILED_DELIVERY"].includes(
-                  status,
-                ) &&
+                {permissions.manageParcels &&
+                  ["AT_WAREHOUSE", "ASSIGNED", "FAILED_DELIVERY"].includes(
+                    status,
+                  ) &&
                   parcel.custody !== "DRIVER" && (
                     <Button
                       variant="outline"
@@ -478,36 +484,37 @@ function ParcelContent({
                       {t("Assign parcel")}
                     </Button>
                   )}
-                {["OUT_FOR_DELIVERY"].includes(status) && (
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      operate("Record attempt", "attempts", [
-                        {
-                          name: "outcome",
-                          label: "Attempt outcome",
-                          required: true,
-                          options: [
-                            {
-                              value: "DELIVERED",
-                              label: "Successful delivery",
-                            },
-                            { value: "FAILED", label: "Failed attempt" },
-                          ],
-                        },
-                        { name: "reason", label: "Reason" },
-                        {
-                          name: "note",
-                          label: "Note",
-                          type: "textarea",
-                          span: true,
-                        },
-                      ])
-                    }
-                  >
-                    {t("Record attempt")}
-                  </Button>
-                )}
+                {permissions.manageParcels &&
+                  ["OUT_FOR_DELIVERY"].includes(status) && (
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        operate("Record attempt", "attempts", [
+                          {
+                            name: "outcome",
+                            label: "Attempt outcome",
+                            required: true,
+                            options: [
+                              {
+                                value: "DELIVERED",
+                                label: "Successful delivery",
+                              },
+                              { value: "FAILED", label: "Failed attempt" },
+                            ],
+                          },
+                          { name: "reason", label: "Reason" },
+                          {
+                            name: "note",
+                            label: "Note",
+                            type: "textarea",
+                            span: true,
+                          },
+                        ])
+                      }
+                    >
+                      {t("Record attempt")}
+                    </Button>
+                  )}
                 {!["DELIVERED", "CANCELLED", "RETURNED_TO_MERCHANT"].includes(
                   status,
                 ) && (
@@ -524,7 +531,9 @@ function ParcelContent({
                               ? "COMPANY"
                               : parcel.custody,
                           options: [
-                            { value: "COMPANY", label: "Company custody" },
+                            ...(permissions.manageParcels
+                              ? [{ value: "COMPANY", label: "Company custody" }]
+                              : []),
                             { value: "WAREHOUSE", label: "Warehouse custody" },
                             { value: "DRIVER", label: "Driver custody" },
                           ],
@@ -647,7 +656,7 @@ function ParcelContent({
                       },
                     ]}
                   />
-                  {permissions.manageReturns &&
+                  {permissions.advanceReturns &&
                     data.returnRecord.status !== "RETURNED_TO_MERCHANT" && (
                       <Button
                         className="mt-4"

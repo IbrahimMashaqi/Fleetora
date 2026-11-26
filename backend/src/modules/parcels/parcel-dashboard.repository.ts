@@ -1,8 +1,16 @@
+import { capabilities } from './parcel-domain.js';
 import { and, or, not } from '@prisma/orm-postgres/orm-client';
 import { Inject, Injectable } from '@nestjs/common';
 import type { TokenPayload } from '../auth/token/token.payload.js';
 import { amount, company, statusBuckets } from './parcel-domain.js';
-import { ParcelStore, dateRange, now, pattern, wire, RETURN_PARCEL_FIELDS } from './parcel-store.js';
+import {
+  ParcelStore,
+  dateRange,
+  now,
+  pattern,
+  wire,
+  RETURN_PARCEL_FIELDS,
+} from './parcel-store.js';
 import { shipmentFilter } from './parcel-filters.js';
 import { DashboardQueryDto } from './parcel.dto.js';
 @Injectable()
@@ -75,7 +83,9 @@ export class ParcelDashboardRepository {
               r.shipment.some(filter),
             ),
           )
-          .include('shipment', (s) => s.where({ companyId }).select(...RETURN_PARCEL_FIELDS))
+          .include('shipment', (s) =>
+            s.where({ companyId }).select(...RETURN_PARCEL_FIELDS),
+          )
           .orderBy([(r) => r.createdAt.desc(), (r) => r.id.desc()])
           .limit(20)
           .all(),
@@ -131,15 +141,17 @@ export class ParcelDashboardRepository {
         ...row,
         parcel: shipment ? wire(shipment) : null,
       })),
-      money: totals.map((row) => ({
-        currency: row.currency,
-        expectedCod: amount(BigInt(row.expected), row.currency),
-        uncollectedCod: amount(BigInt(row.uncollected), row.currency),
-        collectedCod: amount(BigInt(row.collected), row.currency),
-        unremittedCash: amount(BigInt(row.unremitted), row.currency),
-        merchantPayables: amount(BigInt(row.payable), row.currency),
-        settledAmounts: amount(BigInt(row.paid), row.currency),
-      })),
+      money: (capabilities(actor.role).viewFinance ? totals : []).map(
+        (row) => ({
+          currency: row.currency,
+          expectedCod: amount(BigInt(row.expected), row.currency),
+          uncollectedCod: amount(BigInt(row.uncollected), row.currency),
+          collectedCod: amount(BigInt(row.collected), row.currency),
+          unremittedCash: amount(BigInt(row.unremitted), row.currency),
+          merchantPayables: amount(BigInt(row.payable), row.currency),
+          settledAmounts: amount(BigInt(row.paid), row.currency),
+        }),
+      ),
     };
   }
 }

@@ -4,6 +4,8 @@ import { MailerService } from '@nestjs-modules/mailer';
 const INVITATION_ROLES = {
   COMPANY_ADMIN: { en: 'company administrator', ar: 'مسؤول الشركة' },
   ACCOUNTANT: { en: 'accountant', ar: 'محاسب' },
+  OPERATIONS: { en: 'operations staff', ar: 'موظف العمليات' },
+  WAREHOUSE: { en: 'warehouse staff', ar: 'موظف المستودع' },
   OWNER: { en: 'merchant owner', ar: 'مالك التاجر' },
   EMPLOYEE: { en: 'merchant employee', ar: 'موظف لدى التاجر' },
 } as const;

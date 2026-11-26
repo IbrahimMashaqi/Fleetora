@@ -25,7 +25,11 @@ function location(search: string, page = 1) {
 
 export function DriversDirectory({ query }: { query: DriverQuery }) {
   const { user } = useProtectedSession();
-  if (user.role !== "COMPANY_ADMIN" || !user.company || !user.orgId)
+  if (
+    !["COMPANY_ADMIN", "OPERATIONS"].includes(user.role) ||
+    !user.company ||
+    !user.orgId
+  )
     return <DriverAccessDenied />;
   return (
     <DriverList
@@ -57,7 +61,9 @@ function DriverList({
     <div className="mx-auto w-full min-w-0 max-w-6xl">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-2xl font-semibold tracking-tight">{t("Drivers")}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {t("Drivers")}
+          </h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {t("Find, add, and manage the delivery drivers in your company.")}
           </p>
@@ -138,7 +144,9 @@ function DriverList({
                   ? t("Try a different name or phone.")
                   : query.page > 1
                     ? t("There are no drivers to display on this page.")
-                    : t("Add your first driver to start assigning vehicles and parcels.")}
+                    : t(
+                        "Add your first driver to start assigning vehicles and parcels.",
+                      )}
               </p>
               {!query.search && query.page === 1 && (
                 <Button
@@ -152,7 +160,9 @@ function DriverList({
               )}
               {query.page > 1 && (
                 <Button asChild variant="outline" className="mt-4">
-                  <Link href={location(query.search)}>{t("Back to first page")}</Link>
+                  <Link href={location(query.search)}>
+                    {t("Back to first page")}
+                  </Link>
                 </Button>
               )}
             </section>
@@ -174,7 +184,9 @@ function DriverList({
             aria-label={t("Driver pagination")}
             className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"
           >
-            <p className="text-sm text-muted-foreground">{t("Page {page}", { page: data.page.toLocaleString(locale) })}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("Page {page}", { page: data.page.toLocaleString(locale) })}
+            </p>
             <div className="flex gap-2">
               {data.page > 1 ? (
                 <Button asChild variant="outline" size="sm">

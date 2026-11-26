@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { TokenPayload } from '../auth/token/token.payload.js';
 import { fleetCompany } from '../vehicles/vehicles.repository.js';
+import { company } from '../parcels/parcel-domain.js';
 import type { ListWarehousesDto } from './dto/list-warehouses.dto.js';
 import type { WarehouseInputDto } from './dto/warehouse-input.dto.js';
 import { WarehousesRepository } from './warehouses.repository.js';
@@ -31,7 +32,7 @@ export class WarehousesService {
     actor: TokenPayload,
     query: ListWarehousesDto,
   ): Promise<WarehousePage> {
-    const companyId = fleetCompany(actor);
+    const companyId = company(actor, 'viewWarehouses');
     const rows = await this.repository.findPage(companyId, query);
     return {
       companyId,
@@ -43,7 +44,7 @@ export class WarehousesService {
   }
 
   async details(actor: TokenPayload, id: string): Promise<WarehouseDetails> {
-    const companyId = fleetCompany(actor);
+    const companyId = company(actor, 'viewWarehouses');
     const row = await this.repository.findOne(companyId, id);
     if (!row) throw new NotFoundException('Warehouse not found');
     return { companyId, warehouse: publicWarehouse(row) };

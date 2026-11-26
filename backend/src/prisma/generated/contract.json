@@ -136,6 +136,10 @@
       "model": "Shipment",
       "namespace": "public"
     },
+    "staff_access_events": {
+      "model": "StaffAccessEvent",
+      "namespace": "public"
+    },
     "staff_invitations": {
       "model": "StaffInvitation",
       "namespace": "public"
@@ -408,6 +412,14 @@
               {
                 "name": "ACCOUNTANT",
                 "value": "ACCOUNTANT"
+              },
+              {
+                "name": "OPERATIONS",
+                "value": "OPERATIONS"
+              },
+              {
+                "name": "WAREHOUSE",
+                "value": "WAREHOUSE"
               }
             ]
           },
@@ -1551,6 +1563,21 @@
                 },
                 "to": {
                   "model": "Shipment",
+                  "namespace": "public"
+                }
+              },
+              "staffAccessEvents": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "StaffAccessEvent",
                   "namespace": "public"
                 }
               },
@@ -7384,6 +7411,104 @@
               },
               "namespaceId": "public",
               "table": "shipment_history"
+            }
+          },
+          "StaffAccessEvent": {
+            "fields": {
+              "action": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "actorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "companyId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "details": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/json@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "subjectId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "company": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "action": {
+                  "column": "action"
+                },
+                "actorId": {
+                  "column": "actorId"
+                },
+                "companyId": {
+                  "column": "companyId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "details": {
+                  "column": "details"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "subjectId": {
+                  "column": "subjectId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "staff_access_events"
             }
           },
           "StaffInvitation": {
@@ -14138,11 +14263,98 @@
                 }
               ]
             },
+            "staff_access_events": {
+              "columns": {
+                "action": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "actorId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "companyId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "details": {
+                  "codecId": "pg/json@1",
+                  "nativeType": "json",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "subjectId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "staff_access_events"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "companyId",
+                    "createdAt"
+                  ],
+                  "name": "staff_access_events_companyId_createdAt_idx_5377e5d5",
+                  "prefix": "staff_access_events_companyId_createdAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "companyId"
+                  ],
+                  "name": "staff_access_events_companyId_idx_33acc5ed",
+                  "prefix": "staff_access_events_companyId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
             "staff_invitations": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('COMPANY_ADMIN','ACCOUNTANT') AND NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL) AND ((\"acceptedAt\" IS NULL AND \"acceptedById\" IS NULL) OR (\"acceptedAt\" IS NOT NULL AND \"acceptedById\" IS NOT NULL)) AND ((\"revokedAt\" IS NULL AND \"revokedById\" IS NULL) OR (\"revokedAt\" IS NOT NULL AND \"revokedById\" IS NOT NULL))",
-                  "name": "staff_invitation_state_ad4af2ce",
+                  "expression": "\"role\" IN ('COMPANY_ADMIN','ACCOUNTANT','OPERATIONS','WAREHOUSE') AND NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL) AND ((\"acceptedAt\" IS NULL AND \"acceptedById\" IS NULL) OR (\"acceptedAt\" IS NOT NULL AND \"acceptedById\" IS NOT NULL)) AND ((\"revokedAt\" IS NULL AND \"revokedById\" IS NULL) OR (\"revokedAt\" IS NOT NULL AND \"revokedById\" IS NOT NULL))",
+                  "name": "staff_invitation_state_5eb9b453",
                   "prefix": "staff_invitation_state"
                 }
               ],
@@ -14266,8 +14478,8 @@
             "users": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'MERCHANT', 'ACCOUNTANT')",
-                  "name": "users_role_check_8e96eaf0",
+                  "expression": "\"role\" IN ('PLATFORM_ADMIN', 'COMPANY_ADMIN', 'MERCHANT', 'ACCOUNTANT', 'OPERATIONS', 'WAREHOUSE')",
+                  "name": "users_role_check_57499776",
                   "prefix": "users_role_check"
                 }
               ],
@@ -14896,7 +15108,9 @@
                 "PLATFORM_ADMIN",
                 "COMPANY_ADMIN",
                 "MERCHANT",
-                "ACCOUNTANT"
+                "ACCOUNTANT",
+                "OPERATIONS",
+                "WAREHOUSE"
               ]
             },
             "VehicleType": {
@@ -14923,10 +15137,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "708f9e2ed66bf132dfef0f2d340877256f07cf5e8d8c71398a4a29290afe4280"
+    "storageHash": "2ff1b08107872ba334fb1b73e951c3137ffe67ad5ebc122ef5f6d3a4710496ce"
   },
   "execution": {
-    "executionHash": "136efae69fcefa90706b18d368032752b32d01366a8d36768a8029e128deee87",
+    "executionHash": "d8a3960be16b58c6aacd171a6e89d448bc21204f3731a1218097d6d6b7a40b1b",
     "mutations": {
       "defaults": [
         {
@@ -15418,6 +15632,17 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "shipments"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "staff_access_events"
           }
         },
         {

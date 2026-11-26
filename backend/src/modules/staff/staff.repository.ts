@@ -91,6 +91,55 @@ export class StaffRepository {
     return company?.name ?? 'Fleetora';
   }
 
+  setRole(actor: TokenPayload, memberId: string, role: StaffRole) {
+    return guarded(() =>
+      lockedFleetWrite(this.prisma, actor, async (tx, companyId) => {
+        await tx.execute(
+          this.prisma.db.raw
+            .sql`SELECT "id" FROM "users" WHERE "id"=${memberId} AND "companyId"=${companyId} FOR UPDATE`
+            .affectedCount()
+            .build(),
+        );
+        const member = await tx.orm.public.User.where({
+          id: memberId,
+          companyId,
+        })
+          .select('id', 'fullName', 'email', 'role', 'isActive')
+          .first();
+        if (!member || !isStaffRole(member.role)) return null;
+        if (member.role === role) return member;
+        if (member.id === actor.sub)
+          throw new ConflictException('You cannot change your own role');
+        if (member.role === 'COMPANY_ADMIN' && member.isActive) {
+          const other = await tx.orm.public.User.where({
+            companyId,
+            role: 'COMPANY_ADMIN',
+            isActive: true,
+          })
+            .where((u) => u.id.neq(memberId))
+            .select('id')
+            .first();
+          if (!other)
+            throw new ConflictException(
+              'A company must keep at least one active administrator',
+            );
+        }
+        await tx.orm.public.User.where({ id: memberId, companyId }).update({
+          role,
+          refreshToken: null,
+        });
+        await tx.orm.public.StaffAccessEvent.create({
+          companyId,
+          actorId: actor.sub,
+          subjectId: memberId,
+          action: 'STAFF_ROLE_CHANGED',
+          details: { previousRole: member.role, role },
+        });
+        return { ...member, role };
+      }),
+    );
+  }
+
   findByTokenHash(tokenHash: string) {
     return this.prisma.db.orm.public.StaffInvitation.where({ tokenHash })
       .select('id', 'companyId')
@@ -189,7 +238,9 @@ export class StaffRepository {
         if (!member || !isStaffRole(member.role)) return null;
         if (!active) {
           if (member.id === actor.sub)
-            throw new ConflictException('You cannot deactivate your own account');
+            throw new ConflictException(
+              'You cannot deactivate your own account',
+            );
           if (member.role === 'COMPANY_ADMIN' && member.isActive) {
             const others = await tx.orm.public.User.where({
               companyId,
@@ -209,7 +260,9 @@ export class StaffRepository {
           await tx.orm.public.User.where({ id: memberId, companyId }).update(
             // Deactivation also revokes the refresh session; reactivation
             // requires a fresh sign-in.
-            active ? { isActive: true } : { isActive: false, refreshToken: null },
+            active
+              ? { isActive: true }
+              : { isActive: false, refreshToken: null },
           );
         return { ...member, isActive: active };
       }),

@@ -146,7 +146,12 @@ export async function pickupsForSession(
   if (session.status === "refresh-rejected") return { status: "changed" };
   if (session.tokens) setSessionTokens(jar, session.tokens);
   if (session.status !== "ready") return { status: "unavailable" };
-  if (session.user.role !== "COMPANY_ADMIN" || !session.user.company)
+  if (
+    !["COMPANY_ADMIN", "OPERATIONS", "WAREHOUSE"].includes(session.user.role) ||
+    !session.user.company
+  )
+    return { status: "forbidden" };
+  if (session.user.role === "WAREHOUSE" && operation.action === "review")
     return { status: "forbidden" };
   if (
     session.user.id !== scope?.userId ||

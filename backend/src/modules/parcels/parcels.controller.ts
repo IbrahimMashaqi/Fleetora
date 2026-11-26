@@ -56,6 +56,12 @@ export class ParcelsController {
       currencyPrecision: CURRENCIES,
     };
   }
+  @Get('zones') @Header('Cache-Control', 'private, no-store') zones(
+    @GetCurrentUser() actor: TokenPayload,
+    @Query() q: PageDto,
+  ) {
+    return this.operations.zones(actor, q);
+  }
   @Get('drivers') @Header('Cache-Control', 'private, no-store') drivers(
     @GetCurrentUser() actor: TokenPayload,
     @Query() q: PageDto,

@@ -63,15 +63,20 @@ export class DriversRepository {
   // Writes reuse the fleet lock order (company, then actor) so identity and
   // tenant state are re-verified inside the transaction that performs them.
   async create(actor: TokenPayload, input: DriverInputDto): Promise<string> {
-    return lockedFleetWrite(this.prisma, actor, async (tx, companyId) => {
-      const created = await tx.orm.public.Worker.create({
-        companyId,
-        fullName: input.name,
-        phone: input.phone,
-        status: 'OFFLINE',
-      });
-      return created.id;
-    });
+    return lockedFleetWrite(
+      this.prisma,
+      actor,
+      async (tx, companyId) => {
+        const created = await tx.orm.public.Worker.create({
+          companyId,
+          fullName: input.name,
+          phone: input.phone,
+          status: 'OFFLINE',
+        });
+        return created.id;
+      },
+      'manageDrivers',
+    );
   }
 
   async update(
@@ -79,13 +84,18 @@ export class DriversRepository {
     id: string,
     input: DriverInputDto,
   ): Promise<void> {
-    await lockedFleetWrite(this.prisma, actor, async (tx, companyId) => {
-      await this.lockDriver(tx, id, companyId);
-      await tx.orm.public.Worker.where({ id, companyId }).update({
-        fullName: input.name,
-        phone: input.phone,
-      });
-    });
+    await lockedFleetWrite(
+      this.prisma,
+      actor,
+      async (tx, companyId) => {
+        await this.lockDriver(tx, id, companyId);
+        await tx.orm.public.Worker.where({ id, companyId }).update({
+          fullName: input.name,
+          phone: input.phone,
+        });
+      },
+      'manageDrivers',
+    );
   }
 
   // Suspension is an administrative override. Reactivation returns the driver
@@ -95,13 +105,18 @@ export class DriversRepository {
     id: string,
     suspended: boolean,
   ): Promise<void> {
-    await lockedFleetWrite(this.prisma, actor, async (tx, companyId) => {
-      const driver = await this.lockDriver(tx, id, companyId);
-      if (suspended === (driver.status === 'SUSPENDED')) return;
-      await tx.orm.public.Worker.where({ id, companyId }).update({
-        status: suspended ? 'SUSPENDED' : 'OFFLINE',
-      });
-    });
+    await lockedFleetWrite(
+      this.prisma,
+      actor,
+      async (tx, companyId) => {
+        const driver = await this.lockDriver(tx, id, companyId);
+        if (suspended === (driver.status === 'SUSPENDED')) return;
+        await tx.orm.public.Worker.where({ id, companyId }).update({
+          status: suspended ? 'SUSPENDED' : 'OFFLINE',
+        });
+      },
+      'manageDrivers',
+    );
   }
 
   private async lockDriver(

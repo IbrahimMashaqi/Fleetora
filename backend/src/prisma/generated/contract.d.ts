@@ -34,9 +34,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'708f9e2ed66bf132dfef0f2d340877256f07cf5e8d8c71398a4a29290afe4280'>;
+  StorageHashBase<'2ff1b08107872ba334fb1b73e951c3137ffe67ad5ebc122ef5f6d3a4710496ce'>;
 export type ExecutionHash =
-  ExecutionHashBase<'136efae69fcefa90706b18d368032752b32d01366a8d36768a8029e128deee87'>;
+  ExecutionHashBase<'d8a3960be16b58c6aacd171a6e89d448bc21204f3731a1218097d6d6b7a40b1b'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -719,6 +719,15 @@ export type FieldOutputTypes = {
       readonly locationLabel: CodecTypes['pg/text@1']['output'] | null;
       readonly occurredAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
+    readonly StaffAccessEvent: {
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly companyId: CodecTypes['pg/text@1']['output'];
+      readonly actorId: CodecTypes['pg/text@1']['output'];
+      readonly subjectId: CodecTypes['pg/text@1']['output'];
+      readonly action: CodecTypes['pg/text@1']['output'];
+      readonly details: CodecTypes['pg/json@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    };
     readonly StaffInvitation: {
       readonly id: CodecTypes['pg/text@1']['output'];
       readonly companyId: CodecTypes['pg/text@1']['output'];
@@ -738,7 +747,8 @@ export type FieldOutputTypes = {
       readonly email: CodecTypes['pg/text@1']['output'] | null;
       readonly password: CodecTypes['pg/text@1']['output'];
       readonly fullName: CodecTypes['pg/text@1']['output'];
-      readonly role: 'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT';
+      readonly role:
+        'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT' | 'OPERATIONS' | 'WAREHOUSE';
       readonly companyId: CodecTypes['pg/text@1']['output'] | null;
       readonly refreshToken: CodecTypes['pg/text@1']['output'] | null;
       readonly verificationToken: CodecTypes['pg/text@1']['output'] | null;
@@ -1265,6 +1275,15 @@ export type FieldInputTypes = {
       readonly locationLabel: CodecTypes['pg/text@1']['input'] | null;
       readonly occurredAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
+    readonly StaffAccessEvent: {
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly companyId: CodecTypes['pg/text@1']['input'];
+      readonly actorId: CodecTypes['pg/text@1']['input'];
+      readonly subjectId: CodecTypes['pg/text@1']['input'];
+      readonly action: CodecTypes['pg/text@1']['input'];
+      readonly details: CodecTypes['pg/json@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+    };
     readonly StaffInvitation: {
       readonly id: CodecTypes['pg/text@1']['input'];
       readonly companyId: CodecTypes['pg/text@1']['input'];
@@ -1284,7 +1303,8 @@ export type FieldInputTypes = {
       readonly email: CodecTypes['pg/text@1']['input'] | null;
       readonly password: CodecTypes['pg/text@1']['input'];
       readonly fullName: CodecTypes['pg/text@1']['input'];
-      readonly role: 'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT';
+      readonly role:
+        'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT' | 'OPERATIONS' | 'WAREHOUSE';
       readonly companyId: CodecTypes['pg/text@1']['input'] | null;
       readonly refreshToken: CodecTypes['pg/text@1']['input'] | null;
       readonly verificationToken: CodecTypes['pg/text@1']['input'] | null;
@@ -1811,6 +1831,15 @@ export type StorageColumnTypes = {
       readonly weight: CodecTypes['pg/float8@1']['output'] | null;
       readonly workerId: CodecTypes['pg/text@1']['output'] | null;
     };
+    readonly staff_access_events: {
+      readonly action: CodecTypes['pg/text@1']['output'];
+      readonly actorId: CodecTypes['pg/text@1']['output'];
+      readonly companyId: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+      readonly details: CodecTypes['pg/json@1']['output'];
+      readonly id: CodecTypes['pg/text@1']['output'];
+      readonly subjectId: CodecTypes['pg/text@1']['output'];
+    };
     readonly staff_invitations: {
       readonly acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
       readonly acceptedById: CodecTypes['pg/text@1']['output'] | null;
@@ -1835,7 +1864,8 @@ export type StorageColumnTypes = {
       readonly isEmailVerified: CodecTypes['pg/bool@1']['output'];
       readonly password: CodecTypes['pg/text@1']['output'];
       readonly refreshToken: CodecTypes['pg/text@1']['output'] | null;
-      readonly role: 'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT';
+      readonly role:
+        'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT' | 'OPERATIONS' | 'WAREHOUSE';
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
       readonly verificationToken: CodecTypes['pg/text@1']['output'] | null;
       readonly verificationTokenExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
@@ -2357,6 +2387,15 @@ export type StorageColumnInputTypes = {
       readonly weight: CodecTypes['pg/float8@1']['input'] | null;
       readonly workerId: CodecTypes['pg/text@1']['input'] | null;
     };
+    readonly staff_access_events: {
+      readonly action: CodecTypes['pg/text@1']['input'];
+      readonly actorId: CodecTypes['pg/text@1']['input'];
+      readonly companyId: CodecTypes['pg/text@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
+      readonly details: CodecTypes['pg/json@1']['input'];
+      readonly id: CodecTypes['pg/text@1']['input'];
+      readonly subjectId: CodecTypes['pg/text@1']['input'];
+    };
     readonly staff_invitations: {
       readonly acceptedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
       readonly acceptedById: CodecTypes['pg/text@1']['input'] | null;
@@ -2381,7 +2420,8 @@ export type StorageColumnInputTypes = {
       readonly isEmailVerified: CodecTypes['pg/bool@1']['input'];
       readonly password: CodecTypes['pg/text@1']['input'];
       readonly refreshToken: CodecTypes['pg/text@1']['input'] | null;
-      readonly role: 'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT';
+      readonly role:
+        'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT' | 'OPERATIONS' | 'WAREHOUSE';
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
       readonly verificationToken: CodecTypes['pg/text@1']['input'] | null;
       readonly verificationTokenExpiresAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
@@ -2466,6 +2506,7 @@ export namespace Models {
     settlementLines: public_MerchantSettlementLine[];
     settlements: public_MerchantSettlement[];
     shipments: public_Shipment[];
+    staffAccessEvents: public_StaffAccessEvent[];
     staffInvitations: public_StaffInvitation[];
     trackingStates: public_DriverTrackingState[];
     users: public_User[];
@@ -2505,6 +2546,7 @@ export namespace Models {
       | 'settlementLines'
       | 'settlements'
       | 'shipments'
+      | 'staffAccessEvents'
       | 'staffInvitations'
       | 'trackingStates'
       | 'users'
@@ -2512,12 +2554,24 @@ export namespace Models {
       | 'warehouses'
       | 'workers';
   };
+  export type public_StaffAccessEvent = {
+    id: CodecTypes['pg/text@1']['output'];
+    companyId: CodecTypes['pg/text@1']['output'];
+    actorId: CodecTypes['pg/text@1']['output'];
+    subjectId: CodecTypes['pg/text@1']['output'];
+    action: CodecTypes['pg/text@1']['output'];
+    details: CodecTypes['pg/json@1']['output'];
+    createdAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
+    company: public_Company;
+    readonly [RelationKeys]?: 'company';
+  };
   export type public_User = {
     id: CodecTypes['pg/text@1']['output'];
     email: CodecTypes['pg/text@1']['output'] | null;
     password: CodecTypes['pg/text@1']['output'];
     fullName: CodecTypes['pg/text@1']['output'];
-    role: 'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT';
+    role:
+      'PLATFORM_ADMIN' | 'COMPANY_ADMIN' | 'MERCHANT' | 'ACCOUNTANT' | 'OPERATIONS' | 'WAREHOUSE';
     companyId: CodecTypes['pg/text@1']['output'] | null;
     refreshToken: CodecTypes['pg/text@1']['output'] | null;
     verificationToken: CodecTypes['pg/text@1']['output'] | null;
@@ -3294,6 +3348,7 @@ export namespace Models {
 export declare const models: {
   public: {
     Company: Models.public_Company;
+    StaffAccessEvent: Models.public_StaffAccessEvent;
     User: Models.public_User;
     CompanyMembership: Models.public_CompanyMembership;
     PlatformAdminGrant: Models.public_PlatformAdminGrant;
@@ -7528,6 +7583,76 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly staff_access_events: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly companyId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly actorId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly subjectId: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly action: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly details: {
+                  readonly nativeType: 'json';
+                  readonly codecId: 'pg/json@1';
+                  readonly nullable: false;
+                };
+                readonly createdAt: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'staff_access_events_companyId_createdAt_idx_5377e5d5';
+                  readonly prefix: 'staff_access_events_companyId_createdAt_idx';
+                  readonly columns: readonly ['companyId', 'createdAt'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'staff_access_events_companyId_idx_33acc5ed';
+                  readonly prefix: 'staff_access_events_companyId_idx';
+                  readonly columns: readonly ['companyId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'staff_access_events';
+                    readonly columns: readonly ['companyId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'companies';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly staff_invitations: {
               columns: {
                 readonly id: {
@@ -8089,6 +8214,8 @@ type ContractBase = Omit<
                 'COMPANY_ADMIN',
                 'MERCHANT',
                 'ACCOUNTANT',
+                'OPERATIONS',
+                'WAREHOUSE',
               ];
             };
             readonly VehicleType: {
@@ -8111,6 +8238,10 @@ type ContractBase = Omit<
   readonly targetFamily: 'sql';
   readonly roots: {
     readonly companies: { readonly namespace: 'public' & NamespaceId; readonly model: 'Company' };
+    readonly staff_access_events: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'StaffAccessEvent';
+    };
     readonly users: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
     readonly company_memberships: {
       readonly namespace: 'public' & NamespaceId;
@@ -8958,6 +9089,17 @@ type ContractBase = Omit<
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
                   readonly model: 'Shipment';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['companyId'];
+                };
+              };
+              readonly staffAccessEvents: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'StaffAccessEvent';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -12558,6 +12700,68 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly StaffAccessEvent: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly companyId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly actorId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly subjectId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly action: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly details: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/json@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-temporal@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly company: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Company';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['companyId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'staff_access_events';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly companyId: { readonly column: 'companyId' };
+                readonly actorId: { readonly column: 'actorId' };
+                readonly subjectId: { readonly column: 'subjectId' };
+                readonly action: { readonly column: 'action' };
+                readonly details: { readonly column: 'details' };
+                readonly createdAt: { readonly column: 'createdAt' };
+              };
+            };
+          };
           readonly StaffInvitation: {
             readonly fields: {
               readonly id: {
@@ -13243,6 +13447,8 @@ type ContractBase = Omit<
               { readonly name: 'COMPANY_ADMIN'; readonly value: 'COMPANY_ADMIN' },
               { readonly name: 'MERCHANT'; readonly value: 'MERCHANT' },
               { readonly name: 'ACCOUNTANT'; readonly value: 'ACCOUNTANT' },
+              { readonly name: 'OPERATIONS'; readonly value: 'OPERATIONS' },
+              { readonly name: 'WAREHOUSE'; readonly value: 'WAREHOUSE' },
             ];
           };
           readonly MembershipStatus: {
@@ -13708,6 +13914,14 @@ type ContractBase = Omit<
           };
           readonly onCreate: { readonly kind: 'generator'; readonly id: 'instantNow' };
           readonly onUpdate: { readonly kind: 'generator'; readonly id: 'instantNow' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'staff_access_events';
+            readonly column: 'id';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'uuidv4' };
         },
         {
           readonly ref: {

@@ -13,6 +13,7 @@ let readsFail: boolean;
 let acceptStatus: number;
 let delivery: string;
 let memberActive: boolean;
+let memberRole: string;
 let memberStatus: number;
 const memberId = "10000000-0000-4000-8000-000000000009";
 let writes: { path: string; method: string; body: unknown; context?: string | string[] }[];
@@ -39,7 +40,8 @@ test.beforeAll(async () => {
       if (req.method === "PUT") {
         res.statusCode = memberStatus;
         if (memberStatus !== 200) return res.end(JSON.stringify({ success: false, message: "conflict" }));
-        memberActive = JSON.parse(raw).active;
+        if (path.endsWith('/role')) memberRole = JSON.parse(raw).role;
+        else memberActive = JSON.parse(raw).active;
       }
       if (readsFail && req.method === "GET") {
         res.statusCode = 503;
@@ -52,12 +54,12 @@ test.beforeAll(async () => {
           : req.method === "DELETE"
             ? { companyId, revoked: true }
             : req.method === "PUT"
-              ? { companyId, member: { id: memberId, fullName: "Fixture Accountant", email: "acc@example.com", role: "ACCOUNTANT", active: memberActive } }
+              ? { companyId, member: { id: memberId, fullName: "Fixture Accountant", email: "acc@example.com", role: memberRole, active: memberActive } }
             : {
                 companyId,
                 members: [
                   { id: userId, fullName: "Fixture admin", email: "admin@example.com", role: "COMPANY_ADMIN", active: true },
-                  { id: memberId, fullName: "Fixture Accountant", email: "acc@example.com", role: "ACCOUNTANT", active: memberActive },
+                  { id: memberId, fullName: "Fixture Accountant", email: "acc@example.com", role: memberRole, active: memberActive },
                 ],
                 invitations: issued ? [invitation] : [],
               };
@@ -78,6 +80,7 @@ test.beforeEach(async ({ context }) => {
   acceptStatus = 201;
   delivery = "MANUAL";
   memberActive = true;
+  memberRole = 'ACCOUNTANT';
   memberStatus = 200;
   writes = [];
   await context.addCookies([{ name: "fleetora_access", value: "isolated-staff-fixture", url: "http://localhost:3100", httpOnly: true }]);
@@ -118,6 +121,21 @@ test("admin can choose the company administrator role", async ({ page }) => {
   await expect(page.getByLabel("Activation link")).toBeVisible();
   expect(writes[0]?.body).toEqual({ email: "second@example.com", role: "COMPANY_ADMIN" });
 });
+
+for (const next of ['OPERATIONS', 'WAREHOUSE'] as const) {
+  test(`admin assigns ${next} and can invite the same built-in role`, async ({ page }) => {
+    await page.goto('/app/team');
+    await page.getByLabel('Change access for Fixture Accountant').selectOption(next);
+    await page.getByRole('button', { name: 'Save role' }).click();
+    await expect.poll(() => memberRole).toBe(next);
+    expect(writes[0]).toMatchObject({ path: `/company/staff/members/${memberId}/role`, body: { role: next }, context: companyId });
+    await page.getByLabel('Role', { exact: true }).selectOption(next);
+    await page.getByLabel('Email', { exact: true }).fill('new@example.com');
+    await page.getByRole('button', { name: 'Create invitation' }).click();
+    await expect(page.getByLabel('Activation link')).toBeVisible();
+    expect(writes.at(-1)?.body).toEqual({ email: 'new@example.com', role: next });
+  });
+}
 
 test("load failures are distinct from an empty team and can retry", async ({ page }) => {
   readsFail = true;

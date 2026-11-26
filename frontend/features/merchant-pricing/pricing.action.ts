@@ -8,3 +8,16 @@ export async function pricingAction(scope: Scope, operation: PricingOperation) {
   if (result.status === "unauthenticated") redirect("/login");
   return result;
 }
+export async function operationalPricingAction(
+  scope: Scope,
+  operation: PricingOperation,
+) {
+  const result = await pricingForSession(
+    await cookies(),
+    scope,
+    operation,
+    true,
+  );
+  if (result.status === "unauthenticated") redirect("/login");
+  return result;
+}

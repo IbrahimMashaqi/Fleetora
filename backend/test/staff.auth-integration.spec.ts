@@ -11,7 +11,15 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { Temporal } from 'temporal-polyfill';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { AuthRepository } from '../src/modules/auth/auth.repository.js';
 import { AuthService } from '../src/modules/auth/auth.service.js';
 import { TokenService } from '../src/modules/auth/token/token.service.js';
@@ -61,6 +69,9 @@ describe('staff invitations against disposable PostgreSQL', () => {
   async function cleanup() {
     guard.assertVerified();
     for (const id of [companyId, otherCompanyId]) {
+      await prisma.db.orm.public.StaffAccessEvent.where({
+        companyId: id,
+      }).deleteAll();
       await prisma.db.orm.public.StaffInvitation.where({
         companyId: id,
       }).deleteAll();
@@ -77,7 +88,14 @@ describe('staff invitations against disposable PostgreSQL', () => {
     service.accept({ token, name, password });
   const userByEmail = (email: string) =>
     prisma.User.where((u) => u.email.ilike(email))
-      .select('id', 'role', 'companyId', 'isActive', 'isEmailVerified', 'password')
+      .select(
+        'id',
+        'role',
+        'companyId',
+        'isActive',
+        'isEmailVerified',
+        'password',
+      )
       .first();
 
   beforeAll(async () => {
@@ -96,7 +114,10 @@ describe('staff invitations against disposable PostgreSQL', () => {
         TokenService,
         {
           provide: MailService,
-          useValue: { sendVerificationEmail: vi.fn(), sendResetPasswordEmail: vi.fn() },
+          useValue: {
+            sendVerificationEmail: vi.fn(),
+            sendResetPasswordEmail: vi.fn(),
+          },
         },
         {
           provide: ConfigService,
@@ -194,7 +215,10 @@ describe('staff invitations against disposable PostgreSQL', () => {
   });
 
   it('lets an invited second administrator manage staff of the same company only', async () => {
-    const issued = await issue('second@staff-invite.example.invalid', 'COMPANY_ADMIN');
+    const issued = await issue(
+      'second@staff-invite.example.invalid',
+      'COMPANY_ADMIN',
+    );
     await accept(issued.token);
     const second = await userByEmail('second@staff-invite.example.invalid');
     expect(second).toMatchObject({ role: 'COMPANY_ADMIN', companyId });
@@ -204,7 +228,11 @@ describe('staff invitations against disposable PostgreSQL', () => {
       role: 'COMPANY_ADMIN',
       email: 'second@staff-invite.example.invalid',
     };
-    const next = await issue('third@staff-invite.example.invalid', 'ACCOUNTANT', secondActor);
+    const next = await issue(
+      'third@staff-invite.example.invalid',
+      'ACCOUNTANT',
+      secondActor,
+    );
     expect(next.companyId).toBe(companyId);
   });
 
@@ -220,9 +248,9 @@ describe('staff invitations against disposable PostgreSQL', () => {
     await expect(
       service.revoke({ ...actor, orgId: otherCompanyId }, issued.invitation.id),
     ).rejects.toBeInstanceOf(ForbiddenException);
-    expect(
-      (await service.overview(actor)).invitations[0],
-    ).toMatchObject({ state: 'PENDING' });
+    expect((await service.overview(actor)).invitations[0]).toMatchObject({
+      state: 'PENDING',
+    });
   });
 
   it('refuses revoked and expired invitations and keeps revocation idempotent', async () => {
@@ -247,8 +275,12 @@ describe('staff invitations against disposable PostgreSQL', () => {
     await expect(accept(expired.token)).rejects.toBeInstanceOf(
       BadRequestException,
     );
-    expect(await userByEmail('revoked@staff-invite.example.invalid')).toBeNull();
-    expect(await userByEmail('expired@staff-invite.example.invalid')).toBeNull();
+    expect(
+      await userByEmail('revoked@staff-invite.example.invalid'),
+    ).toBeNull();
+    expect(
+      await userByEmail('expired@staff-invite.example.invalid'),
+    ).toBeNull();
   });
 
   it('cannot revoke an accepted invitation', async () => {
@@ -276,10 +308,14 @@ describe('staff invitations against disposable PostgreSQL', () => {
     await expect(accept(issued.token)).rejects.toBeInstanceOf(
       ConflictException,
     );
-    expect(await userByEmail('late@staff-invite.example.invalid')).toMatchObject({
+    expect(
+      await userByEmail('late@staff-invite.example.invalid'),
+    ).toMatchObject({
       companyId: otherCompanyId,
     });
-    expect((await service.overview(actor)).invitations[0].state).toBe('PENDING');
+    expect((await service.overview(actor)).invitations[0].state).toBe(
+      'PENDING',
+    );
   });
 
   it('refuses acceptance for a suspended company and issuance by an inactive admin', async () => {
@@ -364,19 +400,92 @@ describe('staff invitations against disposable PostgreSQL', () => {
       companyId,
       member: { id: accountantId, active: false, role: 'ACCOUNTANT' },
     });
-    expect(await member(accountantId)).toEqual({ isActive: false, refreshToken: null });
-    await expect(auth.refreshTokens(accountantId, refresh)).rejects.toBeInstanceOf(
-      UnauthorizedException,
-    );
+    expect(await member(accountantId)).toEqual({
+      isActive: false,
+      refreshToken: null,
+    });
+    await expect(
+      auth.refreshTokens(accountantId, refresh),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
     // Idempotent and visible in the team list.
     await service.setActive(actor, accountantId, false);
-    const listed = (await service.overview(actor)).members.find((m) => m.id === accountantId);
+    const listed = (await service.overview(actor)).members.find(
+      (m) => m.id === accountantId,
+    );
     expect(listed?.active).toBe(false);
 
     await service.setActive(actor, accountantId, true);
-    expect(await member(accountantId)).toEqual({ isActive: true, refreshToken: null });
+    expect(await member(accountantId)).toEqual({
+      isActive: true,
+      refreshToken: null,
+    });
     // The old session stays revoked; the user must sign in again.
-    await expect(auth.refreshTokens(accountantId, refresh)).rejects.toBeDefined();
+    await expect(
+      auth.refreshTokens(accountantId, refresh),
+    ).rejects.toBeDefined();
+  });
+
+  for (const role of ['OPERATIONS', 'WAREHOUSE'] as const) {
+    it(`invites and activates ${role} without granting administrative access`, async () => {
+      const invited = await issue(
+        `${role.toLowerCase()}@staff-invite.example.invalid`,
+        role,
+      );
+      await accept(invited.token);
+      const user = await userByEmail(invited.invitation.email);
+      expect(user).toMatchObject({ role, companyId, isActive: true });
+      await expect(
+        service.overview({ ...actor, sub: user!.id, role }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+  }
+
+  it('assigns exactly one role, revokes refresh and audits the change', async () => {
+    await seedStaff(accountantId, 'ACCOUNTANT');
+    expect(
+      await service.setRole(actor, accountantId, { role: 'OPERATIONS' }),
+    ).toMatchObject({ member: { role: 'OPERATIONS' } });
+    expect(await member(accountantId)).toMatchObject({ refreshToken: null });
+    const events = await prisma.db.orm.public.StaffAccessEvent.where({
+      companyId,
+      subjectId: accountantId,
+    }).all();
+    expect(events).toHaveLength(1);
+    expect(events[0].action).toBe('STAFF_ROLE_CHANGED');
+    await expect(
+      service.setRole(
+        { ...actor, sub: accountantId, role: 'COMPANY_ADMIN' },
+        adminId,
+        { role: 'WAREHOUSE' },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('denies cross-company and self role changes', async () => {
+    await expect(
+      service.setRole(actor, otherAdminId, { role: 'WAREHOUSE' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      service.setRole(actor, adminId, { role: 'WAREHOUSE' }),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('serializes mutual demotion and rejects the stale administrator inside the transaction', async () => {
+    await seedStaff(secondAdminId, 'COMPANY_ADMIN');
+    const results = await Promise.allSettled([
+      service.setRole(actor, secondAdminId, { role: 'WAREHOUSE' }),
+      service.setRole({ ...actor, sub: secondAdminId }, adminId, {
+        role: 'OPERATIONS',
+      }),
+    ]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(
+      await prisma.User.where({
+        companyId,
+        role: 'COMPANY_ADMIN',
+        isActive: true,
+      }).all(),
+    ).toHaveLength(1);
   });
 
   it('can deactivate another administrator while one active admin remains', async () => {
@@ -386,13 +495,13 @@ describe('staff invitations against disposable PostgreSQL', () => {
   });
 
   it('refuses self-deactivation, including for the only active administrator', async () => {
-    await expect(service.setActive(actor, adminId, false)).rejects.toBeInstanceOf(
-      ConflictException,
-    );
+    await expect(
+      service.setActive(actor, adminId, false),
+    ).rejects.toBeInstanceOf(ConflictException);
     await seedStaff(secondAdminId, 'COMPANY_ADMIN');
-    await expect(service.setActive(actor, adminId, false)).rejects.toBeInstanceOf(
-      ConflictException,
-    );
+    await expect(
+      service.setActive(actor, adminId, false),
+    ).rejects.toBeInstanceOf(ConflictException);
     expect((await member(adminId))?.isActive).toBe(true);
   });
 
@@ -404,34 +513,50 @@ describe('staff invitations against disposable PostgreSQL', () => {
       service.setActive(second, adminId, false),
     ]);
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
-    const active = await prisma.User.where({ companyId, role: 'COMPANY_ADMIN', isActive: true }).all();
+    const active = await prisma.User.where({
+      companyId,
+      role: 'COMPANY_ADMIN',
+      isActive: true,
+    }).all();
     expect(active).toHaveLength(1);
   });
 
   it('denies non-admin actors', async () => {
     await seedStaff(accountantId, 'ACCOUNTANT');
     await seedStaff(secondAdminId, 'COMPANY_ADMIN');
-    const accountant: TokenPayload = { ...actor, sub: accountantId, role: 'ACCOUNTANT' };
-    await expect(service.setActive(accountant, secondAdminId, false)).rejects.toBeInstanceOf(
-      ForbiddenException,
-    );
+    const accountant: TokenPayload = {
+      ...actor,
+      sub: accountantId,
+      role: 'ACCOUNTANT',
+    };
+    await expect(
+      service.setActive(accountant, secondAdminId, false),
+    ).rejects.toBeInstanceOf(ForbiddenException);
     // A forged admin claim is rejected against the persisted role.
     await expect(
-      service.setActive({ ...accountant, role: 'COMPANY_ADMIN' }, secondAdminId, false),
+      service.setActive(
+        { ...accountant, role: 'COMPANY_ADMIN' },
+        secondAdminId,
+        false,
+      ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect((await member(secondAdminId))?.isActive).toBe(true);
   });
 
   it('cannot touch users of another company or non-staff users', async () => {
     await seedStaff(accountantId, 'ACCOUNTANT', otherCompanyId);
-    await expect(service.setActive(actor, accountantId, false)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
-    await expect(service.setActive(actor, otherAdminId, false)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
     await expect(
-      service.setActive({ ...actor, orgId: otherCompanyId }, accountantId, false),
+      service.setActive(actor, accountantId, false),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      service.setActive(actor, otherAdminId, false),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    await expect(
+      service.setActive(
+        { ...actor, orgId: otherCompanyId },
+        accountantId,
+        false,
+      ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect((await member(accountantId))?.isActive).toBe(true);
     expect((await member(otherAdminId))?.isActive).toBe(true);

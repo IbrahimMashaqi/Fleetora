@@ -121,7 +121,7 @@ function FleetoraBrand({ lightSurface = false }: { lightSurface?: boolean }) {
 
 function WorkspaceNavigation({ user, onNavigate }: { user: SessionUser; onNavigate?: () => void }) {
   const { t } = useLocale();
-  const visible = navigation.filter(item => ["/app", "/app/account"].includes(item.href) || user.company !== null && (user.role === "COMPANY_ADMIN" || user.role === "ACCOUNTANT" && ["/app/operations", "/app/parcels", "/app/merchants", "/app/returns", "/app/collections", "/app/settlements", "/app/requests"].includes(item.href)));
+  const visible = navigation.filter(item => ["/app", "/app/account"].includes(item.href) || user.company !== null && (user.role === "COMPANY_ADMIN" || user.role === "OPERATIONS" && ["/app/operations", "/app/parcels", "/app/drivers", "/app/pickups", "/app/returns", "/app/requests"].includes(item.href) || user.role === "WAREHOUSE" && ["/app/operations", "/app/parcels", "/app/pickups", "/app/returns"].includes(item.href) || user.role === "ACCOUNTANT" && ["/app/operations", "/app/parcels", "/app/merchants", "/app/returns", "/app/collections", "/app/settlements", "/app/requests"].includes(item.href)));
   return (
     <nav aria-label={t("Primary navigation")} className={styles.navigation}>
       {navigationGroups.map(label => {
@@ -140,7 +140,7 @@ function SidebarAccount({ user, accountActions, onNavigate }: { user: SessionUse
       ? t("Platform administrator")
       : user.role === "MERCHANT"
         ? t("Merchant")
-        : t("Accountant");
+        : user.role === "OPERATIONS" ? t("Operations") : user.role === "WAREHOUSE" ? t("Warehouse staff") : t("Accountant");
   return (
     <div className="min-w-0 shrink-0 border-t border-white/10 px-3 pt-4 pb-4">
       <div className="mb-3 flex min-w-0 items-center gap-3 px-3">

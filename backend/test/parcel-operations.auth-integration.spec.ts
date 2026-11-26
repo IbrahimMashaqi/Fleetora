@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { PrismaService } from '../src/modules/prisma/prisma.service.js';
-import { ParcelStore, instant, now } from '../src/modules/parcels/parcel-store.js';
+import {
+  ParcelStore,
+  instant,
+  now,
+} from '../src/modules/parcels/parcel-store.js';
 import { MerchantPricingRepository } from '../src/modules/merchant-pricing/merchant-pricing.repository.js';
 import { MerchantPricingService } from '../src/modules/merchant-pricing/merchant-pricing.service.js';
 import { ParcelLedger } from '../src/modules/parcels/parcel-ledger.js';
@@ -167,6 +171,69 @@ describe('parcel operations on disposable PostgreSQL', () => {
     };
   }
   const warehouses = new Map<string, string>();
+  for (const role of [
+    'COMPANY_ADMIN',
+    'OPERATIONS',
+    'ACCOUNTANT',
+    'WAREHOUSE',
+  ] as const) {
+    it(`BR-042/043 persisted ${role} allows reads and enforces operational/financial writes`, async () => {
+      const merchantId = await merchant();
+      const input = await priced(merchantId);
+      const user = await prisma.User.create({
+        companyId: actor.orgId,
+        role,
+        fullName: 'Role matrix fixture',
+        email: `${key()}@example.invalid`,
+        password: key(),
+        isActive: true,
+        isEmailVerified: true,
+      });
+      const by: TokenPayload = { ...actor, sub: user.id, role };
+      const id = await parcel(merchantId);
+      expect((await ops.details(by, id)).parcel.id).toBe(id);
+      if (role === 'COMPANY_ADMIN' || role === 'OPERATIONS') {
+        await expect(ops.saveParcel(by, input)).resolves.toBeDefined();
+      } else
+        await expect(ops.saveParcel(by, input)).rejects.toMatchObject({
+          status: 403,
+        });
+      if (role === 'COMPANY_ADMIN' || role === 'ACCOUNTANT') {
+        await expect(
+          finance.collections(by, new PageDto()),
+        ).resolves.toBeDefined();
+      } else {
+        await expect(
+          finance.collections(by, new PageDto()),
+        ).rejects.toMatchObject({ status: 403 });
+        expect((await dashboard.dashboard(by)).money).toEqual([]);
+        expect((await ops.merchant(by, merchantId)).balances).toEqual([]);
+      }
+      if (role === 'ACCOUNTANT') {
+        await expect(
+          ops.transition(by, id, {
+            revision: await revision(id),
+            status: 'RECEIVED_FROM_MERCHANT',
+            warehouseId: await warehouseFor(actor),
+          }),
+        ).rejects.toMatchObject({ status: 403 });
+      } else {
+        await ops.transition(by, id, {
+          revision: await revision(id),
+          status: 'RECEIVED_FROM_MERCHANT',
+          warehouseId: await warehouseFor(actor),
+        });
+      }
+      const foreignId = await parcel(await merchant(foreign), foreign);
+      await expect(ops.details(by, foreignId)).rejects.toMatchObject({
+        status: 404,
+      });
+      if (role !== 'COMPANY_ADMIN')
+        await expect(
+          ops.saveMerchant(by, merchantInput()),
+        ).rejects.toMatchObject({ status: 403 });
+    });
+  }
   async function warehouseFor(who: TokenPayload) {
     const known = warehouses.get(who.orgId);
     if (known) return known;
@@ -314,9 +381,15 @@ describe('parcel operations on disposable PostgreSQL', () => {
           ).deleteAll();
           await prisma.Shipment.where({ companyId }).deleteAll();
           await prisma.db.orm.public.Merchant.where({ companyId }).deleteAll();
-          await prisma.db.orm.public.PlanZoneTariff.where({ companyId }).deleteAll();
-          await prisma.db.orm.public.MerchantPlan.where({ companyId }).deleteAll();
-          await prisma.db.orm.public.DeliveryZone.where({ companyId }).deleteAll();
+          await prisma.db.orm.public.PlanZoneTariff.where({
+            companyId,
+          }).deleteAll();
+          await prisma.db.orm.public.MerchantPlan.where({
+            companyId,
+          }).deleteAll();
+          await prisma.db.orm.public.DeliveryZone.where({
+            companyId,
+          }).deleteAll();
           await prisma.Warehouse.where({ companyId }).deleteAll();
           await prisma.db.orm.public.MonetaryRequest.where({
             companyId,
@@ -428,36 +501,66 @@ describe('parcel operations on disposable PostgreSQL', () => {
     });
     expect(detail.collection).toBeNull();
     const requestKey = key();
-    await expect(finance.collect(actor, {
-      parcelId: id, amount: '0.00', method: 'CASH', idempotencyKey: requestKey,
-    })).rejects.toMatchObject({ status: 400 });
-    expect(await store.orm.MonetaryRequest.where({ companyId: actor.orgId, key: requestKey }).first()).toBeNull();
+    await expect(
+      finance.collect(actor, {
+        parcelId: id,
+        amount: '0.00',
+        method: 'CASH',
+        idempotencyKey: requestKey,
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(
+      await store.orm.MonetaryRequest.where({
+        companyId: actor.orgId,
+        key: requestKey,
+      }).first(),
+    ).toBeNull();
     expect((await finance.collections(actor, new PageDto())).items).toEqual([]);
-    expect((await finance.statement(actor, merchantId, new PageDto())).items).toMatchObject([
-      { kind: 'DELIVERY_FEE', amount: '-17.00' },
-    ]);
-    expect((await dashboard.dashboard(actor, { merchantId })).money).toMatchObject([
-      { expectedCod: '0.00', uncollectedCod: '0.00', collectedCod: '0.00', unremittedCash: '0.00' },
+    expect(
+      (await finance.statement(actor, merchantId, new PageDto())).items,
+    ).toMatchObject([{ kind: 'DELIVERY_FEE', amount: '-17.00' }]);
+    expect(
+      (await dashboard.dashboard(actor, { merchantId })).money,
+    ).toMatchObject([
+      {
+        expectedCod: '0.00',
+        uncollectedCod: '0.00',
+        collectedCod: '0.00',
+        unremittedCash: '0.00',
+      },
     ]);
     expect((await ops.parcels(actor, new PageDto())).items).toMatchObject([
       { id, collectionRequired: false },
     ]);
-    await expect(ops.details(foreign, id)).rejects.toMatchObject({ status: 404 });
+    await expect(ops.details(foreign, id)).rejects.toMatchObject({
+      status: 404,
+    });
   });
   it('requires collection of customer-paid charges even when the goods COD is zero', async () => {
     const merchantId = await merchant(actor, 'CUSTOMER');
     const id = await dispatched(merchantId, '0.00');
     await ops.attempt(actor, id, {
-      revision: await revision(id), outcome: 'DELIVERED',
+      revision: await revision(id),
+      outcome: 'DELIVERED',
     });
     expect((await ops.details(actor, id)).parcel).toMatchObject({
-      codAmount: '0.00', expectedCustomerTotal: '17.00', collectionRequired: true,
+      codAmount: '0.00',
+      expectedCustomerTotal: '17.00',
+      collectionRequired: true,
     });
     const response = await finance.collect(actor, {
-      parcelId: id, amount: '17.00', method: 'CASH', idempotencyKey: key(),
+      parcelId: id,
+      amount: '17.00',
+      method: 'CASH',
+      idempotencyKey: key(),
     });
-    expect(response.collection).toMatchObject({ amount: '17.00', goodsAmount: '0.00' });
-    expect((await finance.statement(actor, merchantId, new PageDto())).items).toEqual([]);
+    expect(response.collection).toMatchObject({
+      amount: '17.00',
+      goodsAmount: '0.00',
+    });
+    expect(
+      (await finance.statement(actor, merchantId, new PageDto())).items,
+    ).toEqual([]);
   });
   it('rolls back delivery, custody, attempt and audit changes when the required fee posting fails', async () => {
     const merchantId = await merchant();
@@ -465,48 +568,93 @@ describe('parcel operations on disposable PostgreSQL', () => {
     // An owned fixture forces a real PostgreSQL posting-key collision after the
     // operational updates. No transaction or persistence layer is mocked.
     const blocker = await store.orm.MerchantLedgerEntry.create({
-      companyId: actor.orgId, merchantId, shipmentId: id, currency: 'ILS',
-      kind: 'DELIVERY_FEE', amountMinor: -1700n, reason: 'Isolated collision fixture',
-      actorId: actor.sub, postingKey: `DELIVERY_FEE:${id}`,
+      companyId: actor.orgId,
+      merchantId,
+      shipmentId: id,
+      currency: 'ILS',
+      kind: 'DELIVERY_FEE',
+      amountMinor: -1700n,
+      reason: 'Isolated collision fixture',
+      actorId: actor.sub,
+      postingKey: `DELIVERY_FEE:${id}`,
     });
     const before = await ops.details(actor, id);
     const balances = (await ops.merchant(actor, merchantId)).balances;
-    await expect(ops.attempt(actor, id, {
-      revision: Number(before.parcel.revision), outcome: 'DELIVERED',
-    })).rejects.toMatchObject({ status: 409 });
+    await expect(
+      ops.attempt(actor, id, {
+        revision: Number(before.parcel.revision),
+        outcome: 'DELIVERED',
+      }),
+    ).rejects.toMatchObject({ status: 409 });
     const after = await ops.details(actor, id);
     expect(after.parcel).toEqual(before.parcel);
     expect(after.attempts).toEqual(before.attempts);
     expect(after.events).toEqual(before.events);
     expect((await ops.merchant(actor, merchantId)).balances).toEqual(balances);
-    await store.orm.MerchantLedgerEntry.where({ companyId: actor.orgId, id: blocker.id }).delete();
+    await store.orm.MerchantLedgerEntry.where({
+      companyId: actor.orgId,
+      id: blocker.id,
+    }).delete();
     await ops.attempt(actor, id, {
-      revision: Number(before.parcel.revision), outcome: 'DELIVERED',
+      revision: Number(before.parcel.revision),
+      outcome: 'DELIVERED',
     });
     expect((await ops.details(actor, id)).parcel.status).toBe('DELIVERED');
-    expect((await finance.statement(actor, merchantId, new PageDto())).items).toHaveLength(1);
+    expect(
+      (await finance.statement(actor, merchantId, new PageDto())).items,
+    ).toHaveLength(1);
   });
   it('rolls back a collection and leaves its retry key usable when goods posting fails', async () => {
     const merchantId = await merchant();
     const id = await delivered(merchantId);
     const blocker = await store.orm.MerchantLedgerEntry.create({
-      companyId: actor.orgId, merchantId, shipmentId: id, currency: 'ILS',
-      kind: 'ADJUSTMENT', amountMinor: 1n, reason: 'Isolated collision fixture',
-      actorId: actor.sub, postingKey: `GOODS:${id}`,
+      companyId: actor.orgId,
+      merchantId,
+      shipmentId: id,
+      currency: 'ILS',
+      kind: 'ADJUSTMENT',
+      amountMinor: 1n,
+      reason: 'Isolated collision fixture',
+      actorId: actor.sub,
+      postingKey: `GOODS:${id}`,
     });
-    const input = { parcelId: id, amount: '100.00', method: 'CASH', idempotencyKey: key() };
+    const input = {
+      parcelId: id,
+      amount: '100.00',
+      method: 'CASH',
+      idempotencyKey: key(),
+    };
     const before = await ops.details(actor, id);
     const balances = (await ops.merchant(actor, merchantId)).balances;
-    await expect(finance.collect(actor, input)).rejects.toMatchObject({ status: 409 });
+    await expect(finance.collect(actor, input)).rejects.toMatchObject({
+      status: 409,
+    });
     expect(await ops.details(actor, id)).toEqual(before);
     expect((await ops.merchant(actor, merchantId)).balances).toEqual(balances);
-    expect(await store.orm.CodCollection.where({ companyId: actor.orgId, shipmentId: id }).first()).toBeNull();
-    expect(await store.orm.MonetaryRequest.where({ companyId: actor.orgId, key: input.idempotencyKey }).first()).toBeNull();
-    await store.orm.MerchantLedgerEntry.where({ companyId: actor.orgId, id: blocker.id }).delete();
+    expect(
+      await store.orm.CodCollection.where({
+        companyId: actor.orgId,
+        shipmentId: id,
+      }).first(),
+    ).toBeNull();
+    expect(
+      await store.orm.MonetaryRequest.where({
+        companyId: actor.orgId,
+        key: input.idempotencyKey,
+      }).first(),
+    ).toBeNull();
+    await store.orm.MerchantLedgerEntry.where({
+      companyId: actor.orgId,
+      id: blocker.id,
+    }).delete();
     const result = await finance.collect(actor, input);
     expect(await finance.collect(actor, input)).toEqual(result);
-    expect((await finance.collections(actor, new PageDto())).items).toHaveLength(1);
-    expect((await finance.statement(actor, merchantId, new PageDto())).items).toHaveLength(2);
+    expect(
+      (await finance.collections(actor, new PageDto())).items,
+    ).toHaveLength(1);
+    expect(
+      (await finance.statement(actor, merchantId, new PageDto())).items,
+    ).toHaveLength(2);
   });
   it('records structured failure, return custody, and exactly one merchant handoff fee without collection credit', async () => {
     const merchantId = await merchant();
@@ -962,7 +1110,11 @@ describe('parcel operations on disposable PostgreSQL', () => {
     await expect(
       ops.saveMerchant(
         actor,
-        { ...merchantInput(), currency: 'JOD', revision: Number(created.revision) },
+        {
+          ...merchantInput(),
+          currency: 'JOD',
+          revision: Number(created.revision),
+        },
         merchantId,
       ),
     ).rejects.toMatchObject({ status: 400 });
@@ -985,17 +1137,21 @@ describe('parcel operations on disposable PostgreSQL', () => {
     await expect(
       finance.preview(actor, { merchantId, currency: 'JOD' }),
     ).rejects.toMatchObject({ status: 400 });
-    expect((await finance.preview(actor, { merchantId })).preview.currency).toBe('ILS');
+    expect(
+      (await finance.preview(actor, { merchantId })).preview.currency,
+    ).toBe('ILS');
   });
   it('OD-02/BR-066: each tenant keeps its own currency; one company never selects another tenant currency', async () => {
-    await prisma.Company.where({ id: foreign.orgId }).update({ currency: 'USD' });
+    await prisma.Company.where({ id: foreign.orgId }).update({
+      currency: 'USD',
+    });
     const { currency: _omitted, ...withoutCurrency } = merchantInput();
     expect(
       (await ops.saveMerchant(foreign, withoutCurrency)).merchant.currency,
     ).toBe('USD');
-    expect((await ops.saveMerchant(actor, withoutCurrency)).merchant.currency).toBe(
-      'ILS',
-    );
+    expect(
+      (await ops.saveMerchant(actor, withoutCurrency)).merchant.currency,
+    ).toBe('ILS');
     await expect(
       ops.saveMerchant(actor, { ...merchantInput(), currency: 'USD' }),
     ).rejects.toMatchObject({ status: 400 });
@@ -1017,9 +1173,9 @@ describe('parcel operations on disposable PostgreSQL', () => {
       legacyActivation: false,
     });
     const pending = { status: 409 };
-    await expect(ops.saveParcel(actor, await priced(merchantId))).rejects.toMatchObject(
-      pending,
-    );
+    await expect(
+      ops.saveParcel(actor, await priced(merchantId)),
+    ).rejects.toMatchObject(pending);
     // A delivered parcel stored before OD-13 still cannot be collected or settled.
     const id = await parcel(merchantId);
     await prisma.Shipment.where({ id }).update({ status: 'DELIVERED' });
@@ -1031,7 +1187,9 @@ describe('parcel operations on disposable PostgreSQL', () => {
         idempotencyKey: key(),
       }),
     ).rejects.toMatchObject(pending);
-    await expect(finance.preview(actor, { merchantId })).rejects.toMatchObject(pending);
+    await expect(finance.preview(actor, { merchantId })).rejects.toMatchObject(
+      pending,
+    );
     await expect(
       finance.draft(actor, {
         merchantId,
@@ -1040,7 +1198,9 @@ describe('parcel operations on disposable PostgreSQL', () => {
       }),
     ).rejects.toMatchObject(pending);
     expect(
-      await prisma.db.orm.public.CodCollection.where({ shipmentId: id }).first(),
+      await prisma.db.orm.public.CodCollection.where({
+        shipmentId: id,
+      }).first(),
     ).toBeNull();
     const listed = async (activationStatus: 'PENDING' | 'ACTIVE') =>
       (
@@ -1054,16 +1214,22 @@ describe('parcel operations on disposable PostgreSQL', () => {
     // Once ACTIVE the same merchant operates normally.
     await activated(merchantId);
     expect(await listed('ACTIVE')).toContain(merchantId);
-    expect((await ops.saveParcel(actor, await priced(merchantId))).parcel).toMatchObject({
+    expect(
+      (await ops.saveParcel(actor, await priced(merchantId))).parcel,
+    ).toMatchObject({
       merchantId,
     });
   });
   it('OD-13: a foreign company cannot use or see another tenant\u2019s merchant, active or not', async () => {
     const merchantId = await merchant();
-    await expect(ops.saveParcel(foreign, await priced(merchantId))).rejects.toMatchObject({
+    await expect(
+      ops.saveParcel(foreign, await priced(merchantId)),
+    ).rejects.toMatchObject({
       status: 404,
     });
-    await expect(finance.preview(foreign, { merchantId })).rejects.toMatchObject({
+    await expect(
+      finance.preview(foreign, { merchantId }),
+    ).rejects.toMatchObject({
       status: 404,
     });
   });
