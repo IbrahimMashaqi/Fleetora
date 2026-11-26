@@ -268,13 +268,7 @@ export class ParcelFinanceRepository {
       'ADJUSTMENT',
       input,
       async (tx, companyId) => {
-        const merchant = await tx.orm.public.Merchant.where({
-          companyId,
-          id: input.merchantId,
-        })
-          .select('id')
-          .first();
-        if (!merchant) throw new NotFoundException('Merchant not found');
+        await this.activeMerchant(tx, companyId, input.merchantId);
         const currency = await companyCurrency(tx, companyId, input.currency);
         const value = money(input.amount, currency, true);
         if (value === 0n)
@@ -282,7 +276,7 @@ export class ParcelFinanceRepository {
         return (
           await tx.orm.public.MerchantLedgerEntry.create({
             companyId,
-            merchantId: merchant.id,
+            merchantId: input.merchantId,
             currency,
             kind: 'ADJUSTMENT',
             amountMinor: value,
@@ -345,7 +339,7 @@ export class ParcelFinanceRepository {
     if (!entry) throw new NotFoundException('Entry not found');
     return { companyId, entry: wire(entry) };
   }
-  /** OD-13: COD and settlements only for an ACTIVE merchant of this company. */
+  /** OD-13: money operations only for an ACTIVE merchant of this company. */
   private async activeMerchant(
     tx: ParcelTransaction,
     companyId: string,

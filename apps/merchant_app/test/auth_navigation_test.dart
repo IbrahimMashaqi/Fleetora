@@ -130,7 +130,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(child: localized(const ActivationPage())),
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Activate account'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Review agreement'));
     await tester.pump();
     expect(find.text('This field is required'), findsNWidgets(2));
     expect(find.text('Use at least 8 characters'), findsOneWidget);
