@@ -213,7 +213,10 @@ for (const locale of ["en", "ar"] as const) for (const mobile of [false, true]) 
     const operations = nav.locator("a[href='/app/operations']");
     await expect(operations).toBeVisible();
     expect((await operations.innerText()).trim()).not.toBe(t("Parcel operations"));
-    await operations.click();
+    await Promise.all([
+      page.waitForURL(/\/app\/operations$/),
+      operations.click(),
+    ]);
     await expect(page).toHaveURL(/\/app\/operations$/);
     await openMobile();
     await expect(operations).toHaveAttribute("aria-current", "page");

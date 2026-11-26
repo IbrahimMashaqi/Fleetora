@@ -184,10 +184,13 @@ async function directory(page: Page) {
 
 test("shows driver rows and Company Admin navigation", async ({ page }) => {
   await page.goto("/app");
-  await page
-    .getByRole("navigation", { name: "Primary navigation" })
-    .getByRole("link", { name: "Drivers", exact: true })
-    .click();
+  await Promise.all([
+    page.waitForURL(/\/app\/drivers$/),
+    page
+      .getByRole("navigation", { name: "Primary navigation" })
+      .getByRole("link", { name: "Drivers", exact: true })
+      .click(),
+  ]);
   await expect(page).toHaveURL(/\/app\/drivers$/);
   await expect(
     page.getByRole("main").getByText("Amina Driver", { exact: true }).first(),

@@ -592,6 +592,7 @@ test("redirects missing session and drops old-company catalog on identity change
 }) => {
   await context.clearCookies();
   await page.goto("/app/vehicles");
+  await page.waitForURL(/\/login$/);
   await expect(page).toHaveURL(/\/login$/);
   await context.addCookies([
     {

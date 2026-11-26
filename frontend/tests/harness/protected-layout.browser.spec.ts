@@ -33,7 +33,10 @@ test("a nested child reuses shell and identity without repeating bootstrap", asy
   await expect(page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "Overview" })).not.toHaveAttribute("aria-current");
   expect(checks).toBe(1);
   await page.locator("header").evaluate(header => header.setAttribute("data-layout-probe", "preserved"));
-  await page.getByRole("link", { name: "Dashboard content" }).click();
+  await Promise.all([
+    page.waitForURL(/\/app$/),
+    page.getByRole("link", { name: "Dashboard content" }).click(),
+  ]);
   await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
   await expect(page.locator("header")).toHaveAttribute("data-layout-probe", "preserved");

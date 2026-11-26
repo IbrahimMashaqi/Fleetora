@@ -103,6 +103,17 @@ test.beforeEach(() => {
   disconnect = false;
   requests = [];
 });
+test("OD-13/BR-093: forwards the ACTIVE merchant filter for operational pickers", async () => {
+  const result = await operationsForSession(jar, scope, {
+    resource: "merchants",
+    query: { activationStatus: "ACTIVE", page: "1", pageSize: "25" },
+  });
+  expect(result.status).toBe("ready");
+  const request = requests.find((entry) => entry.path === "/merchants/business");
+  expect(request?.search).toContain("activationStatus=ACTIVE");
+  expect(request?.context).toBe(company);
+});
+
 test("reads scoped allowlisted pages with trusted company context", async () => {
   const result = await operationsForSession(jar, scope, {
     resource: "parcels",
