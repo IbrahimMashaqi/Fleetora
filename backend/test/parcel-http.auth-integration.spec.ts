@@ -97,12 +97,20 @@ describe('parcel HTTP with persisted JWT identity and disposable PostgreSQL', ()
     customerNotes: 'Call at the entrance',
   });
   async function merchant(client: Client = own) {
-    return entity(
+    const created = entity(
       await post('/merchants/business', client)
         .send(merchantInput())
         .expect(201),
       'merchant',
     );
+    // OD-13 fixture shortcut: staff-created merchants start PENDING; activation through the
+    // owner's agreement is covered by the merchant-access and merchant-portal suites.
+    expect(created).toMatchObject({ activationStatus: 'PENDING' });
+    await prisma.db.orm.public.Merchant.where({
+      id: text(created.id),
+      companyId: client.companyId,
+    }).update({ activationStatus: 'ACTIVE', legacyActivation: true });
+    return { ...created, activationStatus: 'ACTIVE' };
   }
   /** Seeds a parcel exactly as the pre-D1 staff path stored it (LEGACY snapshot). */
   async function parcel(merchantId: string, client: Client = own) {

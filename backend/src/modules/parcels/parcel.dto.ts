@@ -42,6 +42,8 @@ export class PageDto {
   ])
   reason?: string;
   @IsOptional() @Transform(trim) @IsString() @MaxLength(100) city?: string;
+  /** OD-13: list only PENDING or only ACTIVE merchants (e.g. operational pickers). */
+  @IsOptional() @IsIn(['PENDING', 'ACTIVE']) activationStatus?: 'PENDING' | 'ACTIVE';
   @IsOptional() @IsDateString() from?: string;
   @IsOptional() @IsDateString() to?: string;
   @IsOptional() @IsIn(['ILS', 'USD', 'EUR', 'JOD']) currency?: string;

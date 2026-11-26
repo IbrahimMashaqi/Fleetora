@@ -36,11 +36,27 @@ class MerchantApi {
   String _id(String id) => Uri.encodeComponent(id);
   Future<MerchantContext> me() async =>
       MerchantContext.fromJson(await _read('/merchant/me'));
-  Future<void> activate(String token, String name, String password) async {
+  /// OD-13: shows the agreement before an OWNER activates a PENDING merchant.
+  Future<InvitationPreview> previewInvitation(String token) async =>
+      InvitationPreview.fromJson(
+        await _write('/merchant/invitations/preview', {
+          'token': token,
+        }, authenticated: false),
+      );
+  Future<void> activate(
+    String token,
+    String name,
+    String password, {
+    int? acceptedAgreementRevision,
+  }) async {
     final result = await _write('/merchant/invitations/accept', {
       'token': token,
       'name': name,
       'password': password,
+      if (acceptedAgreementRevision != null) ...{
+        'acceptAgreement': true,
+        'agreementRevision': acceptedAgreementRevision,
+      },
     }, authenticated: false);
     if (result['accepted'] != true) {
       throw const FormatException('Invalid activation');

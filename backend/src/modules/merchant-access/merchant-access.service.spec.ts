@@ -97,6 +97,7 @@ describe('merchant invitation and access security', () => {
       id: 'merchant',
       companyId: 'company',
       active: true,
+      activationStatus: 'ACTIVE',
     });
     orm.MerchantMembership.first.mockResolvedValue({ ...membership });
     orm.MerchantInvitation.first.mockResolvedValue({ ...invite });
@@ -165,6 +166,14 @@ describe('merchant invitation and access security', () => {
       ForbiddenException,
     );
     orm.Merchant.first.mockResolvedValueOnce({ active: false });
+    await expect(service.resolve({ sub: 'user' })).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    // OD-13: a PENDING merchant (agreement not accepted) cannot operate.
+    orm.Merchant.first.mockResolvedValueOnce({
+      active: true,
+      activationStatus: 'PENDING',
+    });
     await expect(service.resolve({ sub: 'user' })).rejects.toBeInstanceOf(
       ForbiddenException,
     );
@@ -348,7 +357,7 @@ describe('merchant invitation and access security', () => {
 
     it('emails company-issued merchant invitations with the app activation link and code', async () => {
       admin();
-      orm.Merchant.first.mockResolvedValue({ id: 'merchant', companyId: 'company', active: true, name: 'Fixture Store' });
+      orm.Merchant.first.mockResolvedValue({ id: 'merchant', companyId: 'company', active: true, activationStatus: 'ACTIVE', name: 'Fixture Store' });
       const result = await service.issueByAdmin({ sub: 'user' }, 'merchant', {
         email: 'Owner@Example.invalid',
         role: 'EMPLOYEE',

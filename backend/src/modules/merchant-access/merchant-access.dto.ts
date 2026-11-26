@@ -60,6 +60,22 @@ export class AcceptMerchantInvitationDto {
   @MaxLength(72)
   @PasswordByteLimit()
   password!: string;
+
+  /** OD-13: an OWNER activating a PENDING merchant must accept the agreement. */
+  @IsOptional()
+  @IsBoolean()
+  acceptAgreement?: boolean;
+
+  /** OD-13: the merchant revision whose terms were shown; stale terms are rejected. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  agreementRevision?: number;
+}
+export class PreviewMerchantInvitationDto {
+  @IsString()
+  @Matches(/^[a-f0-9]{64}$/)
+  token!: string;
 }
 export class UpdateMerchantEmployeeDto {
   @IsOptional()

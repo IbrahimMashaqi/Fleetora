@@ -2333,10 +2333,38 @@
           },
           "Merchant": {
             "fields": {
+              "activationStatus": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "active": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "agreementAcceptedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "agreementAcceptedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "agreementTerms": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/json@1",
                   "kind": "scalar"
                 }
               },
@@ -2400,6 +2428,13 @@
                 "nullable": true,
                 "type": {
                   "codecId": "pg/float8@1",
+                  "kind": "scalar"
+                }
+              },
+              "legacyActivation": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
               },
@@ -2745,8 +2780,20 @@
             },
             "storage": {
               "fields": {
+                "activationStatus": {
+                  "column": "activationStatus"
+                },
                 "active": {
                   "column": "active"
+                },
+                "agreementAcceptedAt": {
+                  "column": "agreementAcceptedAt"
+                },
+                "agreementAcceptedById": {
+                  "column": "agreementAcceptedById"
+                },
+                "agreementTerms": {
+                  "column": "agreementTerms"
                 },
                 "city": {
                   "column": "city"
@@ -2774,6 +2821,9 @@
                 },
                 "latitude": {
                   "column": "latitude"
+                },
+                "legacyActivation": {
+                  "column": "legacyActivation"
                 },
                 "longitude": {
                   "column": "longitude"
@@ -11388,6 +11438,11 @@
             "merchants": {
               "checks": [
                 {
+                  "expression": "(\"activationStatus\" = 'PENDING' AND NOT \"legacyActivation\" AND \"agreementAcceptedAt\" IS NULL AND \"agreementAcceptedById\" IS NULL AND \"agreementTerms\" IS NULL) OR (\"activationStatus\" = 'ACTIVE' AND ((\"legacyActivation\" AND \"agreementAcceptedAt\" IS NULL AND \"agreementAcceptedById\" IS NULL AND \"agreementTerms\" IS NULL) OR (NOT \"legacyActivation\" AND \"agreementAcceptedAt\" IS NOT NULL AND \"agreementAcceptedById\" IS NOT NULL AND \"agreementTerms\" IS NOT NULL)))",
+                  "name": "merchant_activation_state_35cfd541",
+                  "prefix": "merchant_activation_state"
+                },
+                {
                   "expression": "(\"latitude\" IS NULL AND \"longitude\" IS NULL) OR (\"latitude\" IS NOT NULL AND \"longitude\" IS NOT NULL AND \"latitude\" BETWEEN -90 AND 90 AND \"longitude\" BETWEEN -180 AND 180)",
                   "name": "merchant_coordinates_6e73a6d3",
                   "prefix": "merchant_coordinates"
@@ -11409,6 +11464,15 @@
                 }
               ],
               "columns": {
+                "activationStatus": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "PENDING"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
                 "active": {
                   "codecId": "pg/bool@1",
                   "default": {
@@ -11417,6 +11481,21 @@
                   },
                   "nativeType": "bool",
                   "nullable": false
+                },
+                "agreementAcceptedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "agreementAcceptedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "agreementTerms": {
+                  "codecId": "pg/json@1",
+                  "nativeType": "json",
+                  "nullable": true
                 },
                 "city": {
                   "codecId": "pg/text@1",
@@ -11466,6 +11545,15 @@
                   "codecId": "pg/float8@1",
                   "nativeType": "float8",
                   "nullable": true
+                },
+                "legacyActivation": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
                 },
                 "longitude": {
                   "codecId": "pg/float8@1",
@@ -14835,7 +14923,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "c8a9d6da8ad8dccf886dbbbdc8ef3564762b631b3fcc5c988586be2b5daa9a2c"
+    "storageHash": "708f9e2ed66bf132dfef0f2d340877256f07cf5e8d8c71398a4a29290afe4280"
   },
   "execution": {
     "executionHash": "136efae69fcefa90706b18d368032752b32d01366a8d36768a8029e128deee87",

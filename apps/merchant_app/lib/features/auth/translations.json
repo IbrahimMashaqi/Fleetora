@@ -1,0 +1,20 @@
+{
+  "agreementReview": {"en":"Review agreement","ar":"مراجعة الاتفاقية"},
+  "agreementTitle": {"en":"Merchant agreement","ar":"اتفاقية التاجر"},
+  "agreementHelp": {"en":"Your delivery company set these terms for your business. Your merchant account becomes active once you accept them.","ar":"حددت شركة التوصيل هذه الشروط لنشاطك التجاري. يصبح حساب التاجر نشطًا بعد موافقتك عليها."},
+  "agreementCurrency": {"en":"Currency","ar":"العملة"},
+  "agreementPlan": {"en":"Pricing plan","ar":"خطة التسعير"},
+  "agreementNoPlan": {"en":"No plan assigned","ar":"لا توجد خطة"},
+  "agreementDeliveryFee": {"en":"Delivery fee","ar":"رسوم التوصيل"},
+  "agreementReturnFee": {"en":"Return fee","ar":"رسوم الإرجاع"},
+  "agreementServiceFee": {"en":"Service fee","ar":"رسوم الخدمة"},
+  "agreementDiscount": {"en":"Discount","ar":"الخصم"},
+  "agreementFeePayer": {"en":"Delivery fee paid by","ar":"يدفع رسوم التوصيل"},
+  "agreementPayer_MERCHANT": {"en":"Merchant","ar":"التاجر"},
+  "agreementPayer_CUSTOMER": {"en":"Customer","ar":"المستلم"},
+  "agreementReturnPolicy": {"en":"Return fee policy","ar":"سياسة رسوم الإرجاع"},
+  "agreementReturn_NONE": {"en":"No return fee","ar":"دون رسوم إرجاع"},
+  "agreementReturn_ON_MERCHANT_HANDOFF": {"en":"Charged when the parcel is returned to you","ar":"تُحتسب عند إعادة الطرد إليك"},
+  "acceptAgreement": {"en":"I accept this agreement","ar":"أوافق على هذه الاتفاقية"},
+  "agreementRequired": {"en":"Accept the agreement to activate your account.","ar":"وافق على الاتفاقية لتفعيل حسابك."}
+}

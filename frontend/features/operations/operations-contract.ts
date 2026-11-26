@@ -112,6 +112,9 @@ const merchantFields = [
   "longitude",
   "notes",
   "active",
+  "activationStatus",
+  "legacyActivation",
+  "agreementAcceptedAt",
   "currency",
   "deliveryFee",
   "feePayer",
@@ -291,7 +294,9 @@ export function parseMerchant(value: unknown): Row | null {
         validMoneyInput(row[field], row.currency as string),
     ) &&
     typeof row.revision === "number" &&
-    typeof row.active === "boolean"
+    typeof row.active === "boolean" &&
+    // OD-13: PENDING until the owner accepts the invitation and agreement.
+    (row.activationStatus === "PENDING" || row.activationStatus === "ACTIVE")
     ? row
     : null;
 }

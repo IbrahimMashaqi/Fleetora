@@ -31,8 +31,10 @@ import type {
   AcceptMerchantInvitationDto,
   CompanyMerchantInvitationDto,
   MerchantInvitationDto,
+  PreviewMerchantInvitationDto,
   UpdateMerchantEmployeeDto,
 } from './merchant-access.dto.js';
+import { merchantAgreementTerms } from './merchant-agreement.js';
 
 type InvitationRow = NonNullable<
   Awaited<ReturnType<MerchantOrm['MerchantInvitation']['first']>>
@@ -115,7 +117,13 @@ export class MerchantAccessService {
         companyId: membership.companyId,
       }).first(),
     ]);
-    if (!company || company.suspended || !merchant?.active)
+    // OD-13: a merchant operates only once ACTIVE (agreement accepted or legacy).
+    if (
+      !company ||
+      company.suspended ||
+      !merchant?.active ||
+      merchant.activationStatus !== 'ACTIVE'
+    )
       throw new ForbiddenException('Merchant or company is inactive');
     const owner = membership.role === 'OWNER';
     return requirePermission(
@@ -394,6 +402,53 @@ export class MerchantAccessService {
     });
   }
 
+  /**
+   * OD-13: shows the invitee what accepting means. For the OWNER of a PENDING merchant this
+   * is the agreement (terms snapshot) and the revision that must be echoed on acceptance.
+   */
+  async previewInvitation(input: PreviewMerchantInvitationDto) {
+    const tokenHash = hashToken(input.token);
+    const invite = await this.repository.orm.MerchantInvitation.where({
+      tokenHash,
+    }).first();
+    if (
+      !invite ||
+      invite.acceptedAt ||
+      invite.revokedAt ||
+      Temporal.Instant.compare(invite.expiresAt, Temporal.Now.instant()) <= 0
+    )
+      throw new BadRequestException('Invalid or expired invitation');
+    return this.repository.transaction(invite.companyId, async (tx) => {
+      const [company, merchant] = await Promise.all([
+        tx.orm.public.Company.where({ id: invite.companyId })
+          .select('name')
+          .first(),
+        tx.orm.public.Merchant.where({
+          id: invite.merchantId,
+          companyId: invite.companyId,
+          active: true,
+        })
+          .select('name', 'activationStatus')
+          .first(),
+      ]);
+      if (!company || !merchant)
+        throw new BadRequestException('Invalid or expired invitation');
+      const requiresAgreement =
+        invite.role === 'OWNER' && merchant.activationStatus === 'PENDING';
+      return {
+        email: invite.email,
+        role: invite.role,
+        companyName: company.name,
+        merchantName: merchant.name,
+        activationStatus: merchant.activationStatus,
+        requiresAgreement,
+        agreement: requiresAgreement
+          ? await merchantAgreementTerms(tx, invite.merchantId, invite.companyId)
+          : null,
+      };
+    });
+  }
+
   async accept(input: AcceptMerchantInvitationDto) {
     if (!/^[a-f0-9]{64}$/.test(input.token))
       throw new BadRequestException('Invalid or expired invitation');
@@ -483,6 +538,18 @@ export class MerchantAccessService {
         throw new ConflictException(
           'Account already has a merchant affiliation',
         );
+      // OD-13 (BR-002, BR-093): the OWNER of a PENDING merchant activates it only by
+      // accepting the agreement, i.e. the terms snapshot of the revision it was shown.
+      const activates =
+        invite.role === 'OWNER' && merchant.activationStatus === 'PENDING';
+      if (activates && input.acceptAgreement !== true)
+        throw new BadRequestException(
+          'Accept the merchant agreement to activate this merchant',
+        );
+      if (activates && input.agreementRevision !== merchant.revision)
+        throw new ConflictException(
+          'The merchant agreement changed; review it again before accepting',
+        );
       // A token can create a new identity; it never resets an existing identity's password.
       if (!user) {
         if (!passwordHash || !input.name)
@@ -526,6 +593,40 @@ export class MerchantAccessService {
         id: invite.id,
         companyId: invite.companyId,
       }).update({ acceptedAt: Temporal.Now.instant(), acceptedById: user.id });
+      if (activates) {
+        const terms = await merchantAgreementTerms(
+          tx,
+          invite.merchantId,
+          invite.companyId,
+        );
+        const activated = await tx.orm.public.Merchant.where({
+          id: invite.merchantId,
+          companyId: invite.companyId,
+          revision: merchant.revision,
+          activationStatus: 'PENDING',
+        }).update({
+          activationStatus: 'ACTIVE',
+          agreementAcceptedAt: Temporal.Now.instant(),
+          agreementAcceptedById: user.id,
+          agreementTerms: terms,
+          revision: merchant.revision + 1,
+        });
+        if (!activated)
+          throw new ConflictException(
+            'The merchant agreement changed; review it again before accepting',
+          );
+        await this.repository.audit(
+          tx,
+          invite.companyId,
+          invite.merchantId,
+          user.id,
+          'AGREEMENT_ACCEPTED',
+          {
+            invitationId: invite.id,
+            agreementRevision: String(merchant.revision),
+          },
+        );
+      }
       await this.repository.audit(
         tx,
         invite.companyId,

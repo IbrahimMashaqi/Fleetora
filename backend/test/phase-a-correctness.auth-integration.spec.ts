@@ -86,6 +86,9 @@ describe('phase A correctness on disposable PostgreSQL', () => {
       promotionLabel: 'Phase A promo',
     });
     const merchant = await prisma.db.orm.public.Merchant.create({
+      // OD-13: an operating (pre-existing) merchant.
+      activationStatus: 'ACTIVE',
+      legacyActivation: true,
       companyId: who.orgId,
       name: 'Phase A merchant',
       contactName: 'Phase A contact',
@@ -105,6 +108,9 @@ describe('phase A correctness on disposable PostgreSQL', () => {
   /** A parcel created before D1, stored with the merchant's legacy terms. */
   async function legacyParcel(feePayer: 'MERCHANT' | 'CUSTOMER') {
     const legacy = await prisma.db.orm.public.Merchant.create({
+      // OD-13: an operating (pre-existing) merchant.
+      activationStatus: 'ACTIVE',
+      legacyActivation: true,
       companyId: actor.orgId,
       name: `Legacy merchant ${feePayer}`,
       contactName: 'Legacy contact',

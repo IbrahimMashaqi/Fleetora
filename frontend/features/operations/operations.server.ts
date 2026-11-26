@@ -51,6 +51,7 @@ const queryFields = new Set([
   "to",
   "currency",
   "active",
+  "activationStatus",
   "remitted",
   "sort",
   "direction",

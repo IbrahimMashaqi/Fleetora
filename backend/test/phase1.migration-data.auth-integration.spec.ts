@@ -49,6 +49,34 @@ describe('Phase 1 data migrations against disposable PostgreSQL', () => {
     await guard.verify(() => readAuthPostgresIdentity(prisma));
   });
 
+  describe('OD-13 merchant activation (owner decision Q13, option A)', () => {
+    it('kept every pre-existing merchant ACTIVE, marked legacy, with no recorded acceptance', async () => {
+      guard.assertVerified();
+      const merchant = await prisma.db.orm.public.Merchant.where({
+        id: 'd0200000-0000-4000-8000-0000000000e1',
+      }).first();
+      expect(merchant).toMatchObject({
+        activationStatus: 'ACTIVE',
+        legacyActivation: true,
+        agreementAcceptedAt: null,
+        agreementAcceptedById: null,
+        agreementTerms: null,
+      });
+    });
+
+    it('rejects inconsistent activation states at the database', async () => {
+      guard.assertVerified();
+      for (const sql of [
+        `UPDATE "merchants" SET "activationStatus" = 'PENDING' WHERE "id" = 'd0200000-0000-4000-8000-0000000000e1'`,
+        `UPDATE "merchants" SET "legacyActivation" = false WHERE "id" = 'd0200000-0000-4000-8000-0000000000e1'`,
+        `UPDATE "merchants" SET "activationStatus" = 'SUSPENDED' WHERE "id" = 'd0200000-0000-4000-8000-0000000000e1'`,
+      ])
+        await expect(rolledBack((db) => db.query(sql))).rejects.toThrow(
+          /merchant_activation_state/,
+        );
+    });
+  });
+
   describe('OD-02/BR-066 company currency', () => {
     it('gave each existing company the one currency its data uses, ILS when it has none', async () => {
       guard.assertVerified();

@@ -1,9 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { ParcelTransaction } from './parcel-store.js';
 
-export const CURRENCIES = ['ILS', 'USD', 'EUR', 'JOD'] as const;
-export type Currency = (typeof CURRENCIES)[number];
-
 /**
  * OD-02 / BR-066 / FR-PL-06: a company operates in exactly one currency.
  * Returns the persisted company currency. A currency supplied by the client is

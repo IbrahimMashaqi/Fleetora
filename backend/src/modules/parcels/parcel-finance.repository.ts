@@ -20,6 +20,7 @@ import {
 } from './parcel-store.js';
 import {
   amount,
+  assertActiveMerchant,
   assertFullAmount,
   assertRevision,
   collectionTotal,
@@ -108,6 +109,7 @@ export class ParcelFinanceRepository {
         }).first();
         if (!parcel?.merchantId)
           throw new NotFoundException('Parcel not found');
+        await this.activeMerchant(tx, companyId, parcel.merchantId);
         if (parcel.status !== 'DELIVERED')
           throw new ConflictException(
             'Only delivered parcels can be collected',
@@ -266,13 +268,7 @@ export class ParcelFinanceRepository {
       'ADJUSTMENT',
       input,
       async (tx, companyId) => {
-        const merchant = await tx.orm.public.Merchant.where({
-          companyId,
-          id: input.merchantId,
-        })
-          .select('id')
-          .first();
-        if (!merchant) throw new NotFoundException('Merchant not found');
+        await this.activeMerchant(tx, companyId, input.merchantId);
         const currency = await companyCurrency(tx, companyId, input.currency);
         const value = money(input.amount, currency, true);
         if (value === 0n)
@@ -280,7 +276,7 @@ export class ParcelFinanceRepository {
         return (
           await tx.orm.public.MerchantLedgerEntry.create({
             companyId,
-            merchantId: merchant.id,
+            merchantId: input.merchantId,
             currency,
             kind: 'ADJUSTMENT',
             amountMinor: value,
@@ -343,12 +339,28 @@ export class ParcelFinanceRepository {
     if (!entry) throw new NotFoundException('Entry not found');
     return { companyId, entry: wire(entry) };
   }
-  /** OD-02: settlements always run in the company currency. */
+  /** OD-13: money operations only for an ACTIVE merchant of this company. */
+  private async activeMerchant(
+    tx: ParcelTransaction,
+    companyId: string,
+    merchantId: string,
+  ) {
+    const merchant = await tx.orm.public.Merchant.where({
+      companyId,
+      id: merchantId,
+    })
+      .select('activationStatus')
+      .first();
+    if (!merchant) throw new NotFoundException('Merchant not found');
+    assertActiveMerchant(merchant);
+  }
+  /** OD-02: settlements always run in the company currency (OD-13: ACTIVE merchant). */
   private async inCompanyCurrency(
     tx: ParcelTransaction,
     companyId: string,
     input: PreviewDto,
   ): Promise<CurrencyPreview> {
+    await this.activeMerchant(tx, companyId, input.merchantId);
     return {
       ...input,
       currency: await companyCurrency(tx, companyId, input.currency),

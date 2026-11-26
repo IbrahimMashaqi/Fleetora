@@ -98,6 +98,21 @@ function MerchantContent({
                       ),
                     },
                     {
+                      // OD-13: PENDING until the owner accepts the invitation and agreement.
+                      label: "Activation",
+                      value:
+                        data.merchant.activationStatus === "PENDING" ? (
+                          t("Pending owner acceptance")
+                        ) : data.merchant.legacyActivation === true ? (
+                          t("Active before agreements")
+                        ) : (
+                          <>
+                            {t("Agreement accepted")}{" "}
+                            <DateTime value={data.merchant.agreementAcceptedAt} />
+                          </>
+                        ),
+                    },
+                    {
                       label: "Pickup address",
                       value: valueText(data.merchant, "pickupAddress"),
                     },

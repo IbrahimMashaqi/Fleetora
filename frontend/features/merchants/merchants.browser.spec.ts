@@ -135,6 +135,10 @@ test('keeps mobile layout, navigation, and long account names usable', async ({ 
   const dialog = page.getByRole('dialog', { name: 'Open navigation' });
   await expect(dialog.getByRole('link', { name: 'Merchants', exact: true })).toHaveAttribute('aria-current', 'page');
   await page.keyboard.press('Escape'); await expect(trigger).toBeFocused();
-  await trigger.click(); await dialog.getByRole('link', { name: 'Account & security' }).click();
+  await trigger.click();
+  await Promise.all([
+    page.waitForURL(/\/app\/account$/),
+    dialog.getByRole('link', { name: 'Account & security' }).click(),
+  ]);
   await expect(page.getByRole('heading', { name: 'Your account' })).toBeVisible();
 });

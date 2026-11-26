@@ -70,11 +70,29 @@ describe('parcel operations on disposable PostgreSQL', () => {
     feePayer: payer,
     returnFeePolicy: 'ON_MERCHANT_HANDOFF',
   });
-  async function merchant(
+  /**
+   * OD-13 fixture shortcut: staff-created merchants start PENDING. The real activation
+   * (owner accepts invitation + agreement) is covered by merchant-access; suites that
+   * exercise parcels and money mark the fixture merchant ACTIVE directly.
+   */
+  async function activated(merchantId: string, who = actor) {
+    await prisma.db.orm.public.Merchant.where({
+      id: merchantId,
+      companyId: who.orgId,
+    }).update({ activationStatus: 'ACTIVE', legacyActivation: true });
+    return merchantId;
+  }
+  async function pendingMerchant(
     who = actor,
     payer: 'MERCHANT' | 'CUSTOMER' = 'MERCHANT',
   ) {
     return str((await ops.saveMerchant(who, merchantInput(payer))).merchant.id);
+  }
+  async function merchant(
+    who = actor,
+    payer: 'MERCHANT' | 'CUSTOMER' = 'MERCHANT',
+  ) {
+    return activated(await pendingMerchant(who, payer), who);
   }
   /**
    * Seeds a parcel exactly as the pre-D1 staff path stored it. Staff can no
@@ -889,16 +907,18 @@ describe('parcel operations on disposable PostgreSQL', () => {
   });
   it('settles JOD three-digit amounts exactly in a JOD company and rejects any other currency (OD-02)', async () => {
     await prisma.Company.where({ id: actor.orgId }).update({ currency: 'JOD' });
-    const merchantId = str(
-      (
-        await ops.saveMerchant(actor, {
-          ...merchantInput(),
-          currency: 'JOD',
-          deliveryFee: '1.111',
-          returnFee: '0.222',
-          serviceFee: '0.000',
-        })
-      ).merchant.id,
+    const merchantId = await activated(
+      str(
+        (
+          await ops.saveMerchant(actor, {
+            ...merchantInput(),
+            currency: 'JOD',
+            deliveryFee: '1.111',
+            returnFee: '0.222',
+            serviceFee: '0.000',
+          })
+        ).merchant.id,
+      ),
     );
     const id = await delivered(merchantId);
     const response = await finance.collect(actor, {
@@ -938,7 +958,7 @@ describe('parcel operations on disposable PostgreSQL', () => {
     const { currency: _omitted, ...withoutCurrency } = merchantInput();
     const created = (await ops.saveMerchant(actor, withoutCurrency)).merchant;
     expect(created.currency).toBe('ILS');
-    const merchantId = str(created.id);
+    const merchantId = await activated(str(created.id));
     await expect(
       ops.saveMerchant(
         actor,
@@ -979,15 +999,73 @@ describe('parcel operations on disposable PostgreSQL', () => {
     await expect(
       ops.saveMerchant(actor, { ...merchantInput(), currency: 'USD' }),
     ).rejects.toMatchObject({ status: 400 });
-    const foreignMerchant = str(
-      (await ops.saveMerchant(foreign, withoutCurrency)).merchant.id,
+    const foreignMerchant = await activated(
+      str((await ops.saveMerchant(foreign, withoutCurrency)).merchant.id),
+      foreign,
     );
     await expect(
       finance.preview(actor, { merchantId: foreignMerchant, currency: 'USD' }),
-    ).rejects.toMatchObject({ status: 400 });
+    ).rejects.toMatchObject({ status: 404 });
     await expect(
       finance.preview(actor, { merchantId: foreignMerchant }),
     ).rejects.toMatchObject({ status: 404 });
+  });
+  it('OD-13/BR-093: no parcels, COD or settlements for a PENDING merchant', async () => {
+    const merchantId = await pendingMerchant();
+    expect((await ops.merchant(actor, merchantId)).merchant).toMatchObject({
+      activationStatus: 'PENDING',
+      legacyActivation: false,
+    });
+    const pending = { status: 409 };
+    await expect(ops.saveParcel(actor, await priced(merchantId))).rejects.toMatchObject(
+      pending,
+    );
+    // A delivered parcel stored before OD-13 still cannot be collected or settled.
+    const id = await parcel(merchantId);
+    await prisma.Shipment.where({ id }).update({ status: 'DELIVERED' });
+    await expect(
+      finance.collect(actor, {
+        parcelId: id,
+        amount: '100.00',
+        method: 'CASH',
+        idempotencyKey: key(),
+      }),
+    ).rejects.toMatchObject(pending);
+    await expect(finance.preview(actor, { merchantId })).rejects.toMatchObject(pending);
+    await expect(
+      finance.draft(actor, {
+        merchantId,
+        expectedPreviewHash: 'a'.repeat(64),
+        idempotencyKey: key(),
+      }),
+    ).rejects.toMatchObject(pending);
+    expect(
+      await prisma.db.orm.public.CodCollection.where({ shipmentId: id }).first(),
+    ).toBeNull();
+    const listed = async (activationStatus: 'PENDING' | 'ACTIVE') =>
+      (
+        await ops.merchants(
+          actor,
+          Object.assign(new PageDto(), { pageSize: 100, activationStatus }),
+        )
+      ).items.map((row) => row.id);
+    expect(await listed('PENDING')).toContain(merchantId);
+    expect(await listed('ACTIVE')).not.toContain(merchantId);
+    // Once ACTIVE the same merchant operates normally.
+    await activated(merchantId);
+    expect(await listed('ACTIVE')).toContain(merchantId);
+    expect((await ops.saveParcel(actor, await priced(merchantId))).parcel).toMatchObject({
+      merchantId,
+    });
+  });
+  it('OD-13: a foreign company cannot use or see another tenant\u2019s merchant, active or not', async () => {
+    const merchantId = await merchant();
+    await expect(ops.saveParcel(foreign, await priced(merchantId))).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(finance.preview(foreign, { merchantId })).rejects.toMatchObject({
+      status: 404,
+    });
   });
   it('prevents concurrent delivery from duplicating fee postings', async () => {
     const merchantId = await merchant(),
@@ -1129,14 +1207,16 @@ describe('parcel operations on disposable PostgreSQL', () => {
   });
   it('refreshes merchant pickup location on a safe new parcel edit and rejects merchant replacement after handoff', async () => {
     const first = await merchant();
-    const second = str(
-      (
-        await ops.saveMerchant(actor, {
-          ...merchantInput(),
-          name: 'Searchable storefront',
-          pickupAddress: 'Second merchant pickup',
-        })
-      ).merchant.id,
+    const second = await activated(
+      str(
+        (
+          await ops.saveMerchant(actor, {
+            ...merchantInput(),
+            name: 'Searchable storefront',
+            pickupAddress: 'Second merchant pickup',
+          })
+        ).merchant.id,
+      ),
     );
     const firstInput = await priced(first);
     const id = str((await ops.saveParcel(actor, firstInput)).parcel.id);

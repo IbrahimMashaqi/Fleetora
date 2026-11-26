@@ -48,3 +48,6 @@ export function requirePermission(
   }
   return context;
 }
+
+/** Injection token for the agreement-preview rate limiter (OD-13). */
+export const INVITATION_PREVIEW_LIMITER = Symbol('INVITATION_PREVIEW_LIMITER');

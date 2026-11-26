@@ -63,3 +63,24 @@ test("OD-02/BR-066: merchant terms offer only the company currency", () => {
     expect(field?.options?.map((option) => option.value)).toEqual([currency]);
   }
 });
+
+test("OD-13/BR-093: merchants carry their activation state; operational pickers list only ACTIVE ones", () => {
+  const merchant = {
+    id: "11111111-1111-4111-8111-111111111111",
+    name: "Fixture merchant",
+    currency: "ILS",
+    deliveryFee: "15.00",
+    returnFee: "5.00",
+    serviceFee: "0.00",
+    revision: 1,
+    active: true,
+  };
+  for (const activationStatus of ["PENDING", "ACTIVE"])
+    expect(parseMerchant({ ...merchant, activationStatus, legacyActivation: false })).toMatchObject({
+      activationStatus,
+    });
+  expect(parseMerchant(merchant)).toBeNull();
+  expect(parseMerchant({ ...merchant, activationStatus: "SUSPENDED" })).toBeNull();
+  const picker = parcelFields().find((field) => field.name === "merchantId");
+  expect(picker?.lookupQuery).toEqual({ activationStatus: "ACTIVE" });
+});

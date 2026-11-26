@@ -571,6 +571,14 @@ model Merchant {
   longitude Float?
   notes String?
   active Boolean @default(true)
+  // OD-13 (BR-002, BR-093): a staff-created merchant is PENDING until its OWNER accepts the
+  // invitation and the agreement (a snapshot of the terms). `active` stays the pause flag.
+  activationStatus String @default("PENDING")
+  // Merchants that existed before OD-13 are ACTIVE without a recorded acceptance.
+  legacyActivation Boolean @default(false)
+  agreementAcceptedAt DateTime?
+  agreementAcceptedById String?
+  agreementTerms Json?
   currency String
   deliveryFeeMinor BigInt
   returnFeeMinor BigInt
@@ -594,6 +602,7 @@ model Merchant {
   @@map("merchants")
   @@check(expression: "\"currency\" IN ('ILS','USD','EUR','JOD') AND \"feePayer\" IN ('MERCHANT','CUSTOMER') AND \"returnFeePolicy\" IN ('NONE','ON_MERCHANT_HANDOFF')", name:"merchant_terms_policy")
   @@check(expression: "(\"latitude\" IS NULL AND \"longitude\" IS NULL) OR (\"latitude\" IS NOT NULL AND \"longitude\" IS NOT NULL AND \"latitude\" BETWEEN -90 AND 90 AND \"longitude\" BETWEEN -180 AND 180)", name:"merchant_coordinates")
+  @@check(expression: "(\"activationStatus\" = 'PENDING' AND NOT \"legacyActivation\" AND \"agreementAcceptedAt\" IS NULL AND \"agreementAcceptedById\" IS NULL AND \"agreementTerms\" IS NULL) OR (\"activationStatus\" = 'ACTIVE' AND ((\"legacyActivation\" AND \"agreementAcceptedAt\" IS NULL AND \"agreementAcceptedById\" IS NULL AND \"agreementTerms\" IS NULL) OR (NOT \"legacyActivation\" AND \"agreementAcceptedAt\" IS NOT NULL AND \"agreementAcceptedById\" IS NOT NULL AND \"agreementTerms\" IS NOT NULL)))", name:"merchant_activation_state")
 }
 model ParcelAttempt {
   id String @id @default(uuid())
