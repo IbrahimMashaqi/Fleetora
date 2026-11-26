@@ -83,6 +83,20 @@ function invitation(
   };
 }
 
+function validActivationUrl(value: unknown, token: string): value is string {
+  if (typeof value !== "string") return false;
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" && !url.username && !url.password &&
+      url.pathname === "/merchant/activate" && !url.search &&
+      url.hash === `#token=${token}`
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function merchantInvitationsForSession(
   jar: Jar,
   scope: InvitationScope,
@@ -171,11 +185,13 @@ export async function merchantInvitationsForSession(
       const parsed = invitation(data, scope, merchantId);
       return parsed &&
         typeof data.token === "string" &&
-        /^[a-f0-9]{64}$/.test(data.token)
+        /^[a-f0-9]{64}$/.test(data.token) &&
+        validActivationUrl(data.activationUrl, data.token)
         ? {
             status: "issued",
             invitation: parsed,
             token: data.token,
+            activationUrl: data.activationUrl,
             // Only an explicit EMAIL confirmation counts as sent.
             emailed: data.delivery === "EMAIL",
           }

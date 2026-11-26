@@ -23,6 +23,12 @@ export type InvitationFailure =
   | "uncertain";
 export type InvitationResult =
   | { status: "ready"; items: Invitation[] }
-  | { status: "issued"; invitation: Invitation; token: string; emailed: boolean }
+  | {
+      status: "issued";
+      invitation: Invitation;
+      token: string;
+      activationUrl: string;
+      emailed: boolean;
+    }
   | { status: "revoked" }
   | { status: InvitationFailure };

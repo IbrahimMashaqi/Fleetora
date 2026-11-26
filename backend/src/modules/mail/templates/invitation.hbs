@@ -18,8 +18,10 @@
 
         <p style='font-size: 15px; line-height: 1.6; color: #555;'>
           <strong>{{inviter}}</strong> invited you to join as
-          <strong>{{roleEn}}</strong>. Click the button below to choose your
-          name and password and activate your account.
+          <strong>{{roleEn}}</strong>.
+          {{#if code}}Install or open the Fleetora Merchant app, then use the button
+          below to continue activation.{{else}}Click the button below to choose your
+          name and password and activate your account.{{/if}}
         </p>
 
         <div style='text-align: center; margin: 35px 0;'>
@@ -53,8 +55,10 @@
           <h3 style='color: #0f172a; font-size: 20px; margin: 0 0 12px;'>دعوة للانضمام إلى Fleetora</h3>
           <p style='font-size: 15px; line-height: 1.8; color: #555;'>
             دعاك <strong>{{inviter}}</strong> للانضمام بصفة
-            <strong>{{roleAr}}</strong>. اضغط زر «قبول الدعوة» أعلاه لاختيار اسمك
-            وكلمة المرور وتفعيل حسابك.
+            <strong>{{roleAr}}</strong>.
+            {{#if code}}ثبّت أو افتح تطبيق Fleetora Merchant، ثم اضغط زر «قبول الدعوة»
+            أعلاه لمتابعة التفعيل.{{else}}اضغط زر «قبول الدعوة» أعلاه لاختيار اسمك
+            وكلمة المرور وتفعيل حسابك.{{/if}}
           </p>
           <p style='font-size: 13px; line-height: 1.7; color: #888;'>
             تنتهي صلاحية الدعوة في

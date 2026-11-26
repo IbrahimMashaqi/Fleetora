@@ -85,6 +85,8 @@ export const operationsArabic = {
   Currency: "العملة",
   "Settlement notes": "ملاحظات التسوية",
   "Active merchant": "تاجر نشط",
+  "Paused merchant": "تاجر موقوف مؤقتاً",
+  "Balance": "الرصيد",
   Activation: "التفعيل",
   "Pending owner acceptance": "بانتظار قبول المالك للدعوة والاتفاقية",
   "Agreement accepted": "تم قبول الاتفاقية",

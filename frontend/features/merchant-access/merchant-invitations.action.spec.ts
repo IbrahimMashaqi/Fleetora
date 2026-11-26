@@ -17,6 +17,7 @@ let responseMerchant: string;
 let status: number;
 let disconnected: boolean;
 let delivery: string | undefined;
+let activationUrl: string;
 let requests: {
   path: string;
   method: string;
@@ -75,6 +76,7 @@ test.beforeAll(async () => {
       tokenHash: "private-hash",
       password: "private-password",
       token,
+      activationUrl,
     };
     res.statusCode = status;
     res.end(
@@ -117,6 +119,7 @@ test.beforeEach(() => {
   status = 200;
   disconnected = false;
   delivery = "MANUAL";
+  activationUrl = `https://app.fleetora.test/merchant/activate#token=${token}`;
   requests = [];
 });
 
@@ -152,6 +155,7 @@ test("issues an OWNER invitation and exposes the manual token only in issuance",
   expect(result.status).toBe("issued");
   if (result.status === "issued") {
     expect(result.token).toBe(token);
+    expect(result).toMatchObject({ activationUrl: `https://app.fleetora.test/merchant/activate#token=${token}` });
     expect(result.emailed).toBe(false);
   }
   expect(requests[1]).toMatchObject({
@@ -173,6 +177,19 @@ test("revokes only the selected invitation in the selected merchant route", asyn
     body: null,
   });
 });
+
+for (const [reason, unsafeUrl] of [
+  ['plain HTTP', `http://app.fleetora.test/merchant/activate#token=${token}`],
+  ['query token', `https://app.fleetora.test/merchant/activate?token=${token}`],
+  ['mismatched token', `https://app.fleetora.test/merchant/activate#token=${'b'.repeat(64)}`],
+  ['embedded credentials', `https://user:pass@app.fleetora.test/merchant/activate#token=${token}`],
+  ['script URL', 'javascript:alert(1)'],
+]) {
+  test(`rejects an activation link with ${reason}`, async () => {
+    activationUrl = unsafeUrl;
+    expect(await merchantInvitationsForSession(jar, scope, merchantId, { action: 'issue', email: 'owner@example.com' })).toEqual({ status: 'uncertain' });
+  });
+}
 for (const denied of ["ACCOUNTANT", "MERCHANT", "PLATFORM_ADMIN"])
   test(`denies ${denied} before backend invitations dispatch`, async () => {
     role = denied;
