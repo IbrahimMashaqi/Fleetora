@@ -7,6 +7,10 @@ import { PasswordRecoveryShell } from "@/features/auth/password-recovery/passwor
 import { useOneTimeTokenFragment } from "@/features/auth/one-time-token-fragment";
 import { newPasswordError } from "@/lib/auth/password-policy";
 import { useLocale } from "@/lib/i18n";
+import {
+  isDriverActivationFailure,
+  type DriverActivationFailure,
+} from "../driver-activation-contract";
 
 export function DriverActivationPage() {
   const fragment = useOneTimeTokenFragment("driver-invitation", false);
@@ -21,7 +25,7 @@ function DriverActivationForm({
   const { locale } = useLocale();
   const c = (en: string, ar: string) => (locale === "ar" ? ar : en);
   const [state, setState] = useState<
-    "idle" | "pending" | "accepted" | "invalid" | "limited" | "unavailable"
+    "idle" | "pending" | "accepted" | DriverActivationFailure
   >("idle");
   const [error, setError] = useState("");
   const locked = useRef(false);
@@ -32,15 +36,12 @@ function DriverActivationForm({
     const data = new FormData(form);
     const password = String(data.get("password") ?? "");
     if (newPasswordError(password)) {
-      setError(
-        c(
-          "Use at least 6 characters, including an uppercase letter, and at most 72 UTF-8 bytes.",
-          "استخدم 6 أحرف على الأقل منها حرف إنجليزي كبير، وبحد أقصى 72 بايت.",
-        ),
-      );
+      setError("");
+      setState("password-rules");
       return;
     }
     if (password !== data.get("confirmPassword")) {
+      setState("idle");
       setError(c("Passwords do not match.", "كلمتا المرور غير متطابقتين."));
       return;
     }
@@ -68,11 +69,16 @@ function DriverActivationForm({
         setState("accepted");
       } else
         setState(
-          response.status === 400
-            ? "invalid"
-            : response.status === 429
-              ? "limited"
-              : "unavailable",
+          typeof body === "object" &&
+            body !== null &&
+            "status" in body &&
+            isDriverActivationFailure(body.status)
+            ? body.status
+            : response.status === 400
+              ? "invalid"
+              : response.status === 429
+                ? "limited"
+                : "unavailable",
         );
     } catch {
       setState("unavailable");
@@ -80,7 +86,55 @@ function DriverActivationForm({
       locked.current = false;
     }
   }
-  const invalid = state === "invalid" || (fragment.ready && !fragment.token);
+  function failureMessage(failure: DriverActivationFailure) {
+    switch (failure) {
+      case "expired":
+        return c(
+          "This activation link has expired. Ask your company administrator for a new invitation.",
+          "انتهت صلاحية رابط التفعيل. اطلب دعوة جديدة من مسؤول الشركة.",
+        );
+      case "used-or-revoked":
+        return c(
+          "This activation link was already used or revoked. Ask your company administrator for a new invitation.",
+          "استُخدم رابط التفعيل أو أُلغي. اطلب دعوة جديدة من مسؤول الشركة.",
+        );
+      case "password-rules":
+        return c(
+          "Password rules were not met. Follow all password requirements.",
+          "كلمة المرور لا تستوفي الشروط. التزم بجميع شروط كلمة المرور.",
+        );
+      case "limited":
+        return c(
+          "Too many activation attempts. Wait a few minutes and try again.",
+          "محاولات تفعيل كثيرة. انتظر بضع دقائق ثم حاول مجددًا.",
+        );
+      case "phone-in-use":
+        return c(
+          "This phone is already linked to another driver account. Contact your company administrator.",
+          "هذا الرقم مرتبط بحساب سائق آخر. تواصل مع مسؤول الشركة.",
+        );
+      case "request-rejected":
+        return c(
+          "This activation request could not be verified. Reopen the activation link.",
+          "تعذر التحقق من طلب التفعيل. افتح رابط التفعيل من جديد.",
+        );
+      case "unavailable":
+        return c(
+          "Activation service is unavailable. Try again later or contact your company administrator.",
+          "خدمة التفعيل غير متاحة. حاول لاحقًا أو تواصل مع مسؤول الشركة.",
+        );
+      case "invalid":
+        return c(
+          "This invitation is invalid or no longer available. Ask your company administrator for a new invitation.",
+          "هذه الدعوة غير صالحة أو لم تعد متاحة. اطلب دعوة جديدة من مسؤول الشركة.",
+        );
+    }
+  }
+  const terminal =
+    state === "invalid" ||
+    state === "expired" ||
+    state === "used-or-revoked" ||
+    state === "phone-in-use";
   return (
     <PasswordRecoveryShell>
       <section
@@ -103,11 +157,10 @@ function DriverActivationForm({
           <p role="status">
             {c("Preparing your invitation…", "تجهيز الدعوة…")}
           </p>
-        ) : invalid ? (
+        ) : terminal || !fragment.token ? (
           <p role="alert" className="text-sm leading-6">
-            {c(
-              "This invitation is invalid, expired or already used. Ask your company administrator for a new invitation.",
-              "هذه الدعوة غير صالحة أو منتهية أو مستخدمة. اطلب دعوة جديدة من مسؤول شركتك.",
+            {failureMessage(
+              isDriverActivationFailure(state) ? state : "invalid",
             )}
           </p>
         ) : (
@@ -118,7 +171,7 @@ function DriverActivationForm({
                 "اختر كلمة مرور لحساب السائق الذي دعتك إليه شركتك. عند نسيان كلمة المرور اطلب من مسؤول الشركة إعادة إصدار الدعوة.",
               )}
             </p>
-            <form className="space-y-4" onSubmit={submit}>
+            <form className="space-y-4" onSubmit={submit} noValidate>
               <div className="space-y-2">
                 <Label htmlFor="driver-password">
                   {c("Password", "كلمة المرور")}
@@ -135,15 +188,25 @@ function DriverActivationForm({
                   aria-describedby="driver-password-help"
                 />
               </div>
-              <p
+              <ul
                 id="driver-password-help"
-                className="text-xs text-muted-foreground"
+                aria-label={c("Password requirements", "شروط كلمة المرور")}
+                className="list-disc space-y-1 ps-5 text-xs text-muted-foreground"
               >
-                {c(
-                  "Use at least 6 characters, including an uppercase letter.",
-                  "استخدم 6 أحرف على الأقل منها حرف إنجليزي كبير.",
-                )}
-              </p>
+                <li>{c("At least 6 characters.", "6 أحرف على الأقل.")}</li>
+                <li>
+                  {c(
+                    "At least one uppercase English letter (A–Z).",
+                    "حرف إنجليزي كبير واحد على الأقل (A–Z).",
+                  )}
+                </li>
+                <li>
+                  {c(
+                    "At most 72 UTF-8 bytes.",
+                    "بحد أقصى 72 بايت بترميز UTF-8.",
+                  )}
+                </li>
+              </ul>
               <div className="space-y-2">
                 <Label htmlFor="driver-confirm-password">
                   {c("Confirm password", "تأكيد كلمة المرور")}
@@ -164,17 +227,9 @@ function DriverActivationForm({
                   {error}
                 </p>
               )}
-              {(state === "limited" || state === "unavailable") && (
+              {isDriverActivationFailure(state) && (
                 <p role="alert" className="text-sm text-danger-foreground">
-                  {state === "limited"
-                    ? c(
-                        "Too many attempts. Wait a few minutes and try again.",
-                        "محاولات كثيرة. انتظر بضع دقائق ثم حاول مجددًا.",
-                      )
-                    : c(
-                        "Activation could not be confirmed. Try again or ask your company administrator for help.",
-                        "تعذر تأكيد التفعيل. حاول مجددًا أو اطلب المساعدة من مسؤول الشركة.",
-                      )}
+                  {failureMessage(state)}
                 </p>
               )}
               <Button

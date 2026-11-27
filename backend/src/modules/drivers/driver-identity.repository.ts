@@ -19,6 +19,7 @@ import { normalizeDriverPhone } from './driver-phone.js';
 export type DriverCredential = NonNullable<
   Awaited<ReturnType<DriverIdentityRepository['credential']>>
 >;
+type DriverActivationOutcome = 'ACCEPTED' | 'INVALID' | 'EXPIRED' | 'USED_OR_REVOKED';
 async function guarded<T>(operation: () => Promise<T>): Promise<T> {
   try {
     return await operation();
@@ -300,15 +301,15 @@ export class DriverIdentityRepository {
       return { companyId, offboarded: true, accessRevoked: revokeAccess };
     });
   }
-  async accept(tokenHash: string, passwordHash: string) {
+  async accept(tokenHash: string, passwordHash: string): Promise<DriverActivationOutcome> {
     const initial = await this.prisma.db.orm.public.DriverInvitation.where({
       tokenHash,
     })
       .select('id', 'companyId', 'workerId')
       .first();
-    if (!initial) return false;
+    if (!initial) return 'INVALID';
     try {
-      return await this.prisma.db.transaction(async (tx) => {
+      return await this.prisma.db.transaction(async (tx): Promise<DriverActivationOutcome> => {
         const { companyId, workerId } = initial;
         await tx.execute(
           this.prisma.db.raw
@@ -319,7 +320,7 @@ export class DriverIdentityRepository {
         const tenant = await tx.orm.public.Company.where({
           id: companyId,
         }).first();
-        if (!tenant || tenant.suspended) return false;
+        if (!tenant || tenant.suspended) return 'INVALID';
         const worker = await this.lockWorker(tx, workerId, companyId);
         await tx.execute(
           this.prisma.db.raw
@@ -333,17 +334,10 @@ export class DriverIdentityRepository {
           workerId,
           tokenHash,
         }).first();
-        if (
-          !invitation ||
-          invitation.acceptedAt ||
-          invitation.revokedAt ||
-          Temporal.Instant.compare(
-            invitation.expiresAt,
-            Temporal.Now.instant(),
-          ) <= 0 ||
-          normalizeDriverPhone(worker.phone) !== invitation.phone
-        )
-          return false;
+        if (!invitation) return 'INVALID';
+        if (invitation.acceptedAt || invitation.revokedAt) return 'USED_OR_REVOKED';
+        if (Temporal.Instant.compare(invitation.expiresAt, Temporal.Now.instant()) <= 0) return 'EXPIRED';
+        if (normalizeDriverPhone(worker.phone) !== invitation.phone) return 'INVALID';
         const collision = await tx.orm.public.DriverAccount.where({
           phone: invitation.phone,
         }).first();
@@ -412,7 +406,7 @@ export class DriverIdentityRepository {
           userId,
           'DRIVER_INVITATION_ACCEPTED',
         );
-        return true;
+        return 'ACCEPTED';
       });
     } catch (error: unknown) {
       const code =

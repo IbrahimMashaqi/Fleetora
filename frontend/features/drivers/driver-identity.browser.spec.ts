@@ -15,6 +15,7 @@ let writes: { path: string; method: string; body: unknown }[];
 let invitationBlockedReason: string | null;
 let driverPhone: string;
 let issuedUrl: string;
+let activationMessage: unknown;
 let invitationFailure: { status: number; message: string } | null;
 test.beforeAll(async () => {
   server = createServer(async (req, res) => {
@@ -102,7 +103,7 @@ test.beforeAll(async () => {
     } else
       data = { companyId, items: [], page: 1, pageSize: 25, hasNext: false };
     res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ success: res.statusCode < 400, data }));
+    res.end(JSON.stringify({ success: res.statusCode < 400, data, ...(path === "/driver/invitations/accept" ? { message: activationMessage } : {}) }));
   });
   await new Promise<void>((resolve) =>
     server.listen(3101, "127.0.0.1", resolve),
@@ -114,6 +115,7 @@ test.afterAll(async () => {
 });
 test.beforeEach(() => {
   activationStatus = 200;
+  activationMessage = undefined;
   linked = false;
   accessActive = false;
   offboarded = false;
@@ -177,6 +179,7 @@ test("invalid activation never dispatches; expired invitations show an actionabl
   ).toBeVisible();
   expect(writes).toHaveLength(0);
   activationStatus = 400;
+  activationMessage = "Driver invitation expired";
   await page.goto(`/driver/activate#token=${token}`);
   await page.getByLabel("Password", { exact: true }).fill("Driver123");
   await page.getByLabel("Confirm password", { exact: true }).fill("Driver123");
@@ -188,6 +191,36 @@ test("invalid activation never dispatches; expired invitations show an actionabl
   ).toBeVisible();
 });
 for (const locale of ["en", "ar"] as const) {
+  test(`shows all password requirements before submission and rejects weak passwords in ${locale}`, async ({ page, context }) => {
+    await context.addCookies([{ name: "fleetora_locale", value: locale, url: "http://localhost:3100" }]);
+    await page.goto(`/driver/activate#token=${token}`);
+    const rules = page.getByRole("list", { name: locale === "en" ? "Password requirements" : "شروط كلمة المرور", exact: true });
+    await expect(rules.getByRole("listitem")).toHaveCount(3);
+    await expect(rules).toContainText("72");
+    await expect(rules).toContainText("A–Z");
+    await page.getByLabel(locale === "en" ? "Password" : "كلمة المرور", { exact: true }).fill("weak");
+    await page.getByLabel(locale === "en" ? "Confirm password" : "تأكيد كلمة المرور", { exact: true }).fill("weak");
+    await page.getByRole("button", { name: locale === "en" ? "Activate driver account" : "تفعيل حساب السائق", exact: true }).click();
+    await expect(page.getByRole("alert").filter({ hasText: locale === "en" ? "Password rules were not met" : "كلمة المرور لا تستوفي الشروط" })).toBeVisible();
+    expect(writes).toEqual([]);
+  });
+  for (const outcome of [
+    { code: 400, message: "Driver invitation expired", en: "This activation link has expired.", ar: "انتهت صلاحية رابط التفعيل." },
+    { code: 400, message: "Driver invitation already used or revoked", en: "This activation link was already used or revoked.", ar: "استُخدم رابط التفعيل أو أُلغي." },
+    { code: 400, message: ["Password must not exceed 72 UTF-8 bytes"], en: "Password rules were not met.", ar: "كلمة المرور لا تستوفي الشروط." },
+    { code: 429, message: "Too many activation attempts", en: "Too many activation attempts.", ar: "محاولات تفعيل كثيرة." },
+    { code: 404, message: "Cannot POST /driver/invitations/accept", en: "Activation service is unavailable.", ar: "خدمة التفعيل غير متاحة." },
+  ]) {
+    test(`activation outcome ${outcome.code} ${outcome.en} is specific in ${locale}`, async ({ page, context }) => {
+      activationStatus = outcome.code; activationMessage = outcome.message;
+      await context.addCookies([{ name: "fleetora_locale", value: locale, url: "http://localhost:3100" }]);
+      await page.goto(`/driver/activate#token=${token}`);
+      await page.getByLabel(locale === "en" ? "Password" : "كلمة المرور", { exact: true }).fill("Driver123");
+      await page.getByLabel(locale === "en" ? "Confirm password" : "تأكيد كلمة المرور", { exact: true }).fill("Driver123");
+      await page.getByRole("button", { name: locale === "en" ? "Activate driver account" : "تفعيل حساب السائق", exact: true }).click();
+      await expect(page.getByRole("alert").filter({ hasText: locale === "en" ? outcome.en : outcome.ar })).toBeVisible();
+    });
+  }
   test(`duplicate phone keeps the access panel loaded and explains the invitation block in ${locale}`, async ({
     page,
     context,

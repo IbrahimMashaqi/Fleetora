@@ -12,6 +12,6 @@ services:
     environment: !override
       NODE_ENV: ${BACKEND_NODE_ENV:-development}
       PORT: 3001
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://127.0.0.1:3000}
       FLEETORA_CLIENT_SOURCE_SECRET: ${FLEETORA_CLIENT_SOURCE_SECRET:?set FLEETORA_CLIENT_SOURCE_SECRET in .env}
       SIGNIN_RATE_LIMIT_KEY: ${SIGNIN_RATE_LIMIT_KEY:-}

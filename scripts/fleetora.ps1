@@ -53,6 +53,20 @@ if ($Neon -and [string]::IsNullOrWhiteSpace($configuration.services.backend.envi
     exit 1
 }
 
+# Docker publishes IPv4 only. A localhost activation link can otherwise open a
+# separate IPv6 dev stack. Override only the local development origin, privately
+# for this launcher process; public HTTPS and other ports remain configured.
+if ($Action -eq 'start' -and $configuration.services.backend.environment.NODE_ENV -ne 'production') {
+    $activationUri = $null
+    if ([uri]::TryCreate($configuration.services.backend.environment.FRONTEND_URL, [System.UriKind]::Absolute, [ref] $activationUri) -and
+        $activationUri.Scheme -eq 'http' -and $activationUri.Port -eq 3000 -and
+        $activationUri.Host -in @('localhost', '127.0.0.1', '::1', '[::1]', '[0000:0000:0000:0000:0000:0000:0000:0001]') -and
+        -not $activationUri.UserInfo -and -not $activationUri.Query -and -not $activationUri.Fragment -and
+        $activationUri.AbsolutePath -eq '/') {
+        $env:FRONTEND_URL = 'http://127.0.0.1:3000'
+    }
+}
+
 # Never echo environment values, including when showing application diagnostics.
 $secretValues = @(
     foreach ($service in $configuration.services.PSObject.Properties.Value) {
