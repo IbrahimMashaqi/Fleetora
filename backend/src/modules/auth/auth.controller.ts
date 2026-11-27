@@ -27,6 +27,7 @@ import { AccessTokenGuard } from './guards/access-token.guard.js';
 import { RefreshTokenGuard } from './guards/refresh-token.guard.js';
 import { GetCurrentUser } from './decorators/get-current-user.decorator.js';
 import { Public } from './decorators/public.decorator.js';
+import { AllowCompanyStatus } from './decorators/company-status.decorator.js';
 import { UpdatePasswordDto } from './dto/update-password.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
@@ -131,8 +132,9 @@ export class AuthController {
   async refresh(
     @GetCurrentUser('sub') id: string,
     @GetCurrentUser('refreshToken') refreshToken: string,
+    @GetCurrentUser('companyVersion') companyVersion?: number,
   ) {
-    return this.authService.refreshTokens(id, refreshToken);
+    return this.authService.refreshTokens(id, refreshToken, false, companyVersion);
   }
 
   @ApiOperation({ summary: 'Get the current active user session' })
@@ -140,6 +142,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Current user session' })
   @UseGuards(AccessTokenGuard)
   @Get('session')
+  @AllowCompanyStatus()
   async session(@GetCurrentUser('sub') id: string) {
     return this.authService.getSessionUser(id);
   }
@@ -149,6 +152,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Logged out' })
   @UseGuards(AccessTokenGuard)
   @Post('logout')
+  @AllowCompanyStatus()
   @HttpCode(HttpStatus.OK)
   logout(@GetCurrentUser('sub') userId: string) {
     return this.authService.logout(userId);

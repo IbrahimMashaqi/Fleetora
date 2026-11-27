@@ -21,9 +21,9 @@ describe('parcel transaction authorization and idempotency', () => {
     isActive: true,
     isEmailVerified: true,
   };
-  let tenant: { id: string; suspended: boolean } | null = {
+  let tenant: { id: string; approvalStatus: string; accessVersion: number; suspended: boolean } | null = {
     id: actor.orgId,
-    suspended: false,
+    approvalStatus: 'ACTIVE', accessVersion: 0, suspended: false,
   };
   let stored: {
     companyId: string;
@@ -55,7 +55,7 @@ describe('parcel transaction authorization and idempotency', () => {
       isActive: true,
       isEmailVerified: true,
     };
-    tenant = { id: actor.orgId, suspended: false };
+    tenant = { id: actor.orgId, approvalStatus: 'ACTIVE', accessVersion: 0, suspended: false };
     stored = null;
     effects = 0;
     transactions = 0;

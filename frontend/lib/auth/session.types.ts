@@ -20,6 +20,7 @@ export type SessionCompany = {
   id: string;
   name: string;
   currency: CompanyCurrency;
+  approvalStatus?: "PENDING" | "ACTIVE" | "REJECTED";
 };
 export type SessionUser = {
   id: string;
@@ -68,6 +69,7 @@ export function isSessionUser(value: unknown): value is SessionUser {
     typeof company.name === "string" &&
     typeof company.currency === "string" &&
     (COMPANY_CURRENCIES as readonly string[]).includes(company.currency) &&
+    (company.approvalStatus === undefined || ["PENDING","ACTIVE","REJECTED"].includes(String(company.approvalStatus))) &&
     company.id === user.orgId
   );
 }

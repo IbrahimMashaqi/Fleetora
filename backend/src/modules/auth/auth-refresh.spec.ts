@@ -41,6 +41,7 @@ describe('real JWT authentication HTTP contracts (in-memory persistence)', () =>
     const repository = {
       findUserById: async (id: string) => id === user.id ? { ...user } : null, // fresh row, like the database
       findUserByEmail: async (email: string) => email === user.email ? user : null,
+      findCompanyAccess: async () => ({approvalStatus:'ACTIVE', suspended:false, accessVersion:0}),
       isCompanyActiveForUser: async () => !companySuspended,
       findSessionContextById: async () => ({ ...user, company: { id: companyId, name: 'Fixture Company', suspended: companySuspended } }),
       updateRefreshToken: async (_id: string, value: string | null) => { await tail; user.refreshToken = value; },

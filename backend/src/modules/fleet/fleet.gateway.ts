@@ -161,6 +161,7 @@ export class FleetGateway
       event.data.companyId !== connection.actor.orgId
     )
       return;
+    if (event.name === 'fleet:company-access-revoked') return this.disconnect(socket);
     const key =
       event.name === 'fleet:headquarters-updated'
         ? event.name

@@ -45,6 +45,41 @@ enum PlatformRole {
   SUPPORT
 }
 
+enum CompanyApproval {
+  PENDING
+  ACTIVE
+  REJECTED
+}
+
+model CompanyAccessEvent {
+  id String @id @default(uuid())
+  companyId String
+  actorId String
+  action String
+  details Json
+  createdAt DateTime @default(now())
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  @@index([companyId,createdAt])
+  @@map("company_access_events")
+}
+
+model CompanyAdminInvitation {
+  id String @id @default(uuid())
+  companyId String
+  userId String
+  issuedById String
+  tokenHash String @unique
+  expiresAt DateTime
+  acceptedAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  user User @relation(fields: [userId,companyId], references: [id,companyId], onDelete: Restrict)
+  @@check(expression: "NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL)", name: "company_admin_invitation_state")
+  @@index([companyId,createdAt])
+  @@map("company_admin_invitations")
+}
+
 // OD-15: separate platform capabilities; no company membership or automatic backfill.
 model PlatformStaff {
   id String @id @default(uuid())
@@ -153,6 +188,19 @@ enum AIExecutionStatus {
 // ------------------------------------------------------------
 
 model Company {
+  accessEvents CompanyAccessEvent[]
+  adminInvitations CompanyAdminInvitation[]
+  // OD-16 grandfathering: old rows default ACTIVE; signup explicitly writes PENDING.
+  approvalStatus CompanyApproval @default(ACTIVE)
+  rejectionReason String?
+  phone String?
+  address String?
+  revision Int @default(1)
+  accessVersion Int @default(0)
+  primaryAdminId String?
+  primaryAdmin User? @relation("CompanyPrimaryAdmin", fields: [primaryAdminId,id], references: [id,companyId], onDelete: Restrict)
+  @@check(expression: "\"revision\" > 0 AND \"accessVersion\" >= 0", name: "company_access_revision")
+  @@check(expression: "\"approvalStatus\" <> 'REJECTED' OR (\"rejectionReason\" IS NOT NULL AND length(btrim(\"rejectionReason\")) BETWEEN 1 AND 500)", name: "company_rejection_reason")
   merchantParcelRequests MerchantParcelRequest[]
   merchantAccessEvents MerchantAccessEvent[]
   merchantMemberships MerchantMembership[]
@@ -273,6 +321,8 @@ model StaffAccessEvent {
 }
 
 model User {
+  primaryAdminFor Company[] @relation("CompanyPrimaryAdmin")
+  primaryAdminInvitations CompanyAdminInvitation[]
   platformStaff PlatformStaff?
   driverAccount DriverAccount?
   @@unique([id,companyId])

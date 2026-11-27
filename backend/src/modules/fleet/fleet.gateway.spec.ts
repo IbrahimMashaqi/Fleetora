@@ -50,7 +50,7 @@ describe('FleetGateway with real Socket.IO connections', () => {
       companyId: string;
       isActive: boolean;
       isEmailVerified: boolean;
-      company: { id: string; suspended: boolean };
+      company: { id: string; approvalStatus: string; accessVersion: number; suspended: boolean };
     }
   >();
   const findSessionContextById = vi.fn(
@@ -60,6 +60,7 @@ describe('FleetGateway with real Socket.IO connections', () => {
   function register(companyId = 'company-a'): TokenPayload {
     const id = `admin-${++sequence}`;
     const account: TokenPayload = {
+      companyVersion: 0,
       sub: id,
       email: `${id}@example.test`,
       role: 'COMPANY_ADMIN',
@@ -72,7 +73,7 @@ describe('FleetGateway with real Socket.IO connections', () => {
       companyId,
       isActive: true,
       isEmailVerified: true,
-      company: { id: companyId, suspended: false },
+      company: { id: companyId, approvalStatus: 'ACTIVE', accessVersion: 0, suspended: false },
     });
     return account;
   }
@@ -296,7 +297,7 @@ describe('FleetGateway with real Socket.IO connections', () => {
     const disconnected = nextEvent<string>(socket, 'disconnect');
     for (let index = 0; index < 131; index++) {
       const update = event(actor.orgId);
-      if (update.name !== 'fleet:headquarters-updated')
+      if (update.name !== 'fleet:headquarters-updated' && update.name !== 'fleet:company-access-revoked')
         update.data.driverId = `driver-${index}`;
       events.publish(update);
     }

@@ -12,6 +12,7 @@ import { MerchantsModule } from './modules/merchants/merchants.module.js';
 import { MerchantPortalModule } from './modules/merchant-portal/merchant-portal.module.js';
 import { StaffModule } from './modules/staff/staff.module.js';
 import { PlatformModule } from './modules/platform/platform.module.js';
+import { CompaniesModule } from './modules/companies/companies.module.js';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PlatformModule } from './modules/platform/platform.module.js';
     MerchantPortalModule,
     StaffModule,
     PlatformModule,
+    CompaniesModule,
   ],
 })
 export class AppModule {}

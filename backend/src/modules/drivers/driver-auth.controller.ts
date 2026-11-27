@@ -110,6 +110,6 @@ export class DriverAuthController {
   refresh(@GetCurrentUser() actor: TokenPayload & { refreshToken: string }) {
     if (actor.role !== 'DRIVER')
       throw new ForbiddenException('Driver account required');
-    return this.auth.refreshTokens(actor.sub, actor.refreshToken, true);
+    return this.auth.refreshTokens(actor.sub, actor.refreshToken, true, actor.companyVersion);
   }
 }

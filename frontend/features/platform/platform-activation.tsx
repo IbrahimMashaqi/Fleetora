@@ -9,17 +9,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { record } from "./platform-contract";
-export function PlatformActivation() {
-  const fragment = useOneTimeTokenFragment("platform-invitation", false);
+export function PlatformActivation({
+  kind = "platform",
+}: {
+  kind?: "platform" | "company";
+}) {
+  const fragment = useOneTimeTokenFragment(`${kind}-invitation`, false);
   return (
     <Activation
       key={fragment.token}
+      kind={kind}
       token={fragment.token}
       ready={fragment.ready}
     />
   );
 }
-function Activation({ token, ready }: { token: string; ready: boolean }) {
+function Activation({
+  token,
+  ready,
+  kind,
+}: {
+  token: string;
+  ready: boolean;
+  kind: "platform" | "company";
+}) {
   const { locale } = useLocale(),
     c = (en: string, ar: string) => (locale === "ar" ? ar : en);
   const [state, setState] = useState("idle"),
@@ -43,7 +56,7 @@ function Activation({ token, ready }: { token: string; ready: boolean }) {
     lock.current = true;
     setState("pending");
     try {
-      const response = await fetch("/api/platform/activate", {
+      const response = await fetch(`/api/${kind}/activate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, name: input.get("name"), password }),
@@ -87,11 +100,27 @@ function Activation({ token, ready }: { token: string; ready: boolean }) {
       "تعذّر تأكيد التفعيل. حاول مجدداً أو اطلب مساعدة المسؤول الأعلى.",
     ],
   };
+  if (kind === "company") {
+    messages.invalid = [
+      "This activation link is invalid, already used or revoked. Ask the platform team for a new invitation.",
+      "رابط التفعيل غير صالح أو مستخدم أو ملغى. اطلب دعوة جديدة من فريق المنصة.",
+    ];
+    messages.expired = [
+      "This activation link has expired. Ask the platform team for a new invitation.",
+      "انتهت صلاحية رابط التفعيل. اطلب دعوة جديدة من فريق المنصة.",
+    ];
+    messages.unavailable = [
+      "We could not confirm activation. Try again or ask the platform team for help.",
+      "تعذّر تأكيد التفعيل. حاول مجددًا أو اطلب مساعدة فريق المنصة.",
+    ];
+  }
   return (
     <PasswordRecoveryShell>
       <section className="w-full max-w-md rounded-xl border border-border bg-surface p-6 sm:p-8">
         <h1 className="text-2xl font-semibold">
-          {c("Activate platform account", "تفعيل حساب المنصة")}
+          {kind === "company"
+            ? c("Activate company administrator", "تفعيل مدير الشركة")
+            : c("Activate platform account", "تفعيل حساب المنصة")}
         </h1>
         {state === "accepted" ? (
           <div className="mt-5 space-y-4">
@@ -102,8 +131,10 @@ function Activation({ token, ready }: { token: string; ready: boolean }) {
               )}
             </p>
             <Button asChild>
-              <Link href="/platform/login">
-                {c("Platform sign in", "تسجيل دخول المنصة")}
+              <Link href={kind === "company" ? "/login" : "/platform/login"}>
+                {kind === "company"
+                  ? c("Go to sign in", "الانتقال إلى تسجيل الدخول")
+                  : c("Platform sign in", "تسجيل دخول المنصة")}
               </Link>
             </Button>
           </div>

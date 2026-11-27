@@ -13,4 +13,6 @@ export interface TokenPayload {
   role: UserRole;
   orgId: string;
   sessionVersion?: number;
+  companyVersion?: number;
+  companyStatus?: 'PENDING' | 'ACTIVE' | 'REJECTED';
 }

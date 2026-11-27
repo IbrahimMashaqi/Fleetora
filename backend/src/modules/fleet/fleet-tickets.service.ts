@@ -98,7 +98,7 @@ export class FleetTicketsService implements OnModuleInit, OnModuleDestroy {
       !user.isEmailVerified ||
       !user.company ||
       user.company.id !== actor.orgId ||
-      user.company.suspended
+      user.company.suspended || user.company.approvalStatus !== 'ACTIVE' || user.company.accessVersion !== (actor.companyVersion ?? 0)
     ) {
       throw new ForbiddenException('Fleet tracking access denied');
     }
@@ -107,6 +107,7 @@ export class FleetTicketsService implements OnModuleInit, OnModuleDestroy {
       email: user.email ?? '',
       role: 'COMPANY_ADMIN',
       orgId: actor.orgId,
+      companyVersion: user.company.accessVersion,
     };
   }
 

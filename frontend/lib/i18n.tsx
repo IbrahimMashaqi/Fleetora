@@ -29,6 +29,7 @@ const english = {
   "Delivery pricing": "Delivery pricing",
   "Final customer payable": "Final customer payable",
   "Account & security": "Account & security",
+  "Company settings": "Company settings",
   "Team": "Team",
   "Primary navigation": "Primary navigation",
   "Signed in as": "Signed in as",
@@ -513,6 +514,7 @@ const arabic: Record<TranslationKey, string> = {
 
   "Vehicles": "المركبات",
   "Account & security": "الحساب والأمان",
+  "Company settings": "إعدادات الشركة",
   "Team": "الفريق",
   "Primary navigation": "التنقل الرئيسي",
   "Signed in as": "تم تسجيل الدخول باسم",

@@ -36,6 +36,7 @@ describe('Overview HTTP authentication with isolated persistence', () => {
         { provide: AuthRepository, useValue: {
           findUserById: async () => ({ id: 'admin', email: 'admin@example.invalid', role,
             companyId, isActive: active, isEmailVerified: verified }),
+          findCompanyAccess: async () => ({approvalStatus:'ACTIVE', suspended:false, accessVersion:0}),
           isCompanyActiveForUser: async () => companyActive,
         } },
       ],

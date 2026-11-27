@@ -83,12 +83,15 @@ export class AuthService {
     companyId: string | null;
     authVersion?: number;
   }) {
+    const tenant = user.role === 'PLATFORM_ADMIN' ? null : await this.authRepository.findCompanyAccess(user.companyId ?? '');
+    if (user.role !== 'PLATFORM_ADMIN' && (!tenant || tenant.suspended)) throw new UnauthorizedException('Invalid company context');
     const payload: TokenPayload = {
       sub: user.id,
       email: user.email ?? '',
       role: user.role,
       orgId: user.companyId ?? '',
       ...(user.role === 'PLATFORM_ADMIN' ? { sessionVersion: user.authVersion ?? 0 } : {}),
+      ...(tenant ? { companyVersion: tenant.accessVersion } : {}),
     };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -267,6 +270,7 @@ export class AuthService {
     userId: string,
     refreshToken: string,
     driverSession = false,
+    expectedCompanyVersion = 0,
   ): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -280,7 +284,7 @@ export class AuthService {
   }> {
     return this.authRepository.withRefreshTokenLock(
       userId,
-      async (user, saveRefreshToken, companyIsActive) => {
+      async (user, saveRefreshToken, companyIsActive, companyVersion = 0) => {
         if (!user) throw new UnauthorizedException('Access Denied: User not found');
         if ((user.role === 'DRIVER') !== driverSession) throw new UnauthorizedException('Session principal changed');
         if (!user.isActive || !companyIsActive) {
@@ -288,6 +292,11 @@ export class AuthService {
         }
         if (!user.isEmailVerified) {
           throw new UnauthorizedException('Access Denied: Account is unverified');
+        }
+        // An in-flight sign-in may save its verifier after suspension clears sessions.
+        // Recheck the signed version under the refresh lock, including after reactivation.
+        if (user.role !== 'PLATFORM_ADMIN' && companyVersion !== expectedCompanyVersion) {
+          throw new UnauthorizedException('Company session revoked');
         }
         if (!user.refreshToken) {
           throw new ForbiddenException('Access Denied: Session expired');
@@ -306,6 +315,7 @@ export class AuthService {
           role: user.role,
           orgId: user.companyId ?? '',
           ...(['DRIVER', 'PLATFORM_ADMIN'].includes(user.role) ? { sessionVersion: user.authVersion } : {}),
+          ...(user.role !== 'PLATFORM_ADMIN' ? { companyVersion } : {}),
         };
         const [accessToken, newRefreshToken] = await Promise.all([
           this.tokenService.generateAccessToken(payload),
@@ -363,7 +373,7 @@ export class AuthService {
       role: user.role,
       orgId: user.companyId,
       company: company
-        ? { id: company.id, name: company.name, currency: company.currency }
+        ? { id: company.id, name: company.name, currency: company.currency, approvalStatus: company.approvalStatus }
         : null,
     };
   }

@@ -35,7 +35,7 @@ export class MerchantAccessRepository {
         const company = await tx.orm.public.Company.where({
           id: companyId,
         }).first();
-        if (!company || company.suspended) throw new UnauthorizedException();
+        if (!company || company.suspended || company.approvalStatus !== 'ACTIVE') throw new UnauthorizedException();
         return operation(tx);
       });
     } catch (error: unknown) {

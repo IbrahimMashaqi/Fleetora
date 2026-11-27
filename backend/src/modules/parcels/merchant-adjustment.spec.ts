@@ -50,7 +50,7 @@ describe('OD-13/BR-093 adjustment activation gate', () => {
       })),
       Company: row(() => ({
         id: actor.orgId,
-        suspended: false,
+        approvalStatus: 'ACTIVE', accessVersion: 0, suspended: false,
         currency: 'ILS',
       })),
       Merchant: row((filter) =>

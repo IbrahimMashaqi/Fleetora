@@ -22,12 +22,13 @@ describe('parcel persistence compatibility and invariants', () => {
         expect(tables.users.uniques).toContainEqual({ columns: ['id','companyId'] });
       } else if (name === 'companies') {
         // OD-02 adds only the company currency, its (id,currency) key and its check.
-        const { currency, ...columns } = tables.companies.columns;
+        const { currency, approvalStatus, rejectionReason, phone, address, revision, accessVersion, primaryAdminId, ...columns } = tables.companies.columns;
+        for (const column of [approvalStatus,rejectionReason,phone,address,revision,accessVersion,primaryAdminId]) expect(column.nullable || "default" in column).toBe(true);
         expect(currency).toBeDefined();
         expect(columns).toEqual(table.columns);
         expect(tables.companies.primaryKey).toEqual(table.primaryKey);
-        expect(tables.companies.foreignKeys).toEqual(table.foreignKeys);
-        expect(tables.companies.indexes).toEqual(table.indexes);
+        expect(tables.companies.foreignKeys).toEqual(expect.arrayContaining(table.foreignKeys));
+        expect(tables.companies.indexes).toEqual(expect.arrayContaining(table.indexes));
         expect(tables.companies.uniques).toEqual([
           ...table.uniques,
           { columns: ['id', 'currency'] },

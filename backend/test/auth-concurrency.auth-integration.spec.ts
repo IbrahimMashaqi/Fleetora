@@ -449,6 +449,10 @@ describe('authentication PostgreSQL concurrency and tenant boundaries', () => {
   async function cleanup(): Promise<void> {
     databaseGuard.assertVerified();
     for (const name of ['Phase6B Rollback', 'Phase6B Duplicate', 'Phase6B Existing', 'Phase6B Mail Failure', 'Phase2 Canonical', 'Phase2 Race', 'Phase2 Claim']) {
+      for (const company of await prisma.Company.where({ name: `${name}'s Company` }).all()) {
+        await prisma.Company.where({ id: company.id }).update({ primaryAdminId: null });
+        await prisma.db.orm.public.CompanyAccessEvent.where({ companyId: company.id }).deleteAll();
+      }
       await prisma?.Company.where({ name: `${name}'s Company` }).delete();
     }
     await prisma?.User.where({ id: userId }).delete();

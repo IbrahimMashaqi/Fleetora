@@ -42,6 +42,7 @@ export class PersistedDriverIdentityVerifier implements DriverIdentityVerifier {
         email: payload.email,
         orgId: payload.orgId,
         sessionVersion: payload.sessionVersion,
+        ...(typeof payload.companyVersion === 'number' ? { companyVersion: payload.companyVersion } : {}),
         typ: payload.typ,
       };
       const actor = await this.strategy.validate(identity);

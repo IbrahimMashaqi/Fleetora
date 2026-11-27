@@ -13,7 +13,7 @@ export const MERCHANT_PERMISSIONS = [
   'SETTLEMENT_REQUEST',
 ] as const;
 export type MerchantPermission = (typeof MERCHANT_PERMISSIONS)[number];
-export type MerchantIdentity = Readonly<Pick<TokenPayload, 'sub'>>;
+export type MerchantIdentity = Readonly<Pick<TokenPayload, 'sub' | 'companyVersion'>>;
 export type MerchantContext = Readonly<{
   userId: string;
   merchantId: string;

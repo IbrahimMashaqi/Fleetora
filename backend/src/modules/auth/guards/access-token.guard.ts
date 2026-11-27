@@ -5,6 +5,7 @@ import { firstValueFrom, isObservable } from 'rxjs';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
+import { COMPANY_STATUS_ALLOWED } from '../decorators/company-status.decorator.js';
 
 @Injectable()
 export class AccessTokenGuard extends AuthGuard('jwt') {
@@ -21,6 +22,8 @@ export class AccessTokenGuard extends AuthGuard('jwt') {
     const result = super.canActivate(context);
     const allowed = await (isObservable(result) ? firstValueFrom(result) : result);
     const request = context.switchToHttp().getRequest<{ user?: TokenPayload }>();
+    if (request.user?.companyStatus && request.user.companyStatus !== 'ACTIVE' && !this.reflector.getAllAndOverride<boolean>(COMPANY_STATUS_ALLOWED, [context.getHandler(), context.getClass()]))
+      throw new ForbiddenException('Company approval required');
     if (request.user?.role === 'DRIVER' && !this.reflector.getAllAndOverride<boolean>(DRIVER_ENDPOINT, [context.getHandler(), context.getClass()]))
       throw new ForbiddenException('Driver access is restricted to driver endpoints');
     return allowed;
