@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 
 const INVITATION_ROLES = {
+  SUPER_ADMIN: { en: 'platform super administrator', ar: 'المسؤول الأعلى للمنصة' },
+  COMPANY_MANAGER: { en: 'platform company manager', ar: 'مدير الشركات في المنصة' },
+  BILLING: { en: 'platform billing staff', ar: 'موظف فوترة المنصة' },
+  SUPPORT: { en: 'platform support (read-only)', ar: 'دعم المنصة (قراءة فقط)' },
   COMPANY_ADMIN: { en: 'company administrator', ar: 'مسؤول الشركة' },
   ACCOUNTANT: { en: 'accountant', ar: 'محاسب' },
   OPERATIONS: { en: 'operations staff', ar: 'موظف العمليات' },

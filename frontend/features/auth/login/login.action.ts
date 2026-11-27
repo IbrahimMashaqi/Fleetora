@@ -7,10 +7,13 @@ import { getBackendEndpoint, requestBackend, readBackendBody } from "@/lib/api/b
 import { parseTokenPair } from "@/lib/auth/tokens.server";
 import { setSessionTokens } from "@/lib/auth/cookies.server";
 import { clientSourceFor } from "@/lib/api/client-source.server";
+import { isPlatformMe, record } from '@/features/platform/platform-contract';
 
 
 
 export async function loginAction(_state: LoginState, formData: FormData): Promise<LoginState> {
+  let destination = '/app';
+  const platform = formData.get('workspace') === 'platform';
   const emailValue = formData.get("email");
   const passwordValue = formData.get("password");
   const email = typeof emailValue === "string" ? emailValue.trim() : "";
@@ -34,10 +37,16 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
     const result = await readBackendBody(response);
     const tokens = parseTokenPair(result);
     if (!tokens) return { status: "error", message: "We couldn't confirm your sign in. Please try again.", values: { email } };
+    if (platform) {
+      const meEndpoint = getBackendEndpoint('platform/me');
+      const me = meEndpoint ? await requestBackend(meEndpoint, { method: 'GET', bearer: tokens.accessToken }).then(readBackendBody) : null;
+      if (!record(me) || me.success !== true || !isPlatformMe(me.data)) return { status: 'error', message: "We couldn't sign you in with those details. Check your email and password and try again.", values: { email } };
+      destination = '/platform';
+    } else if (record(result) && record(result.data) && record(result.data.user) && result.data.user.role === 'PLATFORM_ADMIN') destination = '/platform';
     const jar = await cookies();
     setSessionTokens(jar, tokens);
   } catch {
     return { status: "error", message: "We couldn't reach Fleetora. Check your connection and try again.", values: { email } };
   }
-  redirect("/app");
+  redirect(destination);
 }

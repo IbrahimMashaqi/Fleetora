@@ -38,6 +38,54 @@ enum PlatformGrantStatus {
   REVOKED
 }
 
+enum PlatformRole {
+  SUPER_ADMIN
+  COMPANY_MANAGER
+  BILLING
+  SUPPORT
+}
+
+// OD-15: separate platform capabilities; no company membership or automatic backfill.
+model PlatformStaff {
+  id String @id @default(uuid())
+  userId String @unique
+  role PlatformRole
+  createdAt DateTime @default(now())
+  updatedAt temporal.updatedAt()
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  @@index([role])
+  @@map("platform_staff")
+}
+
+model PlatformInvitation {
+  id String @id @default(uuid())
+  email String
+  role PlatformRole
+  tokenHash String @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  acceptedAt DateTime?
+  revokedAt DateTime?
+  issuedById String?
+  acceptedById String?
+  // A single permanent bootstrap intent survives acceptance/revocation.
+  bootstrapKey String? @unique
+  @@check(expression: "NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL)", name: "platform_invitation_state")
+  @@index([email])
+  @@map("platform_invitations")
+}
+
+model PlatformAccessEvent {
+  id String @id @default(uuid())
+  actorId String?
+  subjectId String
+  action String
+  details Json
+  createdAt DateTime @default(now())
+  @@index([createdAt])
+  @@map("platform_access_events")
+}
+
 enum WorkerStatus {
   ACTIVE
   OFFLINE
@@ -225,6 +273,7 @@ model StaffAccessEvent {
 }
 
 model User {
+  platformStaff PlatformStaff?
   driverAccount DriverAccount?
   @@unique([id,companyId])
   merchantMembership MerchantMembership?

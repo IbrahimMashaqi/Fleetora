@@ -15,8 +15,8 @@ import { LanguageSwitcher, useLocale } from "@/lib/i18n";
 
 const initialState: LoginState = { status: "idle" };
 
-export function LoginForm({ logoutUnconfirmed = false, passwordReset = false }: { logoutUnconfirmed?: boolean; passwordReset?: boolean }) {
-  const { t, tMessage } = useLocale();
+export function LoginForm({ logoutUnconfirmed = false, passwordReset = false, platform = false }: { logoutUnconfirmed?: boolean; passwordReset?: boolean; platform?: boolean }) {
+  const { t, tMessage, locale } = useLocale();
   const [state, action, pending] = useActionState(loginAction, initialState);
   const [showPassword, setShowPassword] = useState(false);
   const errors = state.status === "error" ? state.fieldErrors : undefined;
@@ -38,12 +38,13 @@ export function LoginForm({ logoutUnconfirmed = false, passwordReset = false }: 
             <section aria-labelledby="login-title" className={`${authStyles["auth-enter"]} w-full max-w-[432px] overflow-hidden rounded-xl border border-border bg-surface shadow-sm`}>
               <div className="p-6 sm:p-8">
                 <div className="mb-6">
-                  <h1 id="login-title" className="text-[32px] font-semibold leading-[38px] tracking-[-0.02em]">{t("Welcome back")}</h1>
-                  <p className="mt-2 text-sm leading-5 text-muted-foreground">{t("Sign in to continue to your Fleetora workspace.")}</p>
+                  <h1 id="login-title" className="text-[32px] font-semibold leading-[38px] tracking-[-0.02em]">{platform ? locale === 'ar' ? 'تسجيل دخول المنصة' : 'Platform sign in' : t("Welcome back")}</h1>
+                  <p className="mt-2 text-sm leading-5 text-muted-foreground">{platform ? locale === 'ar' ? 'حسابات فريق منصة Fleetora فقط.' : 'For Fleetora platform staff accounts.' : t("Sign in to continue to your Fleetora workspace.")}</p>
                 </div>
                 {passwordReset && <p role="status" className={`${authStyles["auth-feedback"]} mb-5 rounded-md border border-success-border bg-success-background p-3 text-sm text-foreground`}>{t("Your password has been updated. Sign in with your new password.")}</p>}
                 {logoutUnconfirmed && <p role="status" className={`${authStyles["auth-feedback"]} mb-5 rounded-md border border-warning-border bg-warning-background p-3 text-sm text-foreground`}>{t("You're signed out on this device. We couldn't confirm that the server ended the session.")}</p>}
                 <form action={action} aria-busy={pending} className="space-y-5">
+                  {platform && <input type="hidden" name="workspace" value="platform" />}
                   {state.status === "error" && state.message && <div role="alert" className={`${authStyles["auth-feedback"]} rounded-md border border-danger-border bg-danger-background p-3 text-sm`}>{tMessage(state.message)}</div>}
                   <fieldset disabled={pending} className={`${authStyles["auth-fields"]} space-y-5`}>
                     <div className="space-y-2">
@@ -71,7 +72,7 @@ export function LoginForm({ logoutUnconfirmed = false, passwordReset = false }: 
                   <p role="status" aria-live="polite" className="sr-only">{pending ? t("Signing in. Please wait.") : ""}</p>
                 </form>
               </div>
-              <div className="border-t border-border bg-surface-secondary px-6 py-4 text-center text-[13px] leading-5 text-secondary-foreground">{t("New to Fleetora?")} <Link href="/signup" className={`${authStyles["auth-text-link"]} rounded-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`}>{t("Create an account")}</Link></div>
+              {!platform && <div className="border-t border-border bg-surface-secondary px-6 py-4 text-center text-[13px] leading-5 text-secondary-foreground">{t("New to Fleetora?")} <Link href="/signup" className={`${authStyles["auth-text-link"]} rounded-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`}>{t("Create an account")}</Link></div>}
             </section>
           </div>
         </div>

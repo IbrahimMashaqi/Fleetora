@@ -1,0 +1,404 @@
+[
+  {
+    "id": "table.platform_access_events",
+    "label": "Create table \"platform_access_events\"",
+    "summary": "Creates table \"platform_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "platform_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"platform_access_events\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_access_events\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"platform_access_events\"",
+        "sql": "CREATE TABLE \"public\".\"platform_access_events\" (\n  \"action\" text NOT NULL,\n  \"actorId\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"details\" json NOT NULL,\n  \"id\" text NOT NULL,\n  \"subjectId\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"platform_access_events\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_access_events\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.platform_invitations",
+    "label": "Create table \"platform_invitations\"",
+    "summary": "Creates table \"platform_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "platform_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"platform_invitations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_invitations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"platform_invitations\"",
+        "sql": "CREATE TABLE \"public\".\"platform_invitations\" (\n  \"acceptedAt\" timestamptz,\n  \"acceptedById\" text,\n  \"bootstrapKey\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"expiresAt\" timestamptz NOT NULL,\n  \"id\" text NOT NULL,\n  \"issuedById\" text,\n  \"revokedAt\" timestamptz,\n  \"role\" text NOT NULL,\n  \"tokenHash\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"platform_invitation_state_dec73fa1\" CHECK (NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL)),\n  CONSTRAINT \"platform_invitations_role_check_f6b10d42\" CHECK (\"role\" IN ('SUPER_ADMIN', 'COMPANY_MANAGER', 'BILLING', 'SUPPORT'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"platform_invitations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_invitations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.platform_staff",
+    "label": "Create table \"platform_staff\"",
+    "summary": "Creates table \"platform_staff\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "platform_staff"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"platform_staff\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_staff\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"platform_staff\"",
+        "sql": "CREATE TABLE \"public\".\"platform_staff\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"role\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  \"userId\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"platform_staff_role_check_f6b10d42\" CHECK (\"role\" IN ('SUPER_ADMIN', 'COMPANY_MANAGER', 'BILLING', 'SUPPORT'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"platform_staff\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_staff\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.platform_invitations.platform_invitations_tokenHash_key",
+    "label": "Add unique constraint on \"platform_invitations\" (tokenHash)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "platform_invitations_tokenHash_key",
+        "table": "platform_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"platform_invitations_tokenHash_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_invitations_tokenHash_key",
+          "public",
+          "\"public\".\"platform_invitations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"platform_invitations_tokenHash_key\"",
+        "sql": "ALTER TABLE \"public\".\"platform_invitations\" ADD CONSTRAINT \"platform_invitations_tokenHash_key\" UNIQUE (\"tokenHash\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"platform_invitations_tokenHash_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_invitations_tokenHash_key",
+          "public",
+          "\"public\".\"platform_invitations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.platform_invitations.platform_invitations_bootstrapKey_key",
+    "label": "Add unique constraint on \"platform_invitations\" (bootstrapKey)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "platform_invitations_bootstrapKey_key",
+        "table": "platform_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"platform_invitations_bootstrapKey_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_invitations_bootstrapKey_key",
+          "public",
+          "\"public\".\"platform_invitations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"platform_invitations_bootstrapKey_key\"",
+        "sql": "ALTER TABLE \"public\".\"platform_invitations\" ADD CONSTRAINT \"platform_invitations_bootstrapKey_key\" UNIQUE (\"bootstrapKey\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"platform_invitations_bootstrapKey_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_invitations_bootstrapKey_key",
+          "public",
+          "\"public\".\"platform_invitations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.platform_staff.platform_staff_userId_key",
+    "label": "Add unique constraint on \"platform_staff\" (userId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "platform_staff_userId_key",
+        "table": "platform_staff"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"platform_staff_userId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_staff_userId_key",
+          "public",
+          "\"public\".\"platform_staff\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"platform_staff_userId_key\"",
+        "sql": "ALTER TABLE \"public\".\"platform_staff\" ADD CONSTRAINT \"platform_staff_userId_key\" UNIQUE (\"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"platform_staff_userId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_staff_userId_key",
+          "public",
+          "\"public\".\"platform_staff\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.platform_access_events.platform_access_events_createdAt_idx_9575dbd7",
+    "label": "Create index \"platform_access_events_createdAt_idx_9575dbd7\" on \"platform_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "platform_access_events_createdAt_idx_9575dbd7",
+        "table": "platform_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"platform_access_events_createdAt_idx_9575dbd7\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_access_events_createdAt_idx_9575dbd7\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"platform_access_events_createdAt_idx_9575dbd7\"",
+        "sql": "CREATE INDEX \"platform_access_events_createdAt_idx_9575dbd7\" ON \"public\".\"platform_access_events\" (\"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"platform_access_events_createdAt_idx_9575dbd7\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_access_events_createdAt_idx_9575dbd7\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.platform_invitations.platform_invitations_email_idx_46df9cad",
+    "label": "Create index \"platform_invitations_email_idx_46df9cad\" on \"platform_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "platform_invitations_email_idx_46df9cad",
+        "table": "platform_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"platform_invitations_email_idx_46df9cad\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_invitations_email_idx_46df9cad\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"platform_invitations_email_idx_46df9cad\"",
+        "sql": "CREATE INDEX \"platform_invitations_email_idx_46df9cad\" ON \"public\".\"platform_invitations\" (\"email\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"platform_invitations_email_idx_46df9cad\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_invitations_email_idx_46df9cad\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.platform_staff.platform_staff_role_idx_2c1ddf83",
+    "label": "Create index \"platform_staff_role_idx_2c1ddf83\" on \"platform_staff\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "platform_staff_role_idx_2c1ddf83",
+        "table": "platform_staff"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"platform_staff_role_idx_2c1ddf83\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_staff_role_idx_2c1ddf83\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"platform_staff_role_idx_2c1ddf83\"",
+        "sql": "CREATE INDEX \"platform_staff_role_idx_2c1ddf83\" ON \"public\".\"platform_staff\" (\"role\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"platform_staff_role_idx_2c1ddf83\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"platform_staff_role_idx_2c1ddf83\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.platform_staff.platform_staff_userId_fkey",
+    "label": "Add foreign key \"platform_staff_userId_fkey\" on \"platform_staff\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "platform_staff_userId_fkey",
+        "table": "platform_staff"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"platform_staff_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_staff_userId_fkey",
+          "public",
+          "\"public\".\"platform_staff\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"platform_staff_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"platform_staff\"\nADD CONSTRAINT \"platform_staff_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"users\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"platform_staff_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "platform_staff_userId_fkey",
+          "public",
+          "\"public\".\"platform_staff\""
+        ]
+      }
+    ]
+  }
+]

@@ -179,6 +179,17 @@ describe('parcel persistence compatibility and invariants', () => {
     for (const [name, table] of Object.entries(tables)) {
       if (Object.hasOwn(previous.storage.namespaces.public.entries.table, name))
         continue;
+      // OD-15 adds platform-owned identity records, deliberately without a tenant.
+      // Unknown unscoped tables still fail; platform references may only name identities.
+      if (!Object.hasOwn(table.columns, 'companyId')) {
+        expect(['platform_staff', 'platform_invitations', 'platform_access_events']).toContain(name);
+        for (const foreignKey of table.foreignKeys) {
+          expect(foreignKey.target.tableName).toBe('users');
+          expect(foreignKey.source.columns).toEqual(['userId']);
+          expect(foreignKey).toHaveProperty('onDelete', 'restrict');
+        }
+        continue;
+      }
       for (const foreignKey of table.foreignKeys)
         if (foreignKey.target.tableName !== 'companies')
           expect(

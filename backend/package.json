@@ -10,6 +10,7 @@
     "node": "^22.18.0 || >=24.0.0"
   },
   "scripts": {
+    "platform:bootstrap": "node dist/platform-bootstrap.js",
     "build": "nest build",
     "build:isolated": "node test/build-isolated.cjs",
     "deploy": "nest deploy",
