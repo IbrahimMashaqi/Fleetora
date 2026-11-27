@@ -81,12 +81,14 @@ export class AuthService {
     fullName: string;
     role: UserRole;
     companyId: string | null;
+    authVersion?: number;
   }) {
     const payload: TokenPayload = {
       sub: user.id,
       email: user.email ?? '',
       role: user.role,
       orgId: user.companyId ?? '',
+      ...(user.role === 'PLATFORM_ADMIN' ? { sessionVersion: user.authVersion ?? 0 } : {}),
     };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -303,7 +305,7 @@ export class AuthService {
           email: user.email ?? '',
           role: user.role,
           orgId: user.companyId ?? '',
-          ...(user.role === 'DRIVER' ? { sessionVersion: user.authVersion } : {}),
+          ...(['DRIVER', 'PLATFORM_ADMIN'].includes(user.role) ? { sessionVersion: user.authVersion } : {}),
         };
         const [accessToken, newRefreshToken] = await Promise.all([
           this.tokenService.generateAccessToken(payload),

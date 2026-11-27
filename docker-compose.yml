@@ -3,6 +3,22 @@
 name: fleetora
 
 services:
+  # Local development mail capture; never forwards messages to real recipients.
+  mailpit:
+    image: axllent/mailpit:v1.27.4
+    environment:
+      MP_QUIET: "true"
+      MP_DISABLE_VERSION_CHECK: "true"
+    ports:
+      - "127.0.0.1:8025:8025"
+    expose:
+      - "1025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
   db:
     image: postgres:18-alpine
     environment:
@@ -45,11 +61,15 @@ services:
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:?set REFRESH_TOKEN_SECRET in .env}
       FLEETORA_CLIENT_SOURCE_SECRET: ${FLEETORA_CLIENT_SOURCE_SECRET:?set FLEETORA_CLIENT_SOURCE_SECRET in .env}
       SIGNIN_RATE_LIMIT_KEY: ${SIGNIN_RATE_LIMIT_KEY:-}
+      # Select unauthenticated mailpit:1025 only outside production.
+      FLEETORA_MAILPIT: "true"
       MAIL_HOST: ${MAIL_HOST:-}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USER: ${MAIL_USER:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
     depends_on:
+      mailpit:
+        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     ports:

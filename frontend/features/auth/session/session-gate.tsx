@@ -33,7 +33,7 @@ async function checkSession(): Promise<SessionGateState> {
   });
 }
 
-export function SessionGate({ children }: { children: (user: SessionUser) => ReactNode }) {
+export function SessionGate({ children, loginPath = '/login' }: { children: (user: SessionUser) => ReactNode; loginPath?: '/login' | '/platform/login' }) {
   const { t } = useLocale();
   const [state, setState] = useState<SessionGateState>({ status: "loading" });
   const mounted = useRef(false);
@@ -61,7 +61,7 @@ export function SessionGate({ children }: { children: (user: SessionUser) => Rea
       setState(result);
       if (result.status === "redirecting") {
         signingOut.current = true;
-        router.replace("/login");
+        router.replace(loginPath);
       }
     }).finally(() => {
       if (inFlight.current === task) inFlight.current = null;
@@ -70,7 +70,7 @@ export function SessionGate({ children }: { children: (user: SessionUser) => Rea
         run();
       }
     });
-  }, [router]);
+  }, [router, loginPath]);
 
   const beginLogout = useCallback(() => {
     signingOut.current = true;
