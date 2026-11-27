@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { withSessionLock } from "@/lib/auth/session-lock";
 import { useLocale, type TranslationKey } from "@/lib/i18n";
 import { writeDriverAction } from "../drivers.action";
+import { DriverPhoneWarning } from "./driver-phone-warning";
 import {
   isValidDriverInput,
   normalizeDriverInput,
@@ -48,6 +49,7 @@ export function DriverEditor({
   const busy = useRef(false);
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<DriverWriteResult | null>(null);
+  const [phone, setPhone] = useState(driver?.phone ?? "");
   useEffect(() => {
     active.current = true;
     dialog.current?.showModal();
@@ -167,9 +169,10 @@ export function DriverEditor({
               required
               maxLength={40}
               autoComplete="off"
-              defaultValue={driver?.phone ?? ""}
+              value={phone}
+              onChange={event => setPhone(event.target.value)}
               placeholder="+970 59 000 0000"
-              aria-describedby="driver-phone-hint"
+              aria-describedby="driver-phone-hint driver-phone-warning"
               aria-invalid={result?.status === "invalid" || undefined}
             />
             <p id="driver-phone-hint" className="text-xs text-muted-foreground">
@@ -177,6 +180,7 @@ export function DriverEditor({
                 "Use digits, spaces, dashes, or parentheses, with an optional leading +.",
               )}
             </p>
+            <DriverPhoneWarning phone={phone} excludeId={driver?.id} scope={scope} />
           </div>
         </fieldset>
         {result && result.status !== "saved" && (

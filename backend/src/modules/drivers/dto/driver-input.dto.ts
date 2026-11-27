@@ -2,11 +2,14 @@ import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsString,
+  IsOptional,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
   ValidateIf,
 } from 'class-validator';
+import { PickType } from '@nestjs/swagger';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value;
@@ -26,6 +29,14 @@ export class DriverInputDto {
     message: 'phone must be a valid phone number',
   })
   phone!: string;
+}
+
+export class DriverPhoneCheckDto extends PickType(DriverInputDto, [
+  'phone',
+] as const) {
+  @IsOptional()
+  @IsUUID()
+  excludeId?: string;
 }
 
 export class DriverSuspensionDto {

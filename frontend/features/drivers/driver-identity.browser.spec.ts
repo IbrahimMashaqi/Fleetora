@@ -14,6 +14,8 @@ let server: Server,
 let writes: { path: string; method: string; body: unknown }[];
 let invitationBlockedReason: string | null;
 let driverPhone: string;
+let issuedUrl: string;
+let invitationFailure: { status: number; message: string } | null;
 test.beforeAll(async () => {
   server = createServer(async (req, res) => {
     const path = new URL(req.url ?? "/", "http://fixture.invalid").pathname;
@@ -36,6 +38,12 @@ test.beforeAll(async () => {
       res.statusCode = activationStatus;
       data = { accepted: true };
     } else if (path === `/drivers/${workerId}/invitations`) {
+      if (invitationFailure) {
+        res.statusCode = invitationFailure.status;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ success: false, message: invitationFailure.message }));
+        return;
+      }
       invited = req.method !== "DELETE";
       data =
         req.method === "DELETE"
@@ -45,7 +53,7 @@ test.beforeAll(async () => {
               workerId,
               phone: "+970591234567",
               invitationId,
-              url,
+              url: issuedUrl,
               expiresAt: "2026-12-01T12:00:00Z",
             };
     } else if (path === `/drivers/${workerId}/access`) {
@@ -112,6 +120,8 @@ test.beforeEach(() => {
   invited = false;
   invitationBlockedReason = null;
   driverPhone = "0591234567";
+  issuedUrl = url;
+  invitationFailure = null;
   writes = [];
 });
 for (const locale of ["en", "ar"] as const) {
@@ -229,6 +239,34 @@ for (const locale of ["en", "ar"] as const) {
     }
   });
 }
+for (const locale of ["en", "ar"] as const) {
+  for (const failure of [
+    { status: 400, message: "Driver invitations require an HTTPS FRONTEND_URL", en: "Configure an HTTPS activation website before creating driver invitations.", ar: "هيّئ موقع تفعيل آمنًا عبر HTTPS قبل إنشاء دعوات السائقين." },
+    { status: 409, message: "This phone already has a driver account", en: "This phone is already used by another driver account.", ar: "هذا الرقم مستخدم لحساب سائق آخر." },
+    { status: 403, message: "Operation is not permitted", en: "You don't have permission to manage driver access.", ar: "ليس لديك صلاحية إدارة وصول السائق." },
+  ]) {
+    test(`shows ${failure.status} invitation reason in ${locale}`, async ({ page, context }) => {
+      invitationFailure = failure;
+      await context.addCookies([
+        { name: "fleetora_locale", value: locale, url: "http://localhost:3100" },
+        { name: "fleetora_access", value: "driver-operations-fixture", url: "http://localhost:3100", httpOnly: true },
+      ]);
+      await page.goto("/app/drivers");
+      await page.getByRole("button", { name: /Invited Driver/ }).click();
+      await page.getByRole("button", { name: locale === "en" ? "Create driver invitation" : "إنشاء دعوة للسائق", exact: true }).click();
+      await expect(page.getByRole("status").filter({ hasText: locale === "en" ? failure.en : failure.ar })).toBeVisible();
+      await expect(page.getByLabel("Driver activation link")).toHaveCount(0);
+    });
+  }
+}
+test("development driver invitations keep HTTP loopback links usable", async ({ page, context }) => {
+  issuedUrl = `http://localhost:3100/driver/activate#token=${token}`;
+  await context.addCookies([{ name: "fleetora_access", value: "driver-operations-fixture", url: "http://localhost:3100", httpOnly: true }]);
+  await page.goto("/app/drivers");
+  await page.getByRole("button", { name: "View Invited Driver", exact: true }).click();
+  await page.getByRole("button", { name: "Create driver invitation", exact: true }).click();
+  await expect(page.getByLabel("Driver activation link")).toHaveValue(issuedUrl);
+});
 test("Operations shares an HTTPS invitation through WhatsApp and offboards with optional security revocation", async ({
   page,
   context,

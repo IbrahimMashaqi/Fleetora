@@ -1,7 +1,7 @@
 "use server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { readDriversForSession, writeDriverForSession } from "./drivers.server";
+import { checkDriverPhoneForSession, readDriversForSession, writeDriverForSession } from "./drivers.server";
 import type { DriverRequest, DriverScope, DriverWrite } from "./drivers.types";
 
 export async function readDriversAction(
@@ -12,6 +12,19 @@ export async function readDriversAction(
     await cookies(),
     expected,
     request,
+  );
+  if (result.status === "unauthenticated") redirect("/login");
+  return result;
+}
+
+export async function checkDriverPhoneAction(
+  expected: DriverScope,
+  input: { phone: string; excludeId?: string },
+) {
+  const result = await checkDriverPhoneForSession(
+    await cookies(),
+    expected,
+    input,
   );
   if (result.status === "unauthenticated") redirect("/login");
   return result;

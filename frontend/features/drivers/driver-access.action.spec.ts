@@ -12,6 +12,7 @@ let server: Server,
   status: number;
 let calls: { path: string; method: string; body: unknown; company: unknown }[];
 let invitationBlockedReason: string | null | undefined;
+let errorMessage: string | undefined;
 const jar = { get: () => ({ value: "fixture-access" }), set() {}, delete() {} };
 const previous = process.env.FLEETORA_API_URL;
 test.beforeAll(async () => {
@@ -62,7 +63,7 @@ test.beforeAll(async () => {
     res.statusCode = status;
     res
       .setHeader("Content-Type", "application/json")
-      .end(JSON.stringify({ success: status < 400, data }));
+      .end(JSON.stringify({ success: status < 400, data, message: errorMessage }));
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
@@ -81,6 +82,7 @@ test.beforeEach(() => {
   role = "COMPANY_ADMIN";
   responseCompany = companyId;
   status = 200;
+  errorMessage = undefined;
   invitationBlockedReason = null;
   url = `https://fleetora.example.invalid/driver/activate#token=${token}`;
 });
@@ -236,3 +238,36 @@ test("security revocation and offboarding dispatch only the explicit scoped acti
     await driverAccessForSession(jar, scope, { id: workerId, kind: "invite" }),
   ).toEqual({ status: "conflict" });
 });
+
+for (const mode of ["development", "production"]) {
+  for (const host of ["localhost", "127.0.0.1", "[::1]", "app.example.test"]) {
+    test(`${mode} activation HTTP policy for ${host}`, async () => {
+      const previousMode = process.env.FLEETORA_ACTIVATION_ENV;
+      process.env.FLEETORA_ACTIVATION_ENV = mode;
+      try {
+        url = `http://${host}:3000/driver/activate#token=${token}`;
+        const result = await driverAccessForSession(jar, scope, { id: workerId, kind: "invite" });
+        expect(result.status).toBe(mode !== "production" && host !== "app.example.test" ? "issued" : "uncertain");
+      } finally {
+        if (previousMode === undefined) delete process.env.FLEETORA_ACTIVATION_ENV;
+        else process.env.FLEETORA_ACTIVATION_ENV = previousMode;
+      }
+    });
+  }
+}
+
+for (const [code, message, reason] of [
+  [400, "Driver invitations require an HTTPS FRONTEND_URL", "HTTPS_REQUIRED"],
+  [409, "This phone already has a driver account", "PHONE_IN_USE"],
+  [400, "A valid Palestinian or Israeli mobile number is required", "INVALID_PHONE"],
+  [403, "Operation is not permitted", "PERMISSION_DENIED"],
+  [403, "Session context changed", "SESSION_CHANGED"],
+  [409, "Driver is suspended/offboarded", "DRIVER_UNAVAILABLE"],
+  [409, "Driver identity changed; retry", "IDENTITY_CHANGED"],
+] as const) {
+  test(`preserves the specific invitation rejection: ${reason}`, async () => {
+    status = code;
+    errorMessage = message;
+    expect(await driverAccessForSession(jar, scope, { id: workerId, kind: "invite" })).toMatchObject({ reason });
+  });
+}

@@ -246,6 +246,35 @@ describe('BR-035/043/117/118 driver identity on disposable PostgreSQL', () => {
       invitationBlockedReason: 'INVALID_PHONE',
     });
   });
+  it('warns about same-company normalized duplicate phones, excludes the edited Worker and scopes all checks to persisted identity', async () => {
+    const bearer = await new TokenService(jwt, config).generateAccessToken(actor);
+    const check = (phone: string, excludeId?: string) => request(app.getHttpServer())
+      .get('/drivers/phone-check').auth(bearer, { type: 'bearer' }).query({ phone, ...(excludeId ? { excludeId } : {}) });
+    expect((await check('+970 (59) 123-4567').expect(200)).body.data).toEqual({ companyId: actor.orgId, duplicate: true });
+    expect((await check('00970591234567', workerId).expect(200)).body.data.duplicate).toBe(false);
+    expect((await check('+972591234567').expect(200)).body.data.duplicate).toBe(false);
+    const duplicate = await prisma.Worker.create({ companyId: actor.orgId, fullName: 'Duplicate phone Worker', phone: '00970 59 123 4567' });
+    expect((await check('0591234567', workerId).expect(200)).body.data.duplicate).toBe(true);
+    const foreignWorker = await prisma.Worker.create({ companyId: foreign.orgId, fullName: 'Foreign phone Worker', phone: '0569876543' });
+    expect((await check('+970569876543').query({ companyId: foreign.orgId }).expect(200)).body.data.duplicate).toBe(false);
+    await check('0591234567', foreignWorker.id).expect(404);
+    await check('invalid').expect(400);
+    for (const role of ['OPERATIONS', 'ACCOUNTANT', 'WAREHOUSE', 'MERCHANT'] as const) {
+      await prisma.User.where({ id: actor.sub }).update({ role });
+      await check('0591234567').expect(role === 'OPERATIONS' ? 200 : 403);
+    }
+    expect(await prisma.db.orm.public.DriverAccount.where({ workerId: duplicate.id }).all()).toEqual([]);
+  });
+  it('issues HTTP fragment invitations only for approved development loopback origins', async () => {
+    for (const host of ['localhost', '127.0.0.1', '[::1]']) {
+      const development = new DriverIdentityService(new DriverIdentityRepository(prisma), new ConfigService({ NODE_ENV: 'development', SALT_ROUNDS: 4, FRONTEND_URL: `http://${host}:3000` }));
+      const issued = await development.issue(actor, workerId);
+      const url = new URL(issued.url);
+      expect(url.origin).toBe(`http://${host}:3000`);
+      expect(url.search).toBe('');
+      expect(url.hash).toMatch(/^#token=[a-f0-9]{64}$/);
+    }
+  });
   it('accepts a token only once under concurrency', async () => {
     const token = tokenOf(await invite());
     const result = await Promise.allSettled([

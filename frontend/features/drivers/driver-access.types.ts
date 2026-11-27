@@ -1,4 +1,5 @@
 import type { Failure } from "@/features/operations/operations-contract";
+import type { DriverAccessError } from "./driver-access.errors";
 export type DriverAccess = {
   workerId: string;
   phone: string;
@@ -16,4 +17,4 @@ export type DriverAccessResult =
   | { status: "ready"; data: DriverAccess }
   | { status: "issued"; phone: string; url: string; expiresAt: string }
   | { status: "updated" }
-  | { status: Failure };
+  | { status: Failure; reason?: DriverAccessError };

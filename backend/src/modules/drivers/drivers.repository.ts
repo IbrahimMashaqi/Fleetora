@@ -13,6 +13,44 @@ import type { DriverRow } from './drivers.types.js';
 export class DriversRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
+  async hasDuplicatePhone(
+    companyId: string,
+    phone: string,
+    excludeId?: string,
+  ): Promise<boolean> {
+    const compact = phone.replace(/[ ()-]/g, '');
+    let canonical: string;
+    let local: string;
+    try {
+      canonical = normalizeDriverPhone(phone);
+      const candidate = '0' + canonical.slice(4);
+      local = normalizeDriverPhone(candidate) === canonical ? candidate : canonical;
+    } catch (error: unknown) {
+      if (!(error instanceof BadRequestException)) throw error;
+      // Worker contacts support more than the mobile-login countries. Keep the
+      // warning useful for those existing contacts without changing validation.
+      canonical = compact.startsWith('00') ? '+' + compact.slice(2) : compact;
+      local = canonical;
+    }
+    const international = canonical.startsWith('+')
+      ? '00' + canonical.slice(1)
+      : canonical;
+    const excluded = excludeId ?? '';
+    const rows = await this.prisma.db.runtime().query(
+      this.prisma.db.raw.sql`
+      SELECT EXISTS (
+        SELECT 1 FROM public.workers
+        WHERE "companyId" = ${companyId}
+          AND id <> ${excluded}
+          AND regexp_replace(phone, '[ ()-]', '', 'g') IN (${canonical}, ${international}, ${local}, ${compact})
+      ) AS duplicate
+    `
+        .returnsRow({ duplicate: 'pg/bool@1' })
+        .build(),
+    );
+    return rows[0].duplicate;
+  }
+
   async findPage(
     companyId: string,
     query: ListDriversDto,

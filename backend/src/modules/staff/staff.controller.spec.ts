@@ -27,7 +27,7 @@ import { StaffModule } from './staff.module.js';
 import { StaffRepository } from './staff.repository.js';
 import { MailService } from '../mail/mail.service.js';
 import { Global, Logger, Module } from '@nestjs/common';
-import { hashStaffToken } from './staff.service.js';
+import { hashStaffToken, StaffService } from './staff.service.js';
 
 const companyA = '11111111-1111-4111-8111-111111111111';
 const invitationId = '33333333-3333-4333-8333-333333333333';
@@ -478,6 +478,12 @@ describe('Company staff invitations API (isolated fixtures)', () => {
   });
   describe('invitation email', () => {
     const body = { email: 'accountant@example.invalid', role: 'ACCOUNTANT' };
+
+    it('emails HTTP loopback activation links in development without moving the token into the query', async () => {
+      const development = new StaffService(app.get(StaffRepository), new ConfigService({ NODE_ENV: 'development', SALT_ROUNDS: 4, FRONTEND_URL: 'http://127.0.0.1:3000' }), app.get(MailService));
+      const issued = await development.issue({ sub: actor.id, role: 'COMPANY_ADMIN', orgId: companyA, email: actor.email }, { email: body.email, role: 'ACCOUNTANT' });
+      expect(sendInvitationEmail).toHaveBeenCalledWith(expect.objectContaining({ url: `http://127.0.0.1:3000/auth/accept-invitation#token=${issued.token}` }));
+    });
 
     it('emails the fragment link to the invited address and reports EMAIL delivery', async () => {
       const response = await issueRequest(body).expect(201);

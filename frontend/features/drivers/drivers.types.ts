@@ -50,6 +50,9 @@ export type DriverResult =
         | "unavailable";
     };
 export type DriverInput = { name: string; phone: string };
+export type DriverPhoneCheckResult =
+  | { status: "ready"; duplicate: boolean }
+  | { status: "unauthenticated" | "forbidden" | "changed" | "invalid" | "not-found" | "unavailable" };
 export type DriverWrite =
   | { kind: "create"; input: DriverInput }
   | { kind: "edit"; id: string; input: DriverInput }

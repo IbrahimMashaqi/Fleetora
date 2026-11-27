@@ -26,7 +26,7 @@ import {
   type MerchantPermission,
 } from './merchant-access.types.js';
 import { canonicalEmail } from '../../common/utils/email.js';
-import { trustedFrontendOrigin } from '../../common/utils/frontend-url.js';
+import { trustedActivationOrigin } from '../../common/utils/frontend-url.js';
 import { MailService } from '../mail/mail.service.js';
 import type {
   AcceptMerchantInvitationDto,
@@ -76,7 +76,7 @@ export class MerchantAccessService {
     @Inject(MailService) private readonly mail: MailService,
   ) {
     this.saltRounds = Number(config.get<string | number>('SALT_ROUNDS') ?? 10);
-    this.frontendOrigin = trustedFrontendOrigin(config);
+    this.frontendOrigin = trustedActivationOrigin(config);
     if (
       !Number.isInteger(this.saltRounds) ||
       this.saltRounds < 4 ||
@@ -213,7 +213,6 @@ export class MerchantAccessService {
       },
     );
     const activationLink = new URL('/merchant/activate', this.frontendOrigin);
-    activationLink.protocol = 'https:';
     activationLink.hash = new URLSearchParams({ token: invitation.token }).toString();
     const activationUrl = activationLink.toString();
     return {

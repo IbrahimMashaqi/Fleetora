@@ -15,6 +15,7 @@ import {
   isDriverStatus,
   isValidDriverInput,
   normalizeDriverInput,
+  driverPhonePattern,
 } from "./drivers.types";
 import type {
   Driver,
@@ -25,6 +26,7 @@ import type {
   DriverVehicle,
   DriverWrite,
   DriverWriteResult,
+  DriverPhoneCheckResult,
 } from "./drivers.types";
 
 type SessionCookies = Parameters<typeof setSessionTokens>[0] &
@@ -135,6 +137,53 @@ export async function authorizeDriverSession(
   const bearer = session.tokens?.accessToken ?? access;
   if (!bearer) return { status: "unavailable" };
   return { status: "ready", bearer, companyId: session.user.orgId };
+}
+
+export async function checkDriverPhoneForSession(
+  jar: SessionCookies,
+  expected: DriverScope,
+  input: { phone: string; excludeId?: string },
+): Promise<DriverPhoneCheckResult> {
+  if (
+    !object(input) ||
+    typeof input.phone !== "string" ||
+    input.phone.length > 40 ||
+    !driverPhonePattern.test(input.phone) ||
+    (input.excludeId !== undefined && !uuid.test(input.excludeId)) ||
+    !Object.keys(input).every((key) => ["phone", "excludeId"].includes(key))
+  )
+    return { status: "invalid" };
+  const authorized = await authorizeDriverSession(jar, expected);
+  if (authorized.status !== "ready") return authorized;
+  try {
+    const endpoint = getBackendEndpoint("drivers/phone-check");
+    if (!endpoint) return { status: "unavailable" };
+    endpoint.searchParams.set("phone", input.phone);
+    if (input.excludeId)
+      endpoint.searchParams.set("excludeId", input.excludeId);
+    const response = await requestBackend(endpoint, {
+      method: "GET",
+      bearer: authorized.bearer,
+    });
+    if (response.status === 401) {
+      clearSessionCookies(jar);
+      return { status: "unauthenticated" };
+    }
+    if (response.status === 403) return { status: "forbidden" };
+    if (response.status === 400) return { status: "invalid" };
+    if (response.status === 404) return { status: "not-found" };
+    if (!response.ok) return { status: "unavailable" };
+    const body = await readBackendBody(response);
+    if (!object(body) || body.success !== true || !object(body.data))
+      return { status: "unavailable" };
+    if (body.data.companyId !== authorized.companyId)
+      return { status: "changed" };
+    return typeof body.data.duplicate === "boolean"
+      ? { status: "ready", duplicate: body.data.duplicate }
+      : { status: "unavailable" };
+  } catch {
+    return { status: "unavailable" };
+  }
 }
 
 export async function readDriversForSession(
