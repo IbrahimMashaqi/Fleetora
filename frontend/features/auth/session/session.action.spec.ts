@@ -35,7 +35,7 @@ test.afterAll(async () => {
 });
 
 function request(cookie = "fleetora_access=fixture-access; fleetora_refresh=fixture-refresh", origin = "http://localhost:3100") {
-  return new NextRequest("http://localhost:3100/api/auth/session", { method: "POST", headers: { origin, cookie } });
+  return new NextRequest("http://localhost:3100/api/auth/session", { method: "POST", headers: { origin, cookie, host: "localhost:3100" } });
 }
 function expectUnchangedCookies(response: Response) { expect(response.headers.get("set-cookie")).toBeNull(); }
 function expectClearedCookies(response: Response) {
@@ -138,12 +138,53 @@ test("rejects cross-origin requests before calling the backend", async () => {
   expectUnchangedCookies(response);
   expect(requests).toEqual([]);
 });
+
+for (const origin of ["http://127.0.0.1:3100", "http://[::1]:3100", "https://fleetora.example.invalid"]) {
+  test(`accepts the actual request authority despite NextURL loopback normalization: ${origin}`, async () => {
+    replies = [{ path: "/auth/session", body: { success: true, data: user } }];
+    const response = await handleSession(new NextRequest(`${origin}/api/auth/session`, {
+      method: "POST", headers: { origin, host: new URL(origin).host, cookie: "fleetora_access=fixture-access" },
+    }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ user });
+    expect(requests).toEqual([{ path: "/auth/session", method: "GET" }]);
+  });
+}
+test("a logged-out IPv4 Docker session redirects to sign-in instead of reporting an outage", async () => {
+  const response = await handleSession(new NextRequest("http://127.0.0.1:3000/api/auth/session", {
+    method: "POST", headers: { origin: "http://127.0.0.1:3000", host: "127.0.0.1:3000" },
+  }));
+  expect(response.status).toBe(401);
+  expectClearedCookies(response);
+  expect(requests).toEqual([]);
+});
+for (const origin of [undefined, "null", "http://localhost:3100", "http://127.0.0.1:3101", "https://127.0.0.1:3100", "https://other.example"]) {
+  test(`rejects a nonmatching IPv4 Origin even with spoofed forwarding headers: ${origin}`, async () => {
+    const headers = new Headers({ host: "127.0.0.1:3100", cookie: "fleetora_access=fixture-access", "x-forwarded-host": "other.example", "x-forwarded-proto": "https" });
+    if (origin !== undefined) headers.set("origin", origin);
+    const response = await handleSession(new NextRequest("http://127.0.0.1:3100/api/auth/session", { method: "POST", headers }));
+    expect(response.status).toBe(403);
+    expectUnchangedCookies(response);
+    expect(requests).toEqual([]);
+  });
+}
 test("clears an absent session without attempting refresh", async () => {
   const response = await handleSession(request(""));
   expect(response.status).toBe(401);
   expectClearedCookies(response);
   expect(requests).toEqual([]);
 });
+
+for (const host of [undefined, "127.0.0.1:3100@other.example", "127.0.0.1:3100/path", "127.0.0.1:3100,other.example"]) {
+  test(`rejects an absent or malformed Host authority: ${host}`, async () => {
+    const headers = new Headers({ origin: "http://127.0.0.1:3100", cookie: "fleetora_access=fixture-access" });
+    if (host !== undefined) headers.set("host", host);
+    const response = await handleSession(new NextRequest("http://127.0.0.1:3100/api/auth/session", { method: "POST", headers }));
+    expect(response.status).toBe(403);
+    expectUnchangedCookies(response);
+    expect(requests).toEqual([]);
+  });
+}
 
 test("strips unrecognized fields from nested public company identity", async () => {
   replies = [{ path: "/auth/session", body: { data: { ...user, company: { ...user.company, accessToken: "fixture-private" } } } }];

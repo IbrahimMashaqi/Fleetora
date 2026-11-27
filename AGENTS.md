@@ -134,3 +134,7 @@ Use the user's language for explanations and existing project conventions for co
 - Never start or stop servers. Never touch Neon unless the task says so. Migrations are additive-only.
 - Report in max 10 lines, by rule ID, with real test counts and minimal test output.
 - Update `docs/product/TRACEABILITY.md` for every rule implemented.
+
+## Standing documentation permission
+
+- The owner grants standing permission to update `docs/product/TRACEABILITY.md` and `docs/product/DECISIONS.md` as part of any task, without requesting separate approval. This is an explicit exception to the Markdown-edit restriction above.
