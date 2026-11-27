@@ -1,8 +1,8 @@
 "use client";
+import { useDebouncedSearch } from "@/lib/use-debounced-search";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CircleAlert, Plus, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,13 +44,14 @@ export function WarehousesDirectory({ query }: { query: WarehouseQuery }) {
 
 function WarehouseList({
   scope,
-  query,
+  query: initialQuery,
 }: {
   scope: WarehouseScope;
   query: WarehouseQuery;
 }) {
   const { locale, t } = useLocale();
-  const router = useRouter();
+  const searchState = useDebouncedSearch(initialQuery.search);
+  const query = useMemo(() => ({ ...initialQuery, search: searchState.search, page: searchState.search === initialQuery.search ? initialQuery.page : 1 }), [initialQuery, searchState.search]);
   const { result, retry } = useWarehouseRead(query, scope);
   const [editing, setEditing] = useState<Warehouse | "new" | null>(null);
   const [saved, setSaved] = useState(false);
@@ -106,13 +107,7 @@ function WarehouseList({
       <form
         role="search"
         className="my-6 flex min-w-0 flex-wrap items-end gap-3 rounded-lg border border-border bg-surface p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const value = new FormData(event.currentTarget).get("search");
-          router.push(
-            location(query.status, typeof value === "string" ? value.trim() : ""),
-          );
-        }}
+        onSubmit={(event) => { event.preventDefault(); searchState.apply(); }}
       >
         <div className="min-w-0 flex-1 basis-56 space-y-2 sm:max-w-lg">
           <Label htmlFor="warehouse-search">{t("Search warehouses")}</Label>
@@ -126,7 +121,7 @@ function WarehouseList({
               type="search"
               name="search"
               maxLength={100}
-              defaultValue={query.search}
+              value={searchState.text} onChange={event => searchState.setText(event.target.value)}
               placeholder={t("Search by name or address")}
               className="bg-surface ps-9"
             />

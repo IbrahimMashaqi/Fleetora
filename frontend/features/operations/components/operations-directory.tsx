@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EntityCombobox } from "./entity-combobox";
 import { LocalizedDateInput } from "@/components/ui/localized-date-input";
 import { Label } from "@/components/ui/label";
+import { useDebouncedSearch } from "@/lib/use-debounced-search";
 import { useLocale, type TranslationKey } from "@/lib/i18n";
 import { useCompanyCurrency } from "@/features/auth/session/session-context";
 import { useOperations } from "../use-operations";
@@ -111,7 +112,8 @@ function Directory({
   const { t } = useLocale();
   const companyCurrency = useCompanyCurrency();
   const router = useRouter();
-  const request = { resource, query: { page: "1", pageSize: "25", ...query } };
+  const searchState = useDebouncedSearch(query.search ?? "");
+  const request = { resource, query: { page: "1", pageSize: "25", ...query, search: searchState.search, ...(searchState.search !== (query.search ?? "") ? { page: "1" } : {}) } };
   const { result, retry } = useOperations(scope, request);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [saved, setSaved] = useState(false);
@@ -126,15 +128,15 @@ function Directory({
   function complete(data: Data) {
     setDialog(null);
     setSaved(true);
-    retry();
     if (
       data.kind === "saved" &&
       data.id &&
       (resource === "merchants" ||
         resource === "parcels" ||
         resource === "settlements")
-    )
+    ) {
       router.push(`${resourcePath[resource]}/${data.id}`);
+    } else retry();
   }
   const columns: Column[] =
     resource === "merchants"
@@ -408,7 +410,7 @@ function Directory({
           {t("Saved successfully.")}
         </p>
       )}
-      <DirectoryFilters resource={resource} query={query} scope={scope} />
+      <DirectoryFilters resource={resource} query={query} scope={scope} searchState={searchState} />
       <ReadState result={result} retry={retry}>
         {(data) =>
           data.kind === "page" ? (
@@ -543,29 +545,21 @@ export function DirectoryFilters({
   resource,
   query,
   scope,
+  searchState,
 }: {
   resource: Resource;
   query: Record<string, string>;
   scope: Scope;
+  searchState?: ReturnType<typeof useDebouncedSearch>;
 }) {
   const { t } = useLocale();
   const router = useRouter();
-  const [search, setSearch] = useState(query.search ?? "");
+  const localSearch = useDebouncedSearch(query.search ?? "");
+  const { text: search, setText: setSearch } = searchState ?? localSearch;
   const path =
     resource in resourcePath
       ? resourcePath[resource as DirectoryResource]
       : "/app/operations";
-  useEffect(() => {
-    if (search === (query.search ?? "")) return;
-    const timer = setTimeout(
-      () =>
-        router.replace(filterLocation(path, { ...query, search, page: "1" }), {
-          scroll: false,
-        }),
-      350,
-    );
-    return () => clearTimeout(timer);
-  }, [search, query, router, path]);
   return (
     <form
       role="search"

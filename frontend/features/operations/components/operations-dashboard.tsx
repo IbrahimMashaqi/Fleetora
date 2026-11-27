@@ -17,6 +17,7 @@ import {
   valueText,
 } from "./operations-ui";
 import { DirectoryFilters } from "./operations-directory";
+import { useDebouncedSearch } from "@/lib/use-debounced-search";
 
 const metrics: Record<string, { label: TranslationKey; status?: string }> = {
   total: { label: "Total parcels" },
@@ -62,7 +63,8 @@ function Dashboard({
   const { t, locale } = useLocale();
   const { user } = useProtectedSession();
   const finance = user.role === "COMPANY_ADMIN" || user.role === "ACCOUNTANT";
-  const dashboard = useOperations(scope, { resource: "dashboard", query });
+  const searchState = useDebouncedSearch(query.search ?? "");
+  const dashboard = useOperations(scope, { resource: "dashboard", query: { ...query, search: searchState.search } });
   return (
     <>
       <PageIntro title="Parcel operations">
@@ -73,7 +75,7 @@ function Dashboard({
           {t("Refresh")}
         </Button>
       </PageIntro>
-      <DirectoryFilters resource="dashboard" scope={scope} query={query} />
+      <DirectoryFilters resource="dashboard" scope={scope} query={query} searchState={searchState} />
       <ReadState result={dashboard.result} retry={dashboard.retry}>
         {(data) =>
           data.kind === "dashboard" ? (

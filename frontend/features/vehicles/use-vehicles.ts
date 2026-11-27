@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { unstable_rethrow } from "next/navigation";
-import { withSessionLock } from "@/lib/auth/session-lock";
-import { fleetAction } from "./vehicles.action";
+import { readClient } from "@/lib/api/read.client";
 import type { FleetScope, FleetResult } from "./vehicles.types";
 import { subscribeToVehicleChanges } from "./vehicle-events";
 export function useVehicles(
@@ -41,7 +40,7 @@ export function useVehicles(
     if (pending.current?.key !== key)
       pending.current = {
         key,
-        task: withSessionLock(() => fleetAction(scope, request)),
+        task: readClient("vehicles", scope, request),
       };
     void pending.current.task
       .then((result) => {

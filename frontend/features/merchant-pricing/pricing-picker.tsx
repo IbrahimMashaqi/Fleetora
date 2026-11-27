@@ -2,8 +2,7 @@
 import { useCallback, useId, useRef } from "react";
 import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
-import { withSessionLock } from "@/lib/auth/session-lock";
-import { pricingAction } from "./pricing.action";
+import { readClient } from "@/lib/api/read.client";
 import type { Plan, Zone, Scope } from "./pricing-contract";
 
 export function PricingPicker({
@@ -25,9 +24,11 @@ export function PricingPicker({
     rows = useRef(new Map<string, Plan | Zone>());
   const search = useCallback(
     async (text: string) => {
-      const result = await withSessionLock(() =>
-        pricingAction(scope, { kind, page: 1, search: text }),
-      );
+      const result = await readClient("pricing", scope, {
+        kind,
+        page: 1,
+        search: text,
+      });
       if (
         result.status !== "ready" ||
         (result.data.kind !== "zones" && result.data.kind !== "plans")

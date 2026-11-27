@@ -1,5 +1,6 @@
 import { createServer, type Server } from "node:http";
 import { expect, test } from "@playwright/test";
+import { typeWithoutNavigation } from "@/tests/focus-retention";
 const companyId = "10000000-0000-4000-8000-000000000001";
 const zoneId = "10000000-0000-4000-8000-000000000002";
 const planId = "10000000-0000-4000-8000-000000000003";
@@ -335,6 +336,21 @@ test("selects a business merchant and assigns a same-currency plan", async ({
       request.path.includes(`/merchants/${merchantId}/plan`),
     )?.body,
   ).toEqual({ planId, revision: 1, discountAmount: "0.25" });
+});
+test("UX-01 pricing merchant, plan and zone searches retain Arabic typing focus", async ({ page }) => {
+  await page.goto("/app/pricing");
+  await page.getByRole("button", { name: "Merchant plan assignment", exact: true }).click();
+  const merchantInput = page.getByRole("combobox", { name: "Merchant", exact: true });
+  await typeWithoutNavigation(page, merchantInput);
+  await page.getByRole("option", { name: new RegExp(merchant.name) }).click();
+  await page.getByRole("button", { name: "Assign plan", exact: true }).click();
+  const planInput = page.getByRole("dialog").getByRole("combobox", { name: "Commercial plan", exact: true });
+  await typeWithoutNavigation(page, planInput); await planInput.press("Escape");
+  await page.getByRole("dialog").getByRole("button", { name: "Cancel", exact: true }).click();
+  await page.getByRole("button", { name: "Commercial plans", exact: true }).click();
+  await page.getByRole("button", { name: `Zone tariffs: ${plan.name}`, exact: true }).click();
+  await page.getByRole("button", { name: "Add zone tariff", exact: true }).click();
+  await typeWithoutNavigation(page, page.getByRole("dialog").getByRole("combobox", { name: "Destination zone", exact: true }));
 });
 test("supports Arabic RTL and a narrow viewport without page overflow", async ({
   page,

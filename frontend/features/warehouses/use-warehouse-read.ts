@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { unstable_rethrow } from "next/navigation";
-import { withSessionLock } from "@/lib/auth/session-lock";
-import { readWarehousesAction } from "./warehouses.action";
+import { readClient } from "@/lib/api/read.client";
 import type {
   WarehouseQuery,
   WarehouseResult,
@@ -24,9 +23,7 @@ export function useWarehouseRead(query: WarehouseQuery, scope: WarehouseScope) {
   useEffect(() => {
     let active = true;
     if (pending.current?.key !== key) {
-      const task = withSessionLock(() =>
-        readWarehousesAction({ userId, companyId }, query),
-      );
+      const task = readClient("warehouses", { userId, companyId }, query);
       pending.current = { key, task };
     }
     void pending.current.task

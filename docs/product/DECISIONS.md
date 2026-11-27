@@ -1,6 +1,8 @@
 # Fleetora — Owner Decisions
 
 - **Approved:** 2026-11-25 by the product owner.
+- **UX-01: one searchable Combobox pattern for all record pickers (owner, 2026-11-27).** Draft text stays inside the shared `components/ui/combobox`; typing does not apply/clear a selection, navigate, refresh the route or remount the input. Suggestions use approximately 250 ms debounced, authenticated route-handler/fetch reads, server-side Arabic normalization and trusted tenant context. Click/Enter selects; explicit clear clears. List searches update results in place. Short status/action/role enums and free-form creation/contact/address fields are not record pickers.
+
 - **Phase 1 clarification approved:** 2026-11-26 by the product owner: OD-13 also blocks adjustments for PENDING merchants (no money of any kind before ACTIVE); OD-02 company currency changes remain blocked, with the controlled transition deferred.
 - **Source of each conflict:** [RECONCILIATION.md](RECONCILIATION.md) (OD-01..OD-13).
 - **Phase 2 split approved (2026-11-26):** Phase 2a implements the four built-in staff roles (one role per user), explicit Worker-linked driver phone/password identity, suspension and security/offboarding access (BR-042 built-in part, BR-043, BR-035, BR-117, BR-118). Company custom roles (BR-042 custom part) and delegation (BR-044) are deferred to Phase 2b. No driver app is included.
@@ -25,3 +27,21 @@
 | OD-11 | Docs win. A self-registered company is PENDING until a Fleetora platform admin approves it. A platform admin may also create companies directly. | BR-045 | Platform admin |
 | OD-12 | Docs win, with company-configurable thresholds. A money action above a company-set amount needs a second, different approver. Below the threshold a single admin may act, but the action is flagged in the audit log. | BR-009, BR-012 | Finance |
 | OD-13 | Docs win. A staff-created merchant is PENDING until the merchant accepts the invitation and the agreement. No parcels or money of any kind, including COD, settlements and adjustments, before the merchant is ACTIVE. | BR-002, BR-093 | Merchants (early) |
+
+### UX-01 project-wide audit (2026-11-27)
+
+| Web location | Record/search case | Required implementation |
+| --- | --- | --- |
+| Parcel directory; operations dashboard | Merchant, driver, city/region filters | Shared entity Combobox and fetch-based reads; no typing-driven URL updates. |
+| Parcel create/edit | Merchant and destination zone | Shared Combobox; draft text does not clear the saved merchant/zone or change the price quote. |
+| Parcel assignment/receipt | Eligible driver and receiving warehouse | Shared Combobox; existing eligibility and write guards retained. |
+| Pickups review | Assigned driver | Shared Combobox. Pickup directory currently has no text-search input; its page controls are explicit actions. |
+| Collections | Merchant/driver filters; parcel by tracking number | Shared Combobox; collectable-only parcel search remains authoritative on the backend. |
+| Settlements and returns | Merchant filters and settlement-preview merchant | Shared Combobox; list search updates in place. |
+| Pricing | Merchant assignment, commercial plan, tariff zone | Shared Combobox and fetch-based admin reads. |
+| Driver details | Available vehicle assignment | Replace search plus selectable vehicle list with the shared Combobox; confirmation remains explicit. |
+| Vehicle create/edit | Manufacturer/model catalogue | Shared Combobox; authenticated server catalogue search replaces local filtering. |
+| Parcel/merchant/driver/vehicle/warehouse/account directories | Main text search | Debounced fetch-based results; input remains mounted and focused. Explicit pagination/filter submission may navigate. |
+| Team | Invitation email, four built-in role enums, member cards | No existing staff-record picker or staff search field to convert. Email is free-form creation input; the four roles remain short enums. Future staff-record selectors must use the shared Combobox. |
+
+Flutter merchant app audit only; no Dart/generated/localization files are changed by UX-01: `apps/merchant_app/lib/features/parcels/parcel_form_page.dart` has a destination-zone dropdown; `features/pickups/pickup_form_page.dart` selects ready parcel records using a paginated checkbox list; `features/parcels/parcels_page.dart` has parcel search plus a status enum. `features/settlements/settlements_page.dart` has a currency enum, and pickup method/collection mode are short enums rather than record pickers. Address fields and `core/location/pin_picker.dart` coordinate fields are free-form values. No merchant-app warehouse/staff/vehicle/plan record selector was found.

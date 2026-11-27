@@ -1,3 +1,4 @@
+import { typeWithoutNavigation } from "@/tests/focus-retention";
 import { translate, type Locale } from "@/lib/i18n";
 import { createServer, type Server } from "node:http";
 import { expect, test, type Page } from "@playwright/test";
@@ -52,6 +53,16 @@ test.beforeAll(async () => {
     if (url.pathname === "/auth/session") {
       res.end(JSON.stringify({ success: true, data: user }));
       return;
+    }
+    if (url.pathname === "/operation-lookups") {
+      const kind = url.searchParams.get("kind"), search = url.searchParams.get("search") ?? "";
+      const key = (text: string) => text.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
+      const items = kind === "vehicles" ? vehicles.filter(v => v.id !== assigned).map(v => ({ id: v.id, label: [v.manufacturer, v.model].filter(Boolean).join(" "), detail: v.plateNumber }))
+        : [ { id: "none", label: "Not recorded", detail: "" },
+          ...(kind === "vehicleBrands" ? choices.map(brand => ({ id: "brand:" + brand.manufacturer, label: brand.manufacturer, detail: brand.aliases.join(" ") }))
+            : choices.find(brand => brand.manufacturer === url.searchParams.get("manufacturer"))?.models.map(model => ({ id: "model:" + model, label: model, detail: "" })) ?? []),
+          { id: "custom", label: kind === "vehicleBrands" ? "Other / Custom manufacturer" : "Other / Custom model", detail: "" } ];
+      return res.end(JSON.stringify({ success: true, data: { companyId: user.orgId, items: items.filter(item => key(item.label + " " + item.detail).includes(key(search))).slice(0, search ? 20 : 10), selected: null } }));
     }
     let raw = "";
     for await (const chunk of req) raw += chunk;
@@ -509,7 +520,8 @@ test("assigns, confirms replacement, cancels replacement and unassigns with card
   await dialog
     .getByRole("button", { name: "Assign vehicle", exact: true })
     .click();
-  await dialog.getByRole("button", { name: "Toyota Corolla TEST-A" }).click();
+  await dialog.getByRole("combobox", { name: "Search available vehicles" }).click();
+  await dialog.getByRole("option", { name: "Toyota Corolla TEST-A" }).click();
   expect(writes).toBe(0);
   await dialog.getByRole("button", { name: "Confirm assignment" }).click();
   await expect(
@@ -520,10 +532,10 @@ test("assigns, confirms replacement, cancels replacement and unassigns with card
   ).toBeVisible();
   await dialog.getByRole("button", { name: "Change vehicle" }).click();
   await dialog
-    .getByRole("searchbox", { name: "Search available vehicles" })
+    .getByRole("combobox", { name: "Search available vehicles" })
     .fill("BMW");
-  await dialog.getByRole("button", { name: "Search", exact: true }).click();
-  await dialog.getByRole("button", { name: "BMW 320i TEST-B" }).click();
+  await dialog.getByRole("combobox", { name: "Search available vehicles" }).click();
+  await dialog.getByRole("option", { name: "BMW 320i TEST-B" }).click();
   await expect(dialog.getByText("Replace the assigned vehicle?")).toBeVisible();
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
   expect(writes).toBe(1);
@@ -531,7 +543,8 @@ test("assigns, confirms replacement, cancels replacement and unassigns with card
     dialog.getByText("Toyota Corolla", { exact: true }),
   ).toBeVisible();
   await dialog.getByRole("button", { name: "Change vehicle" }).click();
-  await dialog.getByRole("button", { name: "BMW 320i TEST-B" }).click();
+  await dialog.getByRole("combobox", { name: "Search available vehicles" }).click();
+  await dialog.getByRole("option", { name: "BMW 320i TEST-B" }).click();
   await dialog.getByRole("button", { name: "Confirm assignment" }).click();
   await expect(
     dialog.getByRole("img", { name: "Vehicle brand logo: BMW" }),
@@ -661,7 +674,8 @@ test("reports assignment conflicts, preserves the current vehicle and refreshes 
   await page.getByRole("button", { name: "View Fictional Driver" }).click();
   const dialog = page.getByRole("dialog", { name: "Driver details" });
   await dialog.getByRole("button", { name: "Change vehicle" }).click();
-  await dialog.getByRole("button", { name: "BMW 320i TEST-B" }).click();
+  await dialog.getByRole("combobox", { name: "Search available vehicles" }).click();
+  await dialog.getByRole("option", { name: "BMW 320i TEST-B" }).click();
   mutationStatus = 409;
   await dialog.getByRole("button", { name: "Confirm assignment" }).click();
   await expect(dialog.getByRole("alert")).toContainText("already in use");
@@ -950,5 +964,30 @@ test("mobile keyboard selection, escape and dark-mode colors remain usable", asy
     path: test.info().outputPath("dependent-model-mobile-dark.png"),
     fullPage: true,
   });
+  expect(writes).toBe(0);
+});
+
+ test("UX-01 list search retains focus and updates without navigation", async ({ page }) => {
+ await page.goto("/app/vehicles");
+ await typeWithoutNavigation(page, page.getByRole("searchbox", { name: "Search vehicles", exact: true }));
+});
+test("UX-01 vehicle assignment and manufacturer/model keep focus without applying draft text", async ({ page }) => {
+  await page.goto("/app/drivers");
+  await page.getByRole("button", { name: "View Fictional Driver" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Assign vehicle", exact: true }).click();
+  const input = page.getByRole("dialog").getByRole("combobox", { name: "Search available vehicles" });
+  await typeWithoutNavigation(page, input);
+  await input.fill("Toyota");
+  await page.getByRole("option", { name: "Toyota Corolla TEST-A" }).click();
+  expect(writes).toBe(0);
+  await page.goto("/app/vehicles");
+  await page.getByRole("button", { name: "Edit TEST-A" }).click();
+  const dialog = page.getByRole("dialog");
+  for (const label of ["Manufacturer", "Model"]) {
+    const field = dialog.getByRole("combobox", { name: label, exact: true });
+    await typeWithoutNavigation(page, field);
+    await expect(page.getByText("No results", { exact: true })).toBeVisible();
+    await field.press("Escape");
+  }
   expect(writes).toBe(0);
 });

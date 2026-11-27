@@ -1,5 +1,6 @@
 const channelName = "fleetora-session";
 const invalidationMessage = "session-invalidated";
+const localEvent = "fleetora-session-invalidated";
 
 function openChannel(): BroadcastChannel | null {
   if (typeof BroadcastChannel === "undefined") return null;
@@ -7,6 +8,7 @@ function openChannel(): BroadcastChannel | null {
 }
 
 export function notifySessionChange() {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(localEvent));
   const channel = openChannel();
   if (!channel) return;
   try {
@@ -17,10 +19,11 @@ export function notifySessionChange() {
 }
 
 export function subscribeToSessionChanges(onChange: () => void): () => void {
+  window.addEventListener(localEvent, onChange);
   const channel = openChannel();
-  if (!channel) return () => {};
+  if (!channel) return () => window.removeEventListener(localEvent, onChange);
   channel.onmessage = (event: MessageEvent<unknown>) => {
     if (event.data === invalidationMessage) onChange();
   };
-  return () => channel.close();
+  return () => { window.removeEventListener(localEvent, onChange); channel.close(); };
 }

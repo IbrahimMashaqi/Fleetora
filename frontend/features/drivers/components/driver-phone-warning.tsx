@@ -1,9 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { unstable_rethrow } from "next/navigation";
-import { withSessionLock } from "@/lib/auth/session-lock";
+import { readClient } from "@/lib/api/read.client";
 import { useLocale } from "@/lib/i18n";
-import { checkDriverPhoneAction } from "../drivers.action";
 import {
   driverPhonePattern,
   type DriverPhoneCheckResult,
@@ -32,12 +31,10 @@ export function DriverPhoneWarning({
     if (!valid) return;
     let active = true;
     const timer = setTimeout(() => {
-      withSessionLock(() =>
-        checkDriverPhoneAction(
+        readClient("driverPhone",
           { userId, companyId },
           { phone, ...(excludeId ? { excludeId } : {}) },
-        ),
-      )
+        )
         .then((result) => {
           if (active) setReply({ key, result });
         })

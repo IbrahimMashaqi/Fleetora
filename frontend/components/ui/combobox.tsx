@@ -37,6 +37,7 @@ export function Combobox({
   const dir = (language ?? locale) === "ar" ? "rtl" : "ltr";
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [draft, setDraft] = useState<string | null>(null);
   const [items, setItems] = useState<ComboboxOption[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -78,6 +79,7 @@ export function Combobox({
     };
   }, [open, query, search]);
   const choose = (option: ComboboxOption | null) => {
+    setDraft(null);
     // Native form listeners (e.g. live price quote) must observe the chosen ID.
     if (hidden.current) {
       hidden.current.value = option?.value ?? "";
@@ -90,9 +92,13 @@ export function Combobox({
     <Primitive.Root<ComboboxOption>
       items={items}
       value={value}
+      inputValue={draft ?? value?.label ?? ""}
       filter={null}
       autoHighlight
-      onValueChange={choose}
+      onValueChange={(option, details) => {
+        if (details.reason === "input-change" || details.reason === "input-clear") return;
+        choose(option);
+      }}
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
@@ -103,15 +109,15 @@ export function Combobox({
         if (next) {
           setStatus("loading");
           setItems([]);
-        } else setQuery("");
+        } else { setQuery(""); setDraft(null); }
       }}
       onInputValueChange={(text, details) => {
-        if (details.reason === "input-change") {
+        if (details.reason === "input-change" || details.reason === "input-clear") {
           generation.current++;
+          setDraft(text);
           setQuery(text);
           setStatus("loading");
           setItems([]);
-          if (value) choose(null);
         }
       }}
       isItemEqualToValue={(a, b) => a.value === b.value}

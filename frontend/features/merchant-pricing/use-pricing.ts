@@ -1,14 +1,16 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { unstable_rethrow } from "next/navigation";
-import { withSessionLock } from "@/lib/auth/session-lock";
-import { pricingAction } from "./pricing.action";
+import { readClient } from "@/lib/api/read.client";
 import type {
   PricingOperation,
   PricingResult,
   Scope,
 } from "./pricing-contract";
-export function usePricing(scope: Scope, operation: PricingOperation) {
+export function usePricing(
+  scope: Scope,
+  operation: Extract<PricingOperation, { kind: "zones" | "plans" | "plan" }>,
+) {
   const [attempt, setAttempt] = useState(0);
   const [response, setResponse] = useState<{
     key: string;
@@ -23,7 +25,7 @@ export function usePricing(scope: Scope, operation: PricingOperation) {
     if (pending.current?.key !== key)
       pending.current = {
         key,
-        task: withSessionLock(() => pricingAction(scope, operation)),
+        task: readClient("pricing", scope, operation),
       };
     void pending.current.task
       .then((result) => {

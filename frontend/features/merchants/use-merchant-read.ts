@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { unstable_rethrow } from 'next/navigation';
-import { withSessionLock } from '@/lib/auth/session-lock';
-import { readMerchantsAction } from './merchants.action';
+import { readClient } from "@/lib/api/read.client";
 import type { MerchantRequest, MerchantResult, MerchantScope } from './merchants.types';
 
 export function useMerchantRead(request: MerchantRequest, scope: MerchantScope) {
@@ -14,7 +13,7 @@ export function useMerchantRead(request: MerchantRequest, scope: MerchantScope) 
   useEffect(() => {
     let active = true;
     if (pending.current?.key !== key) {
-      const task = withSessionLock(() => readMerchantsAction({ userId, companyId }, request));
+      const task = ( readClient("merchants", { userId, companyId }, request));
       pending.current = { key, task };
     }
     void pending.current.task.then(result => {

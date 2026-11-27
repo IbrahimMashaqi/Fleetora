@@ -41,7 +41,7 @@ const resources = new Set([
   "adjustments",
 ]);
 const queryFields = new Set([
-  "kind", "selected",
+  "kind", "selected", "manufacturer",
   "page",
   "pageSize",
   "search",

@@ -13,6 +13,7 @@ import {
 import { useLocale } from "@/lib/i18n";
 import { withSessionLock } from "@/lib/auth/session-lock";
 import { pickupsAction } from "./pickups.action";
+import { readClient } from "@/lib/api/read.client";
 import type {
   Pickup,
   PickupOperation,
@@ -27,7 +28,7 @@ function useCopy() {
   const { locale } = useLocale();
   return (en: string, ar: string) => (locale === "ar" ? ar : en);
 }
-function usePickups(scope: Scope, operation: PickupOperation, version: number) {
+function usePickups(scope: Scope, operation: Extract<PickupOperation, { action: "list" | "detail" }>, version: number) {
   const key = JSON.stringify([scope, operation, version]);
   const [value, setValue] = useState<{
     key: string;
@@ -41,7 +42,7 @@ function usePickups(scope: Scope, operation: PickupOperation, version: number) {
     if (pending.current?.key !== key)
       pending.current = {
         key,
-        task: withSessionLock(() => pickupsAction(scope, operation)),
+        task: readClient("pickups", scope, operation),
       };
     void pending.current.task
       .then((result) => {

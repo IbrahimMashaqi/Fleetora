@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { unstable_rethrow } from "next/navigation";
 import { EntityCombobox } from "./entity-combobox";
 import { useLocale } from "@/lib/i18n";
-import { withSessionLock } from "@/lib/auth/session-lock";
-import { operationalPricingAction as pricingAction } from "@/features/merchant-pricing/pricing.action";
+import { readClient } from "@/lib/api/read.client";
 import type { Quote } from "@/features/merchant-pricing/pricing-contract";
 import type { Scope } from "../operations-contract";
 import { displayMoney } from "../money";
@@ -60,14 +59,12 @@ export function PricingQuoteField({
       setState({ status: "loading" });
       timer = setTimeout(() => {
         const current = ++request.current;
-        void withSessionLock(() =>
-          pricingAction(scope, {
+        void readClient("operationalPricing", scope, {
             kind: "quote",
             merchantId,
             zoneId,
             finalCustomerAmount,
-          }),
-        )
+          })
           .then((result) => {
             if (current !== request.current) return;
             setState(

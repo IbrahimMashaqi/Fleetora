@@ -1,3 +1,4 @@
+import { typeWithoutNavigation } from "@/tests/focus-retention";
 import { createServer, type Server } from 'node:http';
 import { expect, test, type Page } from '@playwright/test';
 import type { SessionUser } from '@/lib/auth/session.types';
@@ -54,7 +55,7 @@ test('supports backend search, URL pagination, and detail lookup', async ({ page
   await expect(page.getByRole('main').getByText('Second Page Merchant', { exact: true }).first()).toBeVisible();
   await page.getByRole('searchbox', { name: 'Search merchant accounts' }).fill('Alpha');
   await page.getByRole('button', { name: 'Search', exact: true }).click();
-  await expect(page).toHaveURL(/search=Alpha/);
+  await expect(page.getByRole("searchbox").first()).toHaveValue("Alpha");
   await expect(page.getByRole('main').getByText('Alpha Supplies', { exact: true }).first()).toBeVisible();
   const view = page.getByRole('button', { name: 'View Alpha Supplies', exact: true });
   await view.first().click();
@@ -141,4 +142,9 @@ test('keeps mobile layout, navigation, and long account names usable', async ({ 
     dialog.getByRole('link', { name: 'Account & security' }).click(),
   ]);
   await expect(page.getByRole('heading', { name: 'Your account' })).toBeVisible();
+});
+
+ test("UX-01 list search retains focus and updates without navigation", async ({ page }) => {
+ await page.goto("/app/merchants/accounts");
+ await typeWithoutNavigation(page, page.getByRole("searchbox", { name: "Search merchant accounts", exact: true }));
 });

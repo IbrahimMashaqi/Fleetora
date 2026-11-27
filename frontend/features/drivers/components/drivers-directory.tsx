@@ -1,7 +1,7 @@
 "use client";
+import { useDebouncedSearch } from "@/lib/use-debounced-search";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Plus, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,13 +42,14 @@ export function DriversDirectory({ query }: { query: DriverQuery }) {
 
 function DriverList({
   scope,
-  query,
+  query: initialQuery,
 }: {
   scope: DriverScope;
   query: DriverQuery;
 }) {
   const { locale, t } = useLocale();
-  const router = useRouter();
+  const searchState = useDebouncedSearch(initialQuery.search);
+  const query = useMemo(() => ({ ...initialQuery, search: searchState.search, page: searchState.search === initialQuery.search ? initialQuery.page : 1 }), [initialQuery, searchState.search]);
   const request = useMemo<DriverRequest>(
     () => ({ kind: "list", query }),
     [query],
@@ -87,11 +88,7 @@ function DriverList({
       <form
         role="search"
         className="my-6 flex min-w-0 flex-wrap items-end gap-3 rounded-lg border border-border bg-surface p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const value = new FormData(event.currentTarget).get("search");
-          router.push(location(typeof value === "string" ? value.trim() : ""));
-        }}
+        onSubmit={(event) => { event.preventDefault(); searchState.apply(); }}
       >
         <div className="min-w-0 flex-1 basis-56 space-y-2 sm:max-w-lg">
           <Label htmlFor="driver-search">{t("Search drivers")}</Label>
@@ -105,7 +102,7 @@ function DriverList({
               type="search"
               name="search"
               maxLength={100}
-              defaultValue={query.search}
+              value={searchState.text} onChange={event => searchState.setText(event.target.value)}
               placeholder={t("Search by name or phone")}
               className="bg-surface ps-9"
             />

@@ -1,6 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { expect, test } from "@playwright/test";
 import { translate } from "@/lib/i18n";
+import { typeWithoutNavigation } from "@/tests/focus-retention";
 
 const companyId = "10000000-0000-4000-8000-000000000001";
 const user = {
@@ -192,7 +193,9 @@ test.beforeAll(async () => {
       const items = kind === "merchants" ? [{ id: merchantId, label: merchant.name, detail: merchant.phone }]
         : kind === "zones" ? [{ id: pricingZone.id, label: pricingZone.name, detail: pricingZone.city }]
         : kind === "drivers" ? [{ id: driverId, label: "Fictional Driver", detail: "+000000003" }]
-        : kind === "parcels" ? [{ id: parcelId, label: parcel.trackingNumber, detail: parcel.recipientName }] : [];
+        : kind === "parcels" ? [{ id: parcelId, label: parcel.trackingNumber, detail: parcel.recipientName }]
+        : kind === "warehouses" ? [{ id: "10000000-0000-4000-8000-000000000080", label: "Fixture warehouse", detail: "Fixture address" }]
+        : kind === "cities" ? [{ id: "Fixture city", label: "Fixture city", detail: "" }] : [];
       return res.end(JSON.stringify({ success: true, data: { companyId, items, selected: items.find(item => item.id === url.searchParams.get("selected")) ?? null } }));
     }
     let raw = "";
@@ -313,7 +316,7 @@ test.beforeAll(async () => {
         returnRecord: returnedFixture,
         events: [],
         attempts: [],
-        allowedTransitions: [
+        allowedTransitions: parcelOverride.status === "CREATED" ? ["RECEIVED_FROM_MERCHANT", "CANCELLED"] : [
           "DELIVERED",
           "FAILED_DELIVERY",
           "RETURN_IN_PROGRESS",
@@ -603,10 +606,84 @@ test("parcel search and pagination preserve URL filters", async ({ page }) => {
   await page
     .getByRole("searchbox", { name: "Search parcels", exact: true })
     .fill("missing");
-  await expect(page).toHaveURL(/search=missing/);
+  await expect(page.getByRole("searchbox").first()).toBeFocused();
   await expect(
     page.getByText("No records match these filters.", { exact: true }),
   ).toBeVisible();
+});
+
+test("UX-01 parcel picker retains focus for each Arabic character without route actions", async ({ page }) => {
+  await page.goto("/app/parcels");
+  await page.getByText("Advanced filters", { exact: true }).click();
+  const input = page.getByRole("combobox", { name: "Merchants", exact: true });
+  await typeWithoutNavigation(page, input);
+  await expect(page.getByRole("option")).not.toHaveCount(0);
+});
+test("UX-01 parcel list search updates in place and retains focus", async ({ page }) => {
+  await page.goto("/app/parcels");
+  await typeWithoutNavigation(page, page.getByLabel("Search parcels", { exact: true }));
+});
+test("UX-01 operations dashboard search and record filters update without navigation", async ({ page }) => {
+  await page.goto("/app/operations");
+  await typeWithoutNavigation(page, page.locator("#operation-search"));
+  const merchantInput = page.getByRole("combobox", { name: "Merchants", exact: true });
+  await typeWithoutNavigation(page, merchantInput);
+  await expect(page.getByRole("option")).not.toHaveCount(0);
+});
+for (const resource of ["merchants", "collections", "settlements", "returns"]) {
+  test(`UX-01 ${resource} list and record filters retain Arabic typing focus`, async ({ page }) => {
+    await page.goto(`/app/${resource}`);
+    await typeWithoutNavigation(page, page.locator("#operation-search"));
+    if (resource !== "merchants") {
+      await typeWithoutNavigation(page, page.getByRole("combobox", { name: "Merchants", exact: true }));
+      await expect(page.getByRole("option")).not.toHaveCount(0);
+    }
+  });
+}
+test("UX-01 parcel create merchant/zone, filter driver/city and edit fields keep focus", async ({ page }) => {
+  await page.goto("/app/parcels");
+  await page.getByText("Advanced filters", { exact: true }).click();
+  for (const label of ["Drivers", "City / region"]) {
+    const input = page.getByRole("combobox", { name: label, exact: true });
+    await typeWithoutNavigation(page, input); await expect(page.getByRole("option")).not.toHaveCount(0); await input.press("Escape");
+  }
+  await page.getByRole("button", { name: "Create parcel", exact: true }).click();
+  for (const label of ["Merchants", "Destination zone"]) {
+    const input = page.getByRole("dialog").getByRole("combobox", { name: label, exact: true });
+    await typeWithoutNavigation(page, input); await expect(page.getByRole("option")).not.toHaveCount(0); await input.press("Escape");
+  }
+});
+test("UX-01 assignment and receiving warehouse searches keep focus", async ({ page }) => {
+  parcelOverride = { status: "AT_WAREHOUSE", custody: "WAREHOUSE" };
+  await page.goto(`/app/parcels/${parcelId}`);
+  await page.getByRole("button", { name: "Assign parcel", exact: true }).click();
+  const driver = page.getByRole("dialog").getByRole("combobox", { name: "Drivers", exact: true });
+  await expect(driver).toBeEnabled(); await typeWithoutNavigation(page, driver); await driver.press("Escape");
+  await page.getByRole("dialog").getByRole("button", { name: "Cancel", exact: true }).click();
+  parcelOverride = { status: "CREATED", custody: "MERCHANT" };
+  await page.reload();
+  await page.getByRole("button", { name: "Change status", exact: true }).click();
+  await page.getByRole("dialog").getByLabel("Next status", { exact: true }).selectOption("RECEIVED_FROM_MERCHANT");
+  await typeWithoutNavigation(page, page.getByRole("dialog").getByRole("combobox", { name: "Receiving warehouse", exact: true }));
+});
+test("UX-01 editing a parcel keeps the selected merchant while searching", async ({ page }) => {
+  parcelOverride = { status: "CREATED", custody: "MERCHANT", pricingMode: "FINAL_INCLUSIVE", deliveryZoneId: pricingZone.id };
+  await page.goto(`/app/parcels/${parcelId}`);
+  await page.getByRole("button", { name: "Edit parcel", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  for (const label of ["Merchants", "Destination zone"]) {
+    const input = dialog.getByRole("combobox", { name: label, exact: true });
+    await expect(input).toBeEnabled();
+    await typeWithoutNavigation(page, input);
+    await input.press("Escape");
+  }
+  await expect(dialog.locator('input[name="merchantId"]')).toHaveValue(merchantId);
+});
+test("UX-01 collection parcel picker keeps Arabic typing focus", async ({ page }) => {
+  await page.goto("/app/collections");
+  await page.getByRole("button", { name: "Record COD collection", exact: true }).click();
+  await typeWithoutNavigation(page, page.getByRole("dialog").getByRole("combobox", { name: "Parcels", exact: true }));
+  await expect(page.getByRole("option")).not.toHaveCount(0);
 });
 
 test("parcel advanced filters keep main search visible and submit the selected merchant", async ({ page }) => {

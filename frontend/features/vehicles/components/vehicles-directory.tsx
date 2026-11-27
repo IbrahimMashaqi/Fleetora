@@ -1,7 +1,7 @@
 "use client";
+import { useDebouncedSearch } from "@/lib/use-debounced-search";
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Check,
@@ -54,13 +54,14 @@ function location(search: string, page = 1) {
 }
 function VehicleCatalog({
   scope,
-  query,
+  query: initialQuery,
 }: {
   scope: FleetScope;
   query: DriverQuery;
 }) {
   const { locale, t } = useLocale();
-  const router = useRouter();
+  const searchState = useDebouncedSearch(initialQuery.search);
+  const query = useMemo(() => ({ ...initialQuery, search: searchState.search, page: searchState.search === initialQuery.search ? initialQuery.page : 1 }), [initialQuery, searchState.search]);
   const { result, retry } = useVehicles(scope, query.search, query.page);
   const [editor, setEditor] = useState<Vehicle | null | undefined>(undefined);
   const [saved, setSaved] = useState(false);
@@ -123,16 +124,7 @@ function VehicleCatalog({
       <form
         role="search"
         className="my-6 flex min-w-0 flex-wrap items-end gap-3 rounded-lg border border-border bg-surface p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          router.push(
-            location(
-              String(
-                new FormData(event.currentTarget).get("search") ?? "",
-              ).trim(),
-            ),
-          );
-        }}
+        onSubmit={(event) => { event.preventDefault(); searchState.apply(); }}
       >
         <div className="min-w-0 flex-1 basis-56 space-y-2 sm:max-w-lg">
           <Label htmlFor="vehicle-search">{t("Search vehicles")}</Label>
@@ -146,7 +138,7 @@ function VehicleCatalog({
               name="search"
               type="search"
               maxLength={100}
-              defaultValue={query.search}
+              value={searchState.text} onChange={event => searchState.setText(event.target.value)}
               placeholder={t("Manufacturer, model or plate")}
               className="bg-surface ps-9"
             />

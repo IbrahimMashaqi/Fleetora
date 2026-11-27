@@ -197,6 +197,12 @@ describe('parcel operations on disposable PostgreSQL', () => {
       expect((await pricing.zones(tx, actor.orgId, { page: 1, pageSize: 25, search: 'مدرسه' })).map(row => row.id)).toEqual([zone.id]);
     });
     expect((await lookup.search(actor, { kind: 'merchants', search: '%' })).items).toEqual([]);
+    const vehicle = await prisma.Vehicle.create({ companyId: actor.orgId, type: 'CAR', manufacturer: 'مَحمد', model: 'واحد', plateNumber: 'LOOKUP-OWN' });
+    const foreignVehicle = await prisma.Vehicle.create({ companyId: foreign.orgId, type: 'CAR', manufacturer: 'محمد', model: 'واحد', plateNumber: 'LOOKUP-FOREIGN' });
+    expect((await lookup.search(actor, { kind: 'vehicles', search: 'محمد' })).items.map(item => item.id)).toEqual([vehicle.id]);
+    expect((await lookup.search(actor, { kind: 'vehicles', selected: foreignVehicle.id })).selected).toBeNull();
+    await prisma.db.orm.public.Worker.where({ id: driverId }).update({ vehicleId: vehicle.id });
+    expect((await lookup.search(actor, { kind: 'vehicles', selected: vehicle.id })).selected).toBeNull();
     for (const role of ['COMPANY_ADMIN', 'OPERATIONS', 'ACCOUNTANT', 'WAREHOUSE'] as const)
       expect((await lookup.search({ ...actor, role }, { kind: 'merchants' })).companyId).toBe(actor.orgId);
     for (const role of ['DRIVER', 'MERCHANT', 'PLATFORM_ADMIN'] as const)

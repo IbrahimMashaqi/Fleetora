@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useLocale } from "@/lib/i18n";
 import { withSessionLock } from "@/lib/auth/session-lock";
 import { driverAccessAction } from "../driver-access.action";
+import { readClient } from "@/lib/api/read.client";
 import { driverAccessErrorText } from "../driver-access.errors";
 import type { DriverScope } from "../drivers.types";
 import type {
@@ -43,7 +44,7 @@ export function DriverAccessControls({
   const [version, setVersion] = useState(0);
   useEffect(() => {
     let stale = false;
-    withSessionLock(() => driverAccessAction(scope, { id, kind: "read" }))
+    readClient("driverAccess", scope, { id, kind: "read" })
       .then((result) => {
         if (!stale) setState(result);
       })
