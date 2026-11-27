@@ -2,9 +2,10 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { accessCookie, refreshCookie, clearSessionCookies, setSessionTokens } from "@/lib/auth/cookies.server";
 import { resolveSession } from "@/lib/auth/session.server";
+import { hasSameOrigin } from "@/lib/auth/same-origin.server";
 
 export async function handleSession(request: NextRequest) {
-  if (request.headers.get("origin") !== request.nextUrl.origin) {
+  if (!hasSameOrigin(request)) {
     return jsonSessionResponse({ message: "Request origin could not be verified." }, 403);
   }
   const session = await resolveSession({ access: request.cookies.get(accessCookie)?.value, refresh: request.cookies.get(refreshCookie)?.value });

@@ -6,6 +6,7 @@ import {
 } from "@/lib/api/backend.server";
 import { clientSourceFor } from "@/lib/api/client-source.server";
 import { newPasswordError } from "@/lib/auth/password-policy";
+import { hasSameOrigin } from "@/lib/auth/same-origin.server";
 import { object } from "@/features/operations/operations-contract";
 
 // A Route Handler keeps the credential/token out of Next's Server Action argument logs.
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
     );
   if (
     request.nextUrl.search ||
-    request.headers.get("origin") !== request.nextUrl.origin ||
+    !hasSameOrigin(request) ||
     !request.headers.get("content-type")?.startsWith("application/json")
   )
     return reply("invalid", 400);
