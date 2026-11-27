@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useLocale } from "@/lib/i18n";
 import { withSessionLock } from "@/lib/auth/session-lock";
 import { driverAccessAction } from "../driver-access.action";
+import { driverAccessErrorText } from "../driver-access.errors";
 import type { DriverScope } from "../drivers.types";
 import type {
   DriverAccessOperation,
@@ -76,17 +77,7 @@ export function DriverAccessControls({
       } else {
         setIssued(null);
         setUncertain(result.status === "uncertain");
-        setFeedback(
-          result.status === "uncertain"
-            ? c(
-                "Result unknown. Refresh before trying again.",
-                "النتيجة غير مؤكدة. حدّث قبل المحاولة مجددًا.",
-              )
-            : c(
-                "Action rejected or unavailable. Refresh and check the driver phone and your access.",
-                "تعذر الإجراء أو رُفض. حدّث وتحقق من رقم السائق وصلاحيتك.",
-              ),
-        );
+        setFeedback(driverAccessErrorText(result, locale));
       }
     } catch (error) {
       unstable_rethrow(error);
@@ -123,7 +114,7 @@ export function DriverAccessControls({
         <p role="status">{c("Loading access…", "تحميل الوصول…")}</p>
       ) : !data ? (
         <p role="alert">
-          {c("Driver access could not be loaded.", "تعذر تحميل وصول السائق.")}
+          {driverAccessErrorText(state, locale)}
         </p>
       ) : (
         <>

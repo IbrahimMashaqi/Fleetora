@@ -1,6 +1,6 @@
 import { createServer, type Server } from "node:http";
 import { expect, test } from "@playwright/test";
-import { writeDriverForSession } from "./drivers.server";
+import { checkDriverPhoneForSession, writeDriverForSession } from "./drivers.server";
 import type { DriverWrite } from "./drivers.types";
 
 type Jar = Parameters<typeof writeDriverForSession>[0];
@@ -15,6 +15,7 @@ let server: Server;
 let apiUrl: string;
 let replies: Reply[];
 let seen: Seen[];
+let queries: URLSearchParams[];
 let values: Map<string, string>;
 let jar: Jar;
 const originalApi = process.env.FLEETORA_API_URL;
@@ -46,6 +47,7 @@ test.beforeAll(async () => {
     let raw = "";
     request.on("data", (chunk) => (raw += chunk));
     request.on("end", () => {
+      queries.push(url.searchParams);
       seen.push({
         method: request.method ?? "",
         path: url.pathname,
@@ -80,6 +82,7 @@ test.beforeAll(async () => {
 test.beforeEach(() => {
   process.env.FLEETORA_API_URL = apiUrl;
   seen = [];
+  queries = [];
   values = new Map([
     ["fleetora_access", "fixture-access"],
     ["fleetora_refresh", "fixture-refresh"],
@@ -127,6 +130,33 @@ test("creates with normalized allowlisted fields and the session company context
     context: "company-a",
     body: { name: "Amina Driver", phone: "+970 599 000001" },
   });
+});
+
+test("phone checks return only a tenant-verified warning and encode the phone and edited Worker", async () => {
+  replies.push({ method: "GET", path: "/drivers/phone-check", body: { success: true, data: { companyId: scope.companyId, duplicate: true, otherDriver: "must-not-escape" } } });
+  expect(await checkDriverPhoneForSession(jar, scope, { phone: "+970 (59) 123-4567", excludeId: id })).toEqual({ status: "ready", duplicate: true });
+  expect(queries[1].get("phone")).toBe("+970 (59) 123-4567");
+  expect(queries[1].get("excludeId")).toBe(id);
+  expect(queries[1].has("companyId")).toBe(false);
+});
+test("phone checks reject foreign-company responses without returning their warning", async () => {
+  replies.push({ method: "GET", path: "/drivers/phone-check", body: { success: true, data: { companyId: "company-b", duplicate: true } } });
+  expect(await checkDriverPhoneForSession(jar, scope, { phone: "0591234567" })).toEqual({ status: "changed" });
+});
+test("phone checks reject malformed input before any session or resource request", async () => {
+  for (const input of [{ phone: "bad" }, { phone: "0591234567", excludeId: "../foreign" }, { phone: "0591234567", companyId: "company-b" }]) {
+    expect(await checkDriverPhoneForSession(jar, scope, input)).toEqual({ status: "invalid" });
+  }
+  expect(seen).toEqual([]);
+});
+test("phone checks cannot be used by a finance-only session", async () => {
+  replies = [{ method: "GET", path: "/auth/session", body: { success: true, data: { ...user, role: "ACCOUNTANT" } } }];
+  expect(await checkDriverPhoneForSession(jar, scope, { phone: "0591234567" })).toEqual({ status: "forbidden" });
+  expect(seen.map(r => r.path)).toEqual(["/auth/session"]);
+});
+test("phone checks do not claim a safe number when the response is malformed", async () => {
+  replies.push({ method: "GET", path: "/drivers/phone-check", body: { success: true, data: { companyId: scope.companyId, duplicate: "yes" } } });
+  expect(await checkDriverPhoneForSession(jar, scope, { phone: "0591234567" })).toEqual({ status: "unavailable" });
 });
 
 test("edits and suspends through the matching endpoints", async () => {

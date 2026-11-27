@@ -70,6 +70,20 @@ export class DriversService {
     };
   }
 
+  async checkPhone(actor: TokenPayload, phone: string, excludeId?: string) {
+    const companyId = this.companyId(actor);
+    if (excludeId && !(await this.repository.findOne(companyId, excludeId)))
+      throw new NotFoundException('Driver not found');
+    return {
+      companyId,
+      duplicate: await this.repository.hasDuplicatePhone(
+        companyId,
+        phone,
+        excludeId,
+      ),
+    };
+  }
+
   async assign(
     actor: TokenPayload,
     id: string,

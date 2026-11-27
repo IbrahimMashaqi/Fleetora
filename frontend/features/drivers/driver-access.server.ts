@@ -10,6 +10,7 @@ import {
 } from "@/lib/auth/cookies.server";
 import { object } from "@/features/operations/operations-contract";
 import { authorizeDriverSession } from "./drivers.server";
+import { driverAccessReason } from "./driver-access.errors";
 import type { DriverScope } from "./drivers.types";
 import type {
   DriverAccess,
@@ -77,11 +78,22 @@ export async function driverAccessForSession(
       clearSessionCookies(jar);
       return { status: "unauthenticated" };
     }
-    if (response.status === 403) return { status: "forbidden" };
-    if (response.status === 404) return { status: "not-found" };
-    if (response.status === 400) return { status: "invalid" };
-    if (response.status === 409) return { status: "conflict" };
-    if (!response.ok) return { status: writing ? "uncertain" : "unavailable" };
+    if (!response.ok) {
+      const reason = driverAccessReason(await readBackendBody(response));
+      const status =
+        response.status === 403
+          ? "forbidden"
+          : response.status === 404
+            ? "not-found"
+            : response.status === 409
+              ? "conflict"
+              : response.status === 400
+                ? "invalid"
+                : writing
+                  ? "uncertain"
+                  : "unavailable";
+      return { status, ...(reason ? { reason } : {}) };
+    }
     const body = await readBackendBody(response);
     if (!object(body) || body.success !== true || !object(body.data))
       return { status: writing ? "uncertain" : "unavailable" };

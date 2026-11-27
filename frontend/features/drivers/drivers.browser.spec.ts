@@ -27,6 +27,7 @@ let delay: number;
 let requests: URL[];
 let driverName: string;
 let fleet: Driver[] | null;
+let duplicatePhone: boolean;
 let writes: {
   method: string;
   path: string;
@@ -105,6 +106,10 @@ test.beforeAll(async () => {
     }
     requests.push(url);
     const requestUser = user;
+    if (url.pathname === "/drivers/phone-check") {
+      response.end(JSON.stringify({ success: true, data: { companyId: requestUser.orgId, duplicate: duplicatePhone } }));
+      return;
+    }
     const record = fleet?.find((item) => url.pathname.endsWith(item.id)) ?? {
       ...driver,
       name: driverName,
@@ -153,6 +158,7 @@ test.beforeEach(async ({ context }) => {
   delay = 0;
   requests = [];
   driverName = driver.name;
+  duplicatePhone = false;
   fleet = null;
   writes = [];
   await context.addCookies([
@@ -210,6 +216,36 @@ test("shows driver rows and Company Admin navigation", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "Add driver", exact: true }),
   ).toBeVisible();
+});
+for (const locale of ["en", "ar"] as const) test(`warns about shared phones during add and edit in ${locale} without blocking Worker saves`, async ({ page, context }) => {
+  await context.addCookies([{ name: "fleetora_locale", value: locale, url: "http://localhost:3100" }]);
+  const c = (en: string, ar: string) => locale === "en" ? en : ar;
+  const warning = c("Another driver in this company uses this phone. Check the number before saving.", "يستخدم سائق آخر في هذه الشركة هذا الرقم. تحقق منه قبل الحفظ.");
+  duplicatePhone = true;
+  await page.goto("/app/drivers");
+  await page.getByRole("button", { name: c("Add driver", "إضافة سائق"), exact: true }).first().click();
+  let editor = page.getByRole("dialog", { name: c("Add driver", "إضافة سائق"), exact: true });
+  await editor.getByLabel(c("Phone number", "رقم الهاتف")).fill("0599000001");
+  await expect(editor.getByText(warning, { exact: true })).toBeVisible();
+  await expect(editor.getByRole("button", { name: c("Add driver", "إضافة سائق"), exact: true })).toBeEnabled();
+  await editor.getByRole("button", { name: c("Cancel", "إلغاء"), exact: true }).click();
+  await page.getByRole("button", { name: c("View Amina Driver", "عرض Amina Driver"), exact: true }).click();
+  await page.getByRole("button", { name: c("Edit details", "تعديل البيانات"), exact: true }).click();
+  editor = page.getByRole("dialog", { name: c("Edit driver", "تعديل السائق"), exact: true });
+  await editor.getByLabel(c("Phone number", "رقم الهاتف")).fill("+970599000002");
+  await expect(editor.getByText(warning, { exact: true })).toBeVisible();
+  const check = requests.filter(url => url.pathname === "/drivers/phone-check").at(-1);
+  expect(check?.searchParams.get("excludeId")).toBe(driver.id);
+  expect(writes).toEqual([]);
+});
+test("places the suspension assignment notice under its action as associated helper text", async ({ page }) => {
+  await directory(page);
+  await page.getByRole("button", { name: "View Amina Driver", exact: true }).click();
+  const button = page.getByRole("button", { name: "Suspend driver", exact: true });
+  await expect(button).toHaveAttribute("aria-describedby", "driver-suspension-hint");
+  await expect(page.locator("#driver-suspension-hint")).toHaveText("Suspended drivers cannot receive new parcel assignments.");
+  const under = await button.evaluate(el => { const hint = document.getElementById('driver-suspension-hint'); return !!hint && !!(el.compareDocumentPosition(hint) & Node.DOCUMENT_POSITION_FOLLOWING); });
+  expect(under).toBe(true);
 });
 test("adds, edits, suspends, and reactivates a driver record", async ({
   page,

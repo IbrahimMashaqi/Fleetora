@@ -77,11 +77,6 @@ export function DriverSuspension({
       <h3 id="driver-suspension-title" className="sr-only">
         {suspended ? t("Reactivate driver") : t("Suspend driver")}
       </h3>
-      <p className="text-sm leading-6 text-muted-foreground">
-        {suspended
-          ? t("Reactivated drivers return as offline until they start work.")
-          : t("Suspended drivers cannot receive new parcel assignments.")}
-      </p>
       {confirming && !suspended ? (
         <div
           role="group"
@@ -128,6 +123,7 @@ export function DriverSuspension({
           type="button"
           variant="outline"
           size="sm"
+          aria-describedby="driver-suspension-hint"
           disabled={locked}
           onClick={() => void save(false)}
         >
@@ -139,11 +135,28 @@ export function DriverSuspension({
           variant="outline"
           size="sm"
           className="text-destructive"
+          aria-describedby="driver-suspension-hint"
           disabled={locked}
           onClick={() => setConfirming(true)}
         >
           {t("Suspend driver")}
         </Button>
+      )}
+      {(!confirming || suspended) && (
+        <p
+          id="driver-suspension-hint"
+          className="text-xs leading-5 text-muted-foreground"
+        >
+          {t("Suspended drivers cannot receive new parcel assignments.")}
+          {suspended && (
+            <>
+              {" "}
+              {t(
+                "Reactivated drivers return as offline until they start work.",
+              )}
+            </>
+          )}
+        </p>
       )}
       {result && result.status !== "saved" && (
         <p
