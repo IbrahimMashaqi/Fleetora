@@ -53,13 +53,12 @@ export class DriverIdentityService {
     if (!/^[a-f0-9]{64}$/.test(input.token))
       throw new BadRequestException('Invalid or expired invitation');
     const passwordHash = await bcrypt.hash(input.password, this.rounds);
-    if (
-      !(await this.repository.accept(
-        hashDriverToken(input.token),
-        passwordHash,
-      ))
-    )
-      throw new BadRequestException('Invalid or expired invitation');
+    const outcome = await this.repository.accept(hashDriverToken(input.token), passwordHash);
+    if (outcome !== 'ACCEPTED') throw new BadRequestException(
+      outcome === 'EXPIRED' ? 'Driver invitation expired'
+        : outcome === 'USED_OR_REVOKED' ? 'Driver invitation already used or revoked'
+          : 'Invalid or expired invitation',
+    );
     return { accepted: true as const };
   }
 }

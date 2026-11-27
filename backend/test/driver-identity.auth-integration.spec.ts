@@ -275,6 +275,21 @@ describe('BR-035/043/117/118 driver identity on disposable PostgreSQL', () => {
       expect(url.hash).toMatch(/^#token=[a-f0-9]{64}$/);
     }
   });
+  it('distinguishes expired and consumed/revoked invitation links while rejecting unknown tokens', async () => {
+    const expired = tokenOf(await invite());
+    await prisma.db.orm.public.DriverInvitation.where({ workerId })
+      .update({ expiresAt: Temporal.Now.instant().subtract({ seconds: 1 }) });
+    const accept = (token: string) => request(app.getHttpServer()).post('/driver/invitations/accept').send({ token, password });
+    expect((await accept(expired).expect(400)).body.message).toBe('Driver invitation expired');
+    const revoked = tokenOf(await invite());
+    await service.revokeInvitation(actor, workerId);
+    expect((await accept(revoked).expect(400)).body.message).toBe('Driver invitation already used or revoked');
+    const used = tokenOf(await invite());
+    await accept(used).expect(200);
+    expect((await accept(used).expect(400)).body.message).toBe('Driver invitation already used or revoked');
+    await accept('0'.repeat(64)).expect(400);
+    expect(await prisma.db.orm.public.DriverAccount.where({ workerId }).all()).toHaveLength(1);
+  });
   it('accepts a token only once under concurrency', async () => {
     const token = tokenOf(await invite());
     const result = await Promise.allSettled([
