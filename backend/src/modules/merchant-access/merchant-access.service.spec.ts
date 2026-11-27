@@ -391,14 +391,14 @@ describe('merchant invitation and access security', () => {
       warn.mockRestore();
     });
 
-    it('keeps the primary link HTTPS even when the development origin uses HTTP', async () => {
+    it('keeps the approved HTTP loopback development origin in the activation fragment link', async () => {
       admin();
       const developmentModule = await Test.createTestingModule({
         providers: [
           MerchantAccessService,
           { provide: MerchantAccessRepository, useValue: repository },
           { provide: MailService, useValue: mail },
-          { provide: ConfigService, useValue: new ConfigService({ SALT_ROUNDS: 4, FRONTEND_URL: 'http://app.fleetora.test' }) },
+          { provide: ConfigService, useValue: new ConfigService({ NODE_ENV: 'development', SALT_ROUNDS: 4, FRONTEND_URL: 'http://localhost:3000' }) },
         ],
       }).compile();
       const development = developmentModule.get(MerchantAccessService);
@@ -406,7 +406,7 @@ describe('merchant invitation and access security', () => {
         email: 'owner@example.invalid', role: 'EMPLOYEE',
       });
       const url = new URL(result.activationUrl);
-      expect(url.protocol).toBe('https:');
+      expect(url.origin).toBe('http://localhost:3000');
       expect(url.search).toBe('');
       expect(url.hash).toBe(`#token=${result.token}`);
     });

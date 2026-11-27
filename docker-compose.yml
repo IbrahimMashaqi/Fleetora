@@ -66,6 +66,7 @@ services:
       context: ./frontend
     environment:
       FLEETORA_API_URL: http://backend:3001
+      FLEETORA_ACTIVATION_ENV: ${BACKEND_NODE_ENV:-development}
       FLEETORA_CLIENT_SOURCE_SECRET: ${FLEETORA_CLIENT_SOURCE_SECRET}
       FLEETORA_TRUSTED_CLIENT_IP_HEADER: ${FLEETORA_TRUSTED_CLIENT_IP_HEADER:-}
     depends_on:

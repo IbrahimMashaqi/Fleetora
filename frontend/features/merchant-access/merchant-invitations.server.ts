@@ -1,4 +1,5 @@
 import "server-only";
+import { isActivationProtocolAllowed } from "@/lib/auth/activation-url.server";
 import {
   getBackendEndpoint,
   readBackendBody,
@@ -88,7 +89,7 @@ function validActivationUrl(value: unknown, token: string): value is string {
   try {
     const url = new URL(value);
     return (
-      url.protocol === "https:" && !url.username && !url.password &&
+      isActivationProtocolAllowed(url) && !url.username && !url.password &&
       url.pathname === "/merchant/activate" && !url.search &&
       url.hash === `#token=${token}`
     );

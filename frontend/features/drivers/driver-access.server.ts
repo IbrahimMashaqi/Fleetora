@@ -11,6 +11,7 @@ import {
 import { object } from "@/features/operations/operations-contract";
 import { authorizeDriverSession } from "./drivers.server";
 import { driverAccessReason } from "./driver-access.errors";
+import { isActivationProtocolAllowed } from "@/lib/auth/activation-url.server";
 import type { DriverScope } from "./drivers.types";
 import type {
   DriverAccess,
@@ -152,7 +153,7 @@ export async function driverAccessForSession(
         return { status: "uncertain" };
       const url = new URL(value.url);
       if (
-        url.protocol !== "https:" ||
+        !isActivationProtocolAllowed(url) ||
         url.username ||
         url.password ||
         url.search ||

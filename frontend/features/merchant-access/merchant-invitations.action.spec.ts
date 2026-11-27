@@ -190,6 +190,22 @@ for (const [reason, unsafeUrl] of [
     expect(await merchantInvitationsForSession(jar, scope, merchantId, { action: 'issue', email: 'owner@example.com' })).toEqual({ status: 'uncertain' });
   });
 }
+for (const mode of ["development", "production"]) {
+  for (const host of ["localhost", "127.0.0.1", "[::1]", "app.example.test"]) {
+    test(`${mode} activation HTTP policy for ${host}`, async () => {
+      const previousMode = process.env.FLEETORA_ACTIVATION_ENV;
+      process.env.FLEETORA_ACTIVATION_ENV = mode;
+      try {
+        activationUrl = `http://${host}:3000/merchant/activate#token=${token}`;
+        const result = await merchantInvitationsForSession(jar, scope, merchantId, { action: "issue", email: "owner@example.com" });
+        expect(result.status).toBe(mode !== "production" && host !== "app.example.test" ? "issued" : "uncertain");
+      } finally {
+        if (previousMode === undefined) delete process.env.FLEETORA_ACTIVATION_ENV;
+        else process.env.FLEETORA_ACTIVATION_ENV = previousMode;
+      }
+    });
+  }
+}
 for (const denied of ["ACCOUNTANT", "MERCHANT", "PLATFORM_ADMIN"])
   test(`denies ${denied} before backend invitations dispatch`, async () => {
     role = denied;

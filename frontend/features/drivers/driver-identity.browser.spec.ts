@@ -14,6 +14,7 @@ let server: Server,
 let writes: { path: string; method: string; body: unknown }[];
 let invitationBlockedReason: string | null;
 let driverPhone: string;
+let issuedUrl: string;
 let invitationFailure: { status: number; message: string } | null;
 test.beforeAll(async () => {
   server = createServer(async (req, res) => {
@@ -52,7 +53,7 @@ test.beforeAll(async () => {
               workerId,
               phone: "+970591234567",
               invitationId,
-              url,
+              url: issuedUrl,
               expiresAt: "2026-12-01T12:00:00Z",
             };
     } else if (path === `/drivers/${workerId}/access`) {
@@ -119,6 +120,7 @@ test.beforeEach(() => {
   invited = false;
   invitationBlockedReason = null;
   driverPhone = "0591234567";
+  issuedUrl = url;
   invitationFailure = null;
   writes = [];
 });
@@ -257,6 +259,14 @@ for (const locale of ["en", "ar"] as const) {
     });
   }
 }
+test("development driver invitations keep HTTP loopback links usable", async ({ page, context }) => {
+  issuedUrl = `http://localhost:3100/driver/activate#token=${token}`;
+  await context.addCookies([{ name: "fleetora_access", value: "driver-operations-fixture", url: "http://localhost:3100", httpOnly: true }]);
+  await page.goto("/app/drivers");
+  await page.getByRole("button", { name: "View Invited Driver", exact: true }).click();
+  await page.getByRole("button", { name: "Create driver invitation", exact: true }).click();
+  await expect(page.getByLabel("Driver activation link")).toHaveValue(issuedUrl);
+});
 test("Operations shares an HTTPS invitation through WhatsApp and offboards with optional security revocation", async ({
   page,
   context,

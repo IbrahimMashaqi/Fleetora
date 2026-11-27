@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcrypt';
 import { Temporal } from 'temporal-polyfill';
-import { trustedFrontendOrigin } from '../../common/utils/frontend-url.js';
+import { trustedActivationOrigin } from '../../common/utils/frontend-url.js';
 import type { TokenPayload } from '../auth/token/token.payload.js';
 import { company } from '../parcels/parcel-domain.js';
 import { DriverIdentityRepository } from './driver-identity.repository.js';
@@ -19,7 +19,7 @@ export class DriverIdentityService {
     private readonly repository: DriverIdentityRepository,
     @Inject(ConfigService) config: ConfigService,
   ) {
-    this.origin = trustedFrontendOrigin(config);
+    this.origin = trustedActivationOrigin(config);
     this.rounds = Number(config.get<string | number>('SALT_ROUNDS') ?? 10);
     if (!Number.isInteger(this.rounds) || this.rounds < 4 || this.rounds > 31)
       throw new Error('Invalid SALT_ROUNDS');
@@ -29,10 +29,6 @@ export class DriverIdentityService {
   }
   async issue(actor: TokenPayload, workerId: string) {
     company(actor, 'manageDrivers');
-    if (new URL(this.origin).protocol !== 'https:')
-      throw new BadRequestException(
-        'Driver invitations require an HTTPS FRONTEND_URL',
-      );
     const token = randomBytes(32).toString('hex');
     const invitation = await this.repository.issue(
       actor,

@@ -26,3 +26,14 @@ export function trustedFrontendOrigin(config: ConfigService): string {
   }
   return url.origin;
 }
+
+/** Activation links may use HTTP only for an explicitly local development site. */
+export function trustedActivationOrigin(config: ConfigService): string {
+  const origin = trustedFrontendOrigin(config);
+  const url = new URL(origin);
+  if (url.protocol === 'http:' && (
+    config.get<string>('NODE_ENV') === 'production' ||
+    !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+  )) throw new Error('FRONTEND_URL activation links require HTTPS outside development loopback');
+  return origin;
+}

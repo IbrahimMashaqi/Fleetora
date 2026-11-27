@@ -265,6 +265,16 @@ describe('BR-035/043/117/118 driver identity on disposable PostgreSQL', () => {
     }
     expect(await prisma.db.orm.public.DriverAccount.where({ workerId: duplicate.id }).all()).toEqual([]);
   });
+  it('issues HTTP fragment invitations only for approved development loopback origins', async () => {
+    for (const host of ['localhost', '127.0.0.1', '[::1]']) {
+      const development = new DriverIdentityService(new DriverIdentityRepository(prisma), new ConfigService({ NODE_ENV: 'development', SALT_ROUNDS: 4, FRONTEND_URL: `http://${host}:3000` }));
+      const issued = await development.issue(actor, workerId);
+      const url = new URL(issued.url);
+      expect(url.origin).toBe(`http://${host}:3000`);
+      expect(url.search).toBe('');
+      expect(url.hash).toMatch(/^#token=[a-f0-9]{64}$/);
+    }
+  });
   it('accepts a token only once under concurrency', async () => {
     const token = tokenOf(await invite());
     const result = await Promise.allSettled([

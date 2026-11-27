@@ -239,6 +239,23 @@ test("security revocation and offboarding dispatch only the explicit scoped acti
   ).toEqual({ status: "conflict" });
 });
 
+for (const mode of ["development", "production"]) {
+  for (const host of ["localhost", "127.0.0.1", "[::1]", "app.example.test"]) {
+    test(`${mode} activation HTTP policy for ${host}`, async () => {
+      const previousMode = process.env.FLEETORA_ACTIVATION_ENV;
+      process.env.FLEETORA_ACTIVATION_ENV = mode;
+      try {
+        url = `http://${host}:3000/driver/activate#token=${token}`;
+        const result = await driverAccessForSession(jar, scope, { id: workerId, kind: "invite" });
+        expect(result.status).toBe(mode !== "production" && host !== "app.example.test" ? "issued" : "uncertain");
+      } finally {
+        if (previousMode === undefined) delete process.env.FLEETORA_ACTIVATION_ENV;
+        else process.env.FLEETORA_ACTIVATION_ENV = previousMode;
+      }
+    });
+  }
+}
+
 for (const [code, message, reason] of [
   [400, "Driver invitations require an HTTPS FRONTEND_URL", "HTTPS_REQUIRED"],
   [409, "This phone already has a driver account", "PHONE_IN_USE"],
