@@ -26,6 +26,8 @@ import {
   type FleetScope,
   type Vehicle,
 } from "../vehicles.types";
+import { EntityCombobox } from "@/features/operations/components/entity-combobox";
+import { DriverDetails } from "@/features/drivers/components/driver-details";
 import { VehicleEditor } from "./vehicle-editor";
 import { VehicleDeleteDialog } from "./vehicle-delete-dialog";
 import { notifyVehicleChange } from "../vehicle-events";
@@ -36,12 +38,13 @@ export function VehiclesDirectory({ query }: { query: DriverQuery }) {
     () => ({ userId: user.id, companyId: user.orgId ?? "" }),
     [user.id, user.orgId],
   );
-  if (user.role !== "COMPANY_ADMIN" || !user.company || !user.orgId)
+  if (!["COMPANY_ADMIN", "OPERATIONS"].includes(user.role) || !user.company || !user.orgId)
     return <DriverAccessDenied />;
   return (
     <VehicleCatalog
       key={JSON.stringify([scope, query])}
       scope={scope}
+      canManage={user.role === "COMPANY_ADMIN"}
       query={query}
     />
   );
@@ -55,8 +58,10 @@ function location(search: string, page = 1) {
 function VehicleCatalog({
   scope,
   query: initialQuery,
+  canManage,
 }: {
   scope: FleetScope;
+  canManage: boolean;
   query: DriverQuery;
 }) {
   const { locale, t } = useLocale();
@@ -64,6 +69,7 @@ function VehicleCatalog({
   const query = useMemo(() => ({ ...initialQuery, search: searchState.search, page: searchState.search === initialQuery.search ? initialQuery.page : 1 }), [initialQuery, searchState.search]);
   const { result, retry } = useVehicles(scope, query.search, query.page);
   const [editor, setEditor] = useState<Vehicle | null | undefined>(undefined);
+  const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [deleting, setDeleting] = useState<Vehicle | null>(null);
   const [deleted, setDeleted] = useState(false);
@@ -72,7 +78,7 @@ function VehicleCatalog({
     <div className="mx-auto w-full min-w-0 max-w-6xl">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-2xl font-semibold tracking-tight">{t("Vehicles")}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">{t(canManage ? "Vehicles" : "Vehicle assignment")}</h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {t("Your company fleet, ready for the road.")}
           </p>
@@ -91,7 +97,7 @@ function VehicleCatalog({
             <RefreshCw aria-hidden="true" />
             {t("Refresh")}
           </Button>
-          <Button
+          {canManage && <Button
             type="button"
             onClick={() => {
               setSaved(false);
@@ -100,9 +106,29 @@ function VehicleCatalog({
           >
             <Plus aria-hidden="true" />
             {t("Register vehicle")}
-          </Button>
+          </Button>}
         </div>
       </div>
+      {!canManage && (
+        <div className="mt-6 max-w-lg">
+          <EntityCombobox
+            scope={scope}
+            kind="drivers"
+            name="assignmentDriver"
+            label="Drivers"
+            placeholder="Choose driver"
+            onChange={id => setSelectedDriver(id || null)}
+          />
+        </div>
+      )}
+      {selectedDriver && (
+        <DriverDetails
+          id={selectedDriver}
+          scope={scope}
+          onClose={() => setSelectedDriver(null)}
+          onUpdated={retry}
+        />
+      )}
       {saved && (
         <p
           role="status"
@@ -191,7 +217,7 @@ function VehicleCatalog({
                   ? t("Try another manufacturer, model or plate.")
                   : t("Register a vehicle, then assign it from a driver's details.")}
               </p>
-              {!query.search && query.page === 1 && (
+              {canManage && !query.search && query.page === 1 && (
                 <Button
                   className="mt-5"
                   variant="outline"
@@ -240,7 +266,7 @@ function VehicleCatalog({
                       {vehicle.assignedDriver?.name ?? t("Unassigned")}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 px-3 py-2">
+                  {canManage && <div className="flex items-center gap-2 px-3 py-2">
                     <Button
                       type="button"
                       variant="ghost"
@@ -265,7 +291,7 @@ function VehicleCatalog({
                     >
                       <Trash2 aria-hidden="true" />
                     </Button>
-                  </div>
+                  </div>}
                 </li>
               ))}
             </ul>
@@ -308,7 +334,7 @@ function VehicleCatalog({
           </nav>
         </>
       )}
-      {editor !== undefined && (
+      {canManage && editor !== undefined && (
         <VehicleEditor
           catalog={data?.catalog ?? []}
           scope={scope}
@@ -321,7 +347,7 @@ function VehicleCatalog({
           }}
         />
       )}
-      {deleting && (
+      {canManage && deleting && (
         <VehicleDeleteDialog
           vehicle={deleting}
           scope={scope}

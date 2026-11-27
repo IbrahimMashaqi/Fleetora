@@ -15,6 +15,7 @@ import { ParcelDashboardRepository } from '../src/modules/parcels/parcel-dashboa
 import { PageDto } from '../src/modules/parcels/parcel.dto.js';
 import { money } from '../src/modules/parcels/parcel-domain.js';
 import { DriversRepository } from '../src/modules/drivers/drivers.repository.js';
+import { VehiclesRepository } from '../src/modules/vehicles/vehicles.repository.js';
 import { LookupRepository } from '../src/modules/parcels/lookup.repository.js';
 import { DriverIdentityRepository } from '../src/modules/drivers/driver-identity.repository.js';
 import type { TokenPayload } from '../src/modules/auth/token/token.payload.js';
@@ -36,6 +37,22 @@ describe('parcel operations on disposable PostgreSQL', () => {
     driverId: string,
     foreignDriverId: string;
   const fixtureCompanies: string[] = [];
+  it('OD-14 Operations assignment is tenant-scoped and rechecks persisted role in the write transaction', async () => {
+    const vehicles = new VehiclesRepository(prisma);
+    const ownVehicle = await prisma.db.orm.public.Vehicle.create({ companyId: actor.orgId!, type: 'CAR', plateNumber: key(), manufacturer: 'Toyota', model: 'Corolla' });
+    const otherVehicle = await prisma.db.orm.public.Vehicle.create({ companyId: foreign.orgId!, type: 'CAR', plateNumber: key(), manufacturer: 'Toyota', model: 'Corolla' });
+    await prisma.User.where({ id: actor.sub }).update({ role: 'OPERATIONS' });
+    const operations: TokenPayload = { ...actor, role: 'OPERATIONS' };
+    await expect(vehicles.assign(actor, driverId, { vehicleId: ownVehicle.id, expectedVehicleId: null })).rejects.toMatchObject({ status: 403 });
+    await expect(vehicles.assign(operations, foreignDriverId, { vehicleId: ownVehicle.id, expectedVehicleId: null })).rejects.toMatchObject({ status: 404 });
+    await expect(vehicles.assign(operations, driverId, { vehicleId: otherVehicle.id, expectedVehicleId: null })).rejects.toMatchObject({ status: 404 });
+    await vehicles.assign(operations, driverId, { vehicleId: ownVehicle.id, expectedVehicleId: null });
+    expect((await prisma.db.orm.public.Worker.where({ id: driverId }).first())?.vehicleId).toBe(ownVehicle.id);
+    await vehicles.assign(operations, driverId, { vehicleId: null, expectedVehicleId: ownVehicle.id });
+    expect((await prisma.db.orm.public.Worker.where({ id: driverId }).first())?.vehicleId).toBeNull();
+    await prisma.User.where({ id: actor.sub }).update({ role: 'ACCOUNTANT' });
+    await expect(vehicles.assign(operations, driverId, { vehicleId: ownVehicle.id, expectedVehicleId: null })).rejects.toMatchObject({ status: 403 });
+  });
   const key = () => randomUUID();
   const str = (value: unknown) => {
     if (typeof value !== 'string')

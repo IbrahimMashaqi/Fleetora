@@ -27,6 +27,7 @@
 | OD-11 | Docs win. A self-registered company is PENDING until a Fleetora platform admin approves it. A platform admin may also create companies directly. | BR-045 | Platform admin |
 | OD-12 | Docs win, with company-configurable thresholds. A money action above a company-set amount needs a second, different approver. Below the threshold a single admin may act, but the action is flagged in the audit log. | BR-009, BR-012 | Finance |
 | OD-13 | Docs win. A staff-created merchant is PENDING until the merchant accepts the invitation and the agreement. No parcels or money of any kind, including COD, settlements and adjustments, before the merchant is ACTIVE. | BR-002, BR-093 | Merchants (early) |
+| OD-14 | Owner, 2026-11-27: OPERATIONS may read company merchant lists and profiles (contact, addresses, activation status), without merchant edits, commercial terms, pricing, plan assignment, invitations, statements or balances. OPERATIONS may view vehicles and assign/unassign them to company drivers, but may not create, edit or delete vehicles. Persisted identity controls every request; writes recheck it inside transactions. | BR-042, BR-043 | Phase 2a follow-up |
 
 ### UX-01 project-wide audit (2026-11-27)
 

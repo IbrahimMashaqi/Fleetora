@@ -32,6 +32,14 @@ describe('merchant identity on disposable PostgreSQL', () => {
   let merchantId: string;
   let foreignMerchantId: string;
   const email = () => `${randomUUID()}@example.invalid`;
+  it('OD-14 Operations cannot read, issue or revoke own or foreign merchant invitations', async () => {
+    await prisma.User.where({ id: admin.sub }).update({ role: 'OPERATIONS' });
+    for (const id of [merchantId, foreignMerchantId]) {
+      await expect(service.invitations(admin, id)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.issueByAdmin(admin, id, { email: email(), role: 'OWNER' })).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.revoke(admin, randomUUID(), id)).rejects.toBeInstanceOf(ForbiddenException);
+    }
+  });
 
   async function companyFixture() {
     const company = await prisma.Company.create({

@@ -181,7 +181,7 @@ test.beforeAll(async () => {
           success: true,
           data: {
             companyId,
-            capabilities,
+            capabilities: activeRole === "OPERATIONS" ? { ...capabilities, manageMerchants: false, viewFinance: false, collect: false, remit: false, createSettlements: false, approveSettlements: false, paySettlements: false } : capabilities,
             transitions: {},
             currencies: ["ILS", "USD", "EUR", "JOD"],
           },
@@ -444,6 +444,19 @@ test("company admin opens business merchant creation and cancellation makes no c
   ).toBeVisible();
   await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
   await expect(dialog).toHaveCount(0);
+  expect(writes).toHaveLength(0);
+});
+test("OD-14 Operations sees merchant profiles without commercial or financial controls", async ({ page }) => {
+  activeRole = 'OPERATIONS';
+  await page.goto('/app/merchants');
+  await expect(page.getByRole('link', { name: 'Merchants', exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create merchant', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('columnheader', { name: 'Default delivery fee' })).toHaveCount(0);
+  await page.getByRole('link', { name: merchant.name, exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Business profile', exact: true })).toBeVisible();
+  for (const title of ['Commercial terms', 'Balance', 'Merchant statement', 'Merchant app access']) await expect(page.getByRole('heading', { name: title, exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edit merchant', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Merchant settlements', exact: true })).toHaveCount(0);
   expect(writes).toHaveLength(0);
 });
 

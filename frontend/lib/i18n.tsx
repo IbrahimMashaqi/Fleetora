@@ -21,6 +21,8 @@ const english = {
   "Merchants": "Merchants",
   "Drivers": "Drivers",
   "Driver list": "Driver list",
+  "Vehicle assignment": "Vehicle assignment",
+
   "Vehicles": "Vehicles",
   "Pickup requests": "Pickup requests",
   "Merchant requests": "Merchant requests",
@@ -507,6 +509,8 @@ const arabic: Record<TranslationKey, string> = {
   "Merchants": "التجار",
   "Drivers": "السائقون",
   "Driver list": "قائمة السائقين",
+  "Vehicle assignment": "إسناد المركبات",
+
   "Vehicles": "المركبات",
   "Account & security": "الحساب والأمان",
   "Team": "الفريق",

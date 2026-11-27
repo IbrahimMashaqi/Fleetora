@@ -9,7 +9,7 @@ import { LocalizedDateInput } from "@/components/ui/localized-date-input";
 import { Label } from "@/components/ui/label";
 import { useDebouncedSearch } from "@/lib/use-debounced-search";
 import { useLocale, type TranslationKey } from "@/lib/i18n";
-import { useCompanyCurrency } from "@/features/auth/session/session-context";
+import { useProtectedSession, useCompanyCurrency } from "@/features/auth/session/session-context";
 import { useOperations } from "../use-operations";
 import type {
   Data,
@@ -111,6 +111,7 @@ function Directory({
 }) {
   const { t } = useLocale();
   const companyCurrency = useCompanyCurrency();
+  const profileOnly = useProtectedSession().user.role === "OPERATIONS";
   const router = useRouter();
   const searchState = useDebouncedSearch(query.search ?? "");
   const request = { resource, query: { page: "1", pageSize: "25", ...query, search: searchState.search, ...(searchState.search !== (query.search ?? "") ? { page: "1" } : {}) } };
@@ -417,7 +418,7 @@ function Directory({
             <>
               <DataTable
                 items={data.data.items}
-                columns={columns}
+                columns={resource === "merchants" && profileOnly ? columns.filter(column => column.label !== "Default delivery fee") : columns}
                 empty={
                   Object.values(query).some(Boolean)
                     ? "No records match these filters."

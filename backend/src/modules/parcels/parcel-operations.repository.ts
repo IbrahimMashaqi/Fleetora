@@ -55,6 +55,15 @@ import type {
 } from './parcel.dto.js';
 import { RECEIVING_STATUSES } from './parcel.dto.js';
 type ReceivingWarehouse = { id: string; name: string };
+// OD-14: Operations receives contact/address/activation data, never merchant terms.
+function merchantView(actor: TokenPayload, merchant: Parameters<typeof wire>[0]) {
+  const row = wire(merchant);
+  if (actor.role !== 'OPERATIONS') return row;
+  const fields = ['id', 'companyId', 'name', 'contactName', 'phone', 'secondaryPhone',
+    'pickupAddress', 'city', 'latitude', 'longitude', 'active', 'activationStatus',
+    'revision', 'createdAt', 'updatedAt'];
+  return Object.fromEntries(fields.filter(key => key in row).map(key => [key, row[key]]));
+}
 function status(value: string): asserts value is ParcelRow['status'] {
   if (!Object.hasOwn(TRANSITIONS, value))
     throw new BadRequestException('Invalid parcel status');
@@ -96,7 +105,7 @@ export class ParcelOperationsRepository {
           .offset((q.page - 1) * q.pageSize)
           .limit(q.pageSize + 1)
           .all()
-      ).map(wire),
+      ).map(merchant => merchantView(actor, merchant)),
       q,
     );
   }
@@ -119,7 +128,7 @@ export class ParcelOperationsRepository {
     );
     return {
       companyId,
-      merchant: wire(merchant),
+      merchant: merchantView(actor, merchant),
       statistics: rows[0],
       balances: capabilities(actor.role).viewFinance
         ? await this.ledger.balances(companyId, id)
@@ -303,7 +312,7 @@ export class ParcelOperationsRepository {
     return {
       companyId,
       parcel: wire(parcel),
-      merchant: merchant ? wire(merchant) : null,
+      merchant: merchant ? merchantView(actor, merchant) : null,
       collection:
         capabilities(actor.role).viewFinance && collection
           ? collectionWire(collection)

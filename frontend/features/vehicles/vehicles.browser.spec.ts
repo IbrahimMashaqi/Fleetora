@@ -57,7 +57,7 @@ test.beforeAll(async () => {
     if (url.pathname === "/operation-lookups") {
       const kind = url.searchParams.get("kind"), search = url.searchParams.get("search") ?? "";
       const key = (text: string) => text.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
-      const items = kind === "vehicles" ? vehicles.filter(v => v.id !== assigned).map(v => ({ id: v.id, label: [v.manufacturer, v.model].filter(Boolean).join(" "), detail: v.plateNumber }))
+      const items = kind === "drivers" ? [{ id: driverId, label: "Fictional Driver", detail: "+970599000001" }] : kind === "vehicles" ? vehicles.filter(v => v.id !== assigned).map(v => ({ id: v.id, label: [v.manufacturer, v.model].filter(Boolean).join(" "), detail: v.plateNumber }))
         : [ { id: "none", label: "Not recorded", detail: "" },
           ...(kind === "vehicleBrands" ? choices.map(brand => ({ id: "brand:" + brand.manufacturer, label: brand.manufacturer, detail: brand.aliases.join(" ") }))
             : choices.find(brand => brand.manufacturer === url.searchParams.get("manufacturer"))?.models.map(model => ({ id: "model:" + model, label: model, detail: "" })) ?? []),
@@ -511,6 +511,26 @@ test("catalog search, pagination, loading, empty and retry states", async ({
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByText("No vehicles match your search.")).toBeVisible();
 });
+test("OD-14 Operations assigns and unassigns from Vehicles without vehicle management controls", async ({ page }) => {
+  user = { ...admin, role: "OPERATIONS" };
+  await page.goto("/app/vehicles");
+  await expect(page.getByRole("heading", { name: "Vehicle assignment", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Register|Edit vehicle|Delete vehicle/ })).toHaveCount(0);
+  await page.getByRole("combobox", { name: "Drivers", exact: true }).click();
+  await page.getByRole("option", { name: "Fictional Driver +970599000001" }).click();
+  const dialog = page.getByRole("dialog", { name: "Driver details" });
+  await dialog.getByRole("button", { name: "Assign vehicle", exact: true }).click();
+  await dialog.getByRole("combobox", { name: "Search available vehicles" }).click();
+  await dialog.getByRole("option", { name: "Toyota Corolla TEST-A" }).click();
+  expect(writes).toBe(0);
+  await dialog.getByRole("button", { name: "Confirm assignment" }).click();
+  await expect(dialog.getByText("Toyota Corolla", { exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Unassign vehicle", exact: true }).click();
+  await dialog.getByRole("button", { name: "Confirm unassignment" }).click();
+  await expect(dialog.getByText("No vehicle assigned", { exact: true })).toBeVisible();
+  expect(writes).toBe(2);
+});
+
 test("assigns, confirms replacement, cancels replacement and unassigns with card refresh", async ({
   page,
 }) => {

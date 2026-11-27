@@ -121,12 +121,12 @@ function FleetoraBrand({ lightSurface = false }: { lightSurface?: boolean }) {
 
 function WorkspaceNavigation({ user, onNavigate }: { user: SessionUser; onNavigate?: () => void }) {
   const { t } = useLocale();
-  const visible = navigation.filter(item => ["/app", "/app/account"].includes(item.href) || user.company !== null && (user.role === "COMPANY_ADMIN" || user.role === "OPERATIONS" && ["/app/operations", "/app/parcels", "/app/drivers", "/app/pickups", "/app/returns", "/app/requests"].includes(item.href) || user.role === "WAREHOUSE" && ["/app/operations", "/app/parcels", "/app/pickups", "/app/returns"].includes(item.href) || user.role === "ACCOUNTANT" && ["/app/operations", "/app/parcels", "/app/merchants", "/app/returns", "/app/collections", "/app/settlements", "/app/requests"].includes(item.href)));
+  const visible = navigation.filter(item => ["/app", "/app/account"].includes(item.href) || user.company !== null && (user.role === "COMPANY_ADMIN" || user.role === "OPERATIONS" && ["/app/operations", "/app/parcels", "/app/drivers", "/app/pickups", "/app/returns", "/app/requests", "/app/merchants", "/app/vehicles"].includes(item.href) || user.role === "WAREHOUSE" && ["/app/operations", "/app/parcels", "/app/pickups", "/app/returns"].includes(item.href) || user.role === "ACCOUNTANT" && ["/app/operations", "/app/parcels", "/app/merchants", "/app/returns", "/app/collections", "/app/settlements", "/app/requests"].includes(item.href)));
   return (
     <nav aria-label={t("Primary navigation")} className={styles.navigation}>
       {navigationGroups.map(label => {
         const items = visible.filter(item => item.group === label);
-        return items.length > 0 ? <NavigationGroup key={label} label={label} items={items} onNavigate={onNavigate} /> : null;
+        return items.length > 0 ? <NavigationGroup key={label} label={label} items={items.map(item => user.role === "OPERATIONS" && item.href === "/app/vehicles" ? { ...item, label: "Vehicle assignment" as const } : item)} onNavigate={onNavigate} /> : null;
       })}
     </nav>
   );
