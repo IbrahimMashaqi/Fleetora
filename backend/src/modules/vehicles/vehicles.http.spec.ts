@@ -196,6 +196,16 @@ describe('vehicle HTTP boundary with isolated persistence', () => {
     await request(app.getHttpServer()).get('/vehicles').expect(401);
     expect(repository.list).not.toHaveBeenCalled();
   });
+  it('OD-14 persisted Operations may list/assign/unassign but cannot create, edit or delete vehicles', async () => {
+    role = 'OPERATIONS';
+    await get().expect(200);
+    for (const vehicleId of [foreign, null])
+      await request(app.getHttpServer()).put(`/drivers/${id}/vehicle`).auth(auth(), { type: 'bearer' }).set('X-Fleetora-Company-Context', company).send({ vehicleId, expectedVehicleId: null }).expect(200);
+    await post().expect(403);
+    await request(app.getHttpServer()).patch(`/vehicles/${id}`).auth(auth(), { type: 'bearer' }).set('X-Fleetora-Company-Context', company).send(input).expect(403);
+    await remove().expect(403);
+    expect(repository.save).not.toHaveBeenCalled(); expect(repository.remove).not.toHaveBeenCalled();
+  });
   it.each(['PLATFORM_ADMIN', 'MERCHANT', 'ACCOUNTANT'])(
     'denies persisted %s despite admin JWT',
     async (denied) => {

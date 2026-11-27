@@ -50,6 +50,14 @@ test("malformed directory projections never masquerade as valid merchants or par
   ).toBeNull();
 });
 
+test("OD-14 Operations profile contract accepts contacts without pricing and strips commercial fields", () => {
+  const profile = { id: "11111111-1111-4111-8111-111111111111", companyId: "company", name: "Merchant", phone: "0590000000", pickupAddress: "Address", revision: 1, active: true, activationStatus: "PENDING" };
+  expect(parseMerchant(profile, true)).toEqual(profile);
+  expect(parseMerchant({ ...profile, deliveryFee: "15.00", planId: "private", paymentNotes: "private", pricingDiscount: "2.00" }, true)).toEqual(profile);
+  expect(parseMerchant(profile)).toBeNull();
+  expect(parseMerchant({ ...profile, activationStatus: "INVALID" }, true)).toBeNull();
+});
+
 test("OD-10/BR-083: parcel priority offers only Normal, High and Urgent", () => {
   const priority = parcelFields().find((field) => field.name === "priority");
   expect(priority?.value).toBe("NORMAL");

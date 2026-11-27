@@ -304,6 +304,29 @@ describe('parcel HTTP with persisted JWT identity and disposable PostgreSQL', ()
     app.useGlobalInterceptors(new TransformInterceptor());
     await app.listen(0, '127.0.0.1');
   }, 30000);
+  it('OD-14 persisted Operations reads merchant profiles without terms and rejects merchant/finance writes', async () => {
+    const ownMerchant = await merchant(), other = await merchant(foreign);
+    const ownParcel = await parcel(text(ownMerchant.id));
+    await prisma.User.where({ id: own.userId }).update({ role: 'OPERATIONS' });
+    // The existing token still claims COMPANY_ADMIN; the strategy must use persistence.
+    const profile = entity(await get(`/merchants/business/${text(ownMerchant.id)}`, own).expect(200), 'merchant');
+    expect(profile).toMatchObject({ name: ownMerchant.name, phone: ownMerchant.phone, pickupAddress: ownMerchant.pickupAddress, activationStatus: 'ACTIVE' });
+    for (const key of ['deliveryFee', 'returnFee', 'serviceFee', 'feePayer', 'returnFeePolicy', 'paymentNotes', 'planId', 'pricingDiscount']) expect(profile).not.toHaveProperty(key);
+    const listing = data(await get('/merchants/business', own).expect(200));
+    expect(JSON.stringify(listing)).not.toContain('deliveryFee');
+    const nested = entity(await get(`/parcels/${text(ownParcel.id)}`, own).expect(200), 'merchant');
+    expect(nested).toMatchObject({ id: ownMerchant.id, name: ownMerchant.name });
+    expect(nested).not.toHaveProperty('deliveryFee');
+    expect(nested).not.toHaveProperty('planId');
+    expect(data(await get(`/merchants/business/${text(ownMerchant.id)}`, own).expect(200)).balances).toEqual([]);
+    await get(`/merchants/business/${text(other.id)}`, own).expect(404);
+    await post('/merchants/business', own).send(merchantInput()).expect(403);
+    await request(app.getHttpServer()).patch(`/merchants/business/${text(ownMerchant.id)}`).set('Authorization', own.token).set('X-Fleetora-Company-Context', own.companyId).send({ ...merchantInput(), revision: ownMerchant.revision }).expect(403);
+    await get(`/merchants/business/${text(ownMerchant.id)}/statement`, own).expect(403);
+    await get('/merchant-pricing/plans', own).expect(403);
+    await get('/merchant-pricing/zones', own).expect(403);
+    await request(app.getHttpServer()).put(`/merchant-pricing/merchants/${text(ownMerchant.id)}/plan`).set('Authorization', own.token).set('X-Fleetora-Company-Context', own.companyId).send({ planId: randomUUID(), revision: 1, discountAmount: '0.00' }).expect(403);
+  });
   beforeEach(async () => {
     await guard.verify(() => readAuthPostgresIdentity(prisma));
     const companies = await Promise.all([

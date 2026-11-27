@@ -24,7 +24,7 @@ import {
   type Field,
 } from "./operations-ui";
 import { merchantFields } from "./operation-forms";
-import { useCompanyCurrency } from "@/features/auth/session/session-context";
+import { useProtectedSession, useCompanyCurrency } from "@/features/auth/session/session-context";
 import { CompanyMerchantInvitations } from "@/features/merchant-access/company-merchant-invitations";
 
 export function MerchantDetail({ id }: { id: string }) {
@@ -52,6 +52,7 @@ function MerchantContent({
 }) {
   const { t } = useLocale();
   const companyCurrency = useCompanyCurrency();
+  const profileOnly = useProtectedSession().user.role === "OPERATIONS";
   const { result, retry } = useOperations(scope, { resource: "merchants", id });
   const [editing, setEditing] = useState(false);
   const [revision, setRevision] = useState(0);
@@ -121,8 +122,8 @@ function MerchantContent({
                 />
               </Panel>
               {/* App access belongs under the merchant profile, not above the page title. */}
-              <CompanyMerchantInvitations merchantId={id} />
-              <Panel title="Commercial terms">
+              {!profileOnly && <CompanyMerchantInvitations merchantId={id} />}
+              {!profileOnly && <Panel title="Commercial terms">
                 <DetailsGrid
                   entries={[
                     {
@@ -159,7 +160,7 @@ function MerchantContent({
                     },
                   ]}
                 />
-              </Panel>
+              </Panel>}
               <Panel title="Merchant parcel history">
                 <div className="flex flex-wrap gap-3">
                   <Button asChild variant="outline">
@@ -181,11 +182,11 @@ function MerchantContent({
                       {data.statistics.returns?.toLocaleString()}
                     </Link>
                   </Button>
-                  <Button asChild variant="outline">
+                  {permissions.viewFinance && <Button asChild variant="outline">
                     <Link href={`/app/settlements?merchantId=${id}`}>
                       {t("Merchant settlements")}
                     </Link>
-                  </Button>
+                  </Button>}
                 </div>
               </Panel>
               {permissions.viewFinance && (

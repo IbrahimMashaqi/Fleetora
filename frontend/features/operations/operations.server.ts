@@ -162,7 +162,7 @@ export async function operationsForSession(
       return { status: writing ? "uncertain" : "unavailable" };
     if (envelope.data.companyId !== scope.companyId)
       return { status: "changed" };
-    const data = parseData(operation, envelope.data, scope.companyId);
+    const data = parseData(operation, envelope.data, scope.companyId, session.user.role === "OPERATIONS");
     return data
       ? { status: "ready", data }
       : { status: writing ? "uncertain" : "unavailable" };

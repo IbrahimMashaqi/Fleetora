@@ -284,17 +284,23 @@ export function readRow(
   }
   return row;
 }
-export function parseMerchant(value: unknown): Row | null {
-  const row = readRow(value, merchantFields);
+export function parseMerchant(value: unknown, profileOnly = false): Row | null {
+  const profileFields = [
+    "id", "companyId", "name", "contactName", "phone", "secondaryPhone",
+    "pickupAddress", "city", "latitude", "longitude", "active", "activationStatus",
+    "revision", "createdAt", "updatedAt",
+  ];
+  const row = readRow(value, profileOnly ? profileFields : merchantFields);
   return row &&
     typeof row.name === "string" &&
-    typeof row.currency === "string" &&
-    ["ILS", "USD", "EUR", "JOD"].includes(row.currency) &&
-    ["deliveryFee", "returnFee", "serviceFee"].every(
-      (field) =>
-        typeof row[field] === "string" &&
-        validMoneyInput(row[field], row.currency as string),
-    ) &&
+    (profileOnly || (
+      typeof row.currency === "string" &&
+      ["ILS", "USD", "EUR", "JOD"].includes(row.currency) &&
+      ["deliveryFee", "returnFee", "serviceFee"].every(
+        (field) => typeof row[field] === "string" &&
+          validMoneyInput(row[field], row.currency as string),
+      )
+    )) &&
     typeof row.revision === "number" &&
     typeof row.active === "boolean" &&
     // OD-13: PENDING until the owner accepts the invitation and agreement.
@@ -401,6 +407,7 @@ export function parseData(
   operation: Operation,
   value: unknown,
   companyId: string,
+  merchantProfileOnly = false,
 ): Data | null {
   if (!object(value) || value.companyId !== companyId) return null;
   if (operation.resource === "lookups") {
@@ -514,7 +521,7 @@ export function parseData(
   ) {
     const parser =
       operation.resource === "merchants"
-        ? parseMerchant
+        ? (item: unknown) => parseMerchant(item, merchantProfileOnly)
         : operation.resource === "parcels"
           ? parseParcel
           : operation.resource === "events"
@@ -551,7 +558,7 @@ export function parseData(
     return preview && lines ? { kind: "preview", preview, lines } : null;
   }
   if (operation.resource === "merchants") {
-    const merchant = parseMerchant(value.merchant),
+    const merchant = parseMerchant(value.merchant, merchantProfileOnly),
       statistics = numbers(value.statistics),
       balances = rows(value.balances, (item) =>
         readRow(item, financialFields, false),
@@ -562,7 +569,7 @@ export function parseData(
   }
   if (operation.resource === "parcels") {
     const parcel = parseParcel(value.parcel),
-      merchant = value.merchant === null ? null : parseMerchant(value.merchant),
+      merchant = value.merchant === null ? null : parseMerchant(value.merchant, merchantProfileOnly),
       worker =
         value.worker === null
           ? null
