@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import { expect, test } from "@playwright/test";
+import { typeWithoutNavigation } from "@/tests/focus-retention";
 
 // Explicit isolated HTTP fixtures; real database/browser integration lives in backend/test/merchant-browser.ts.
 const companyId = "10000000-0000-4000-8000-000000000001";
@@ -232,6 +233,12 @@ test("pickup cancellation of the dialog writes nothing, while explicit confirmat
     body: { action: "CONFIRM", revision: 1, workerId: "10000000-0000-4000-8000-000000000020" },
   });
   expect(writes[0].body).not.toHaveProperty("companyId");
+});
+test("UX-01 pickup driver search retains focus for each Arabic character", async ({ page }) => {
+  await page.goto("/app/pickups");
+  await page.getByRole("button", { name: "Review request", exact: true }).click();
+  await typeWithoutNavigation(page, page.getByRole("dialog").getByRole("combobox", { name: "Drivers", exact: true }));
+  await expect(page.getByRole("option")).not.toHaveCount(0);
 });
 
 test("physical receipt submits only explicitly reviewed parcels and requires discrepancy notes", async ({

@@ -141,4 +141,24 @@ describe('lookup HTTP persisted authority (isolated persistence)', () => {
     await get().expect(403);
     expect(query).not.toHaveBeenCalled();
   });
+  it('UX-01 vehicle and catalogue searches retain fleet permissions', async () => {
+    for (const denied of ['ACCOUNTANT', 'WAREHOUSE']) {
+      role = denied;
+      for (const kind of ['vehicles', 'vehicleBrands', 'vehicleModels'])
+        await get(`kind=${kind}`).expect(403);
+    }
+    expect(query).not.toHaveBeenCalled();
+    role = 'OPERATIONS';
+    const response = await get('kind=vehicleBrands&search=skoda').expect(200);
+    expect(response.body.data.items).toEqual([
+      expect.objectContaining({ label: 'Škoda' }),
+    ]);
+    await get('kind=vehicleModels&manufacturer=Toyota&search=rav').expect(200);
+  });
+  it('UX-01 catalogue lookup matches displayed custom labels and existing brand aliases', async () => {
+    const custom = await get(`kind=vehicleBrands&search=${encodeURIComponent('Other / Custom manufacturer')}`).expect(200);
+    expect(custom.body.data.items).toEqual([expect.objectContaining({ id: 'custom' })]);
+    const brand = await get('kind=vehicleBrands&search=MercedesBenz').expect(200);
+    expect(brand.body.data.items).toEqual([expect.objectContaining({ label: 'Mercedes-Benz' })]);
+  });
 });

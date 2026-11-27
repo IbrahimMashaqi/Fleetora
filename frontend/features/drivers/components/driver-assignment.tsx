@@ -1,15 +1,11 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { unstable_rethrow } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { VehicleBrandLogo } from "@/components/vehicles/vehicle-brand-logo";
-import { vehicleTypeTranslationKey } from "@/components/vehicles/vehicle-brands";
 import { withSessionLock } from "@/lib/auth/session-lock";
 import { fleetAction } from "@/features/vehicles/vehicles.action";
-import { useVehicles } from "@/features/vehicles/use-vehicles";
+import { readClient } from "@/lib/api/read.client";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import {
   fleetMessages,
   type FleetResult,
@@ -30,7 +26,7 @@ export function DriverAssignment({
 }) {
   const { t } = useLocale();
   const [choosing, setChoosing] = useState(false);
-  const [choice, setChoice] = useState<Vehicle | null | undefined>(undefined);
+  const [choice, setChoice] = useState<Pick<Vehicle, "id" | "plateNumber"> | null | undefined>(undefined);
   const [result, setResult] = useState<FleetResult | null>(null);
   const [pending, setPending] = useState(false);
   const busy = useRef(false);
@@ -198,137 +194,19 @@ function VehiclePicker({
   onCancel,
 }: {
   scope: DriverScope;
-  onSelect: (vehicle: Vehicle) => void;
+  onSelect: (vehicle: Pick<Vehicle, "id" | "plateNumber">) => void;
   onCancel: () => void;
 }) {
   const { t } = useLocale();
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const { result, retry } = useVehicles(scope, search, page, true);
-  const data = result?.status === "list" ? result.data : null;
-  return (
-    <section
-      aria-label={t("Available company vehicles")}
-      className="rounded-md border border-border bg-surface p-4"
-    >
-      <form
-        className="flex flex-wrap items-end gap-2"
-        role="search"
-        onSubmit={(event) => {
-          event.preventDefault();
-          setPage(1);
-          setSearch(
-            String(
-              new FormData(event.currentTarget).get("search") ?? "",
-            ).trim(),
-          );
-        }}
-      >
-        <div className="min-w-0 flex-1 space-y-2">
-          <Label htmlFor="assignment-search">{t("Search available vehicles")}</Label>
-          <Input
-            autoFocus
-            id="assignment-search"
-            name="search"
-            type="search"
-            maxLength={100}
-            placeholder={t("Manufacturer, model or plate")}
-          />
-        </div>
-        <Button type="submit" size="sm">
-          {t("Search")}
-        </Button>
-      </form>
-      {!result ? (
-        <p role="status" className="mt-4 text-sm text-muted-foreground">
-          {t("Loading available vehicles...")}
-        </p>
-      ) : !data ? (
-        <div role="alert" className="mt-4 text-sm">
-          {result.status !== "saved" &&
-            result.status !== "list" &&
-            t(fleetMessages[result.status])}
-          {result.status === "unavailable" && (
-            <Button type="button" variant="outline" size="sm" onClick={retry}>
-              {t("Try again")}
-            </Button>
-          )}
-        </div>
-      ) : (
-        <>
-          {data.items.length === 0 ? (
-            <div className="mt-5 text-sm">
-              <p>{t("No unassigned vehicles found.")}</p>
-              <Link
-                href="/app/vehicles"
-                className="mt-2 inline-block text-accent-foreground underline"
-              >
-                {t("Manage company vehicles")}
-              </Link>
-            </div>
-          ) : (
-            <ul aria-label={t("Available vehicles")} className="mt-4 space-y-2">
-              {data.items.map((vehicle) => (
-                <li key={vehicle.id}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect(vehicle)}
-                    className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-start hover:border-primary focus-visible:outline-2 focus-visible:outline-primary"
-                  >
-                    <VehicleBrandLogo
-                      manufacturer={vehicle.manufacturer}
-                      type={vehicle.type}
-                    />
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold [overflow-wrap:anywhere]">
-                        {[vehicle.manufacturer, vehicle.model]
-                          .filter(Boolean)
-                          .join(" ") || t(vehicleTypeTranslationKey(vehicle.type))}
-                      </span>
-                      <bdi className="mt-1 block font-mono text-xs [overflow-wrap:anywhere]">
-                        {vehicle.plateNumber.trim() || t("Plate not recorded")}
-                      </bdi>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <nav
-            aria-label={t("Available vehicle pagination")}
-            className="mt-4 flex items-center justify-between gap-2"
-          >
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={page === 1}
-              onClick={() => setPage((v) => v - 1)}
-            >
-              {t("Previous vehicles")}
-            </Button>
-            <span className="text-xs">{t("Page {page}", { page })}</span>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={!data.hasNext}
-              onClick={() => setPage((v) => v + 1)}
-            >
-              {t("Next vehicles")}
-            </Button>
-          </nav>
-        </>
-      )}
-      <Button
-        className="mt-4"
-        type="button"
-        size="sm"
-        variant="ghost"
-        onClick={onCancel}
-      >
-        {t("Cancel selection")}
-      </Button>
-    </section>
-  );
+  const [value, setValue] = useState<ComboboxOption | null>(null);
+  const search = useCallback(async (text: string) => {
+    const result = await readClient("operations", scope, { resource: "lookups", query: { kind: "vehicles", search: text } });
+    if (result.status !== "ready" || result.data.kind !== "lookups") throw new Error("Vehicle lookup unavailable");
+    return result.data.items.map(vehicle => ({ value: vehicle.id, label: vehicle.label.trim() || vehicle.detail, detail: vehicle.detail }));
+  }, [scope]);
+  return <section aria-label={t("Available company vehicles")} className="space-y-3 rounded-md border border-border bg-surface p-4">
+    <Combobox id="assignment-search" label={t("Search available vehicles")} placeholder={t("Manufacturer, model or plate")} value={value} search={search}
+      onChange={option => { setValue(option); if (option) onSelect({ id: option.value, plateNumber: option.detail ?? "" }); }} />
+    <Button type="button" variant="ghost" size="sm" onClick={onCancel}>{t("Cancel selection")}</Button>
+  </section>;
 }

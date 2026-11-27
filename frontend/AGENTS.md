@@ -129,3 +129,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Technical rules — record selection
+
+- Record pickers MUST use the shared Combobox (components/ui). Never pair a search input with a select. Typing never navigates, refreshes the route, or loses focus; selection applies the value. Search is server-side, tenant-scoped, Arabic-normalized.
+- Fetch suggestions through an authenticated same-origin route handler. Keep draft text inside the picker and commit only on selection or explicit clearing. List search updates debounced results in place; it must not change route parameters or remount the search field while typing.

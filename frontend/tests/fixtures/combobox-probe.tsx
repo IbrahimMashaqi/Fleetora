@@ -21,6 +21,7 @@ export default function ComboboxProbe() {
   }, []);
   return (
     <main dir="rtl" className="p-8">
+      <button onClick={() => setValue({ value: "existing", label: "محل قائم" })}>Set existing record</button>
       <form onSubmit={(event) => event.preventDefault()}>
         <label htmlFor="merchant">التاجر</label>
         <Combobox

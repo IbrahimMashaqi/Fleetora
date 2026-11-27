@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { unstable_rethrow } from "next/navigation";
-import { withSessionLock } from "@/lib/auth/session-lock";
 import { useProtectedSession } from "@/features/auth/session/session-context";
-import { operationsAction } from "./operations.action";
-import type { Operation, Result, Scope } from "./operations-contract";
+import { readClient } from "@/lib/api/read.client";
+import type { Result, Scope } from "./operations-contract";
+import type { ReadOperations } from "@/lib/api/read-contract";
 
 export function useOperationScope(): Scope {
   const { user } = useProtectedSession();
@@ -13,7 +13,7 @@ export function useOperationScope(): Scope {
     [user.id, user.orgId],
   );
 }
-export function useOperations(scope: Scope, request: Operation) {
+export function useOperations(scope: Scope, request: ReadOperations["operations"]) {
   const [attempt, setAttempt] = useState(0);
   const [response, setResponse] = useState<{
     key: string;
@@ -26,11 +26,10 @@ export function useOperations(scope: Scope, request: Operation) {
     if (pending.current?.key !== key)
       pending.current = {
         key,
-        task: withSessionLock(() =>
-          operationsAction(
-            { userId: scope.userId, companyId: scope.companyId },
-            request,
-          ),
+        task: readClient(
+          "operations",
+          { userId: scope.userId, companyId: scope.companyId },
+          request,
         ),
       };
     void pending.current.task

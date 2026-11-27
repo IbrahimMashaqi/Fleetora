@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { unstable_rethrow } from "next/navigation";
-import { withSessionLock } from "@/lib/auth/session-lock";
-import { readDriversAction } from "./drivers.action";
+import { readClient } from "@/lib/api/read.client";
 import type { DriverRequest, DriverResult, DriverScope } from "./drivers.types";
 import { subscribeToVehicleChanges } from "@/features/vehicles/vehicle-events";
 
@@ -27,9 +26,7 @@ export function useDriverRead(request: DriverRequest, scope: DriverScope) {
   useEffect(() => {
     let active = true;
     if (pending.current?.key !== key) {
-      const task = withSessionLock(() =>
-        readDriversAction({ userId, companyId }, request),
-      );
+      const task = readClient("drivers", { userId, companyId }, request);
       pending.current = { key, task };
     }
     void pending.current.task

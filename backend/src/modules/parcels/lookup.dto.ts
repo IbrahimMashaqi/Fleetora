@@ -6,6 +6,9 @@ export const LOOKUP_KINDS = [
   'cities',
   'warehouses',
   'parcels',
+  'vehicles',
+  'vehicleBrands',
+  'vehicleModels',
 ] as const;
 export class LookupDto {
   @IsIn(LOOKUP_KINDS) kind!: (typeof LOOKUP_KINDS)[number];
@@ -15,4 +18,5 @@ export class LookupDto {
   @IsOptional() @IsIn(['ACTIVE']) activationStatus?: string;
   @IsOptional() @IsIn(['true']) active?: string;
   @IsOptional() @IsIn(['true']) collectable?: string;
+  @IsOptional() @IsString() @MaxLength(80) manufacturer?: string;
 }

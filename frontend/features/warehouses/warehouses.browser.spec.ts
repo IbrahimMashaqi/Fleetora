@@ -1,3 +1,4 @@
+import { typeWithoutNavigation } from "@/tests/focus-retention";
 import { createServer, type Server } from "node:http";
 import { expect, test, type Page } from "@playwright/test";
 import type { SessionUser } from "@/lib/auth/session.types";
@@ -236,4 +237,9 @@ test("fits a small screen without page-wide horizontal scrolling", async ({ page
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+ test("UX-01 list search retains focus and updates without navigation", async ({ page }) => {
+ await page.goto("/app/warehouses");
+ await typeWithoutNavigation(page, page.getByRole("searchbox", { name: "Search warehouses", exact: true }));
 });

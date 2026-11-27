@@ -157,6 +157,7 @@ export function VehicleEditor({
             <Label htmlFor="vehicle-manufacturer">{t("Manufacturer")}</Label>
             <SearchableSelect
               id="vehicle-manufacturer"
+              scope={scope} kind="vehicleBrands"
               label={t("Manufacturer")}
               value={brandValue}
               options={[
@@ -193,6 +194,7 @@ export function VehicleEditor({
             <Label htmlFor="vehicle-model">{t("Model")}</Label>
             <SearchableSelect
               id="vehicle-model"
+              scope={scope} kind="vehicleModels" manufacturer={manufacturer}
               label={t("Model")}
               value={modelValue}
               disabled={!manufacturer.trim() && !model.trim() && !customModel}

@@ -1,7 +1,7 @@
 'use client';
+import { useDebouncedSearch } from "@/lib/use-debounced-search";
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,9 +26,10 @@ export function MerchantsDirectory({ query }: { query: MerchantQuery }) {
   return <MerchantList key={JSON.stringify([user.id, user.orgId, query])} scope={{ userId: user.id, companyId: user.orgId }} query={query} />;
 }
 
-function MerchantList({ scope, query }: { scope: MerchantScope; query: MerchantQuery }) {
+function MerchantList({ scope, query: initialQuery }: { scope: MerchantScope; query: MerchantQuery }) {
   const { locale, t } = useLocale();
-  const router = useRouter();
+  const searchState = useDebouncedSearch(initialQuery.search);
+  const query = useMemo(() => ({ ...initialQuery, search: searchState.search, page: searchState.search === initialQuery.search ? initialQuery.page : 1 }), [initialQuery, searchState.search]);
   const request = useMemo<MerchantRequest>(() => ({ kind: 'list', query }), [query]);
   const { result, retry } = useMerchantRead(request, scope);
   const [selected, setSelected] = useState<string | null>(null);
@@ -44,12 +45,11 @@ function MerchantList({ scope, query }: { scope: MerchantScope; query: MerchantQ
       </div>
       <form role="search" className="my-6 flex min-w-0 flex-wrap items-end gap-3" onSubmit={event => {
         event.preventDefault();
-        const value = new FormData(event.currentTarget).get('search');
-        router.push(location(typeof value === 'string' ? value.trim() : ''));
+        searchState.apply();
       }}>
         <div className="min-w-0 flex-1 basis-56 space-y-2">
           <Label htmlFor="merchant-search">{t("Search merchant accounts")}</Label>
-          <Input id="merchant-search" type="search" name="search" maxLength={100} defaultValue={query.search} placeholder={t("Search by name or email")} />
+          <Input id="merchant-search" type="search" name="search" maxLength={100} value={searchState.text} onChange={event => searchState.setText(event.target.value)} placeholder={t("Search by name or email")} />
         </div>
         <Button type="submit">{t("Search")}</Button>
         {query.search && <Button asChild variant="ghost"><Link href="/app/merchants/accounts">{t("Clear search")}</Link></Button>}

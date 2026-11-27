@@ -5,8 +5,7 @@ import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useLocale, type TranslationKey } from "@/lib/i18n";
-import { withSessionLock } from "@/lib/auth/session-lock";
-import { operationsAction } from "../operations.action";
+import { readClient } from "@/lib/api/read.client";
 import type { Scope } from "../operations-contract";
 
 type Props = {
@@ -22,15 +21,13 @@ type Props = {
   onChange?: (id: string) => void;
 };
 export function EntityCombobox(props: Props) {
-  // Remount all local state across identity, company, field or eligibility changes.
+  // Reset across identities/resources; changing search/selection never remounts the input.
   return (
     <ScopedEntityCombobox
       key={JSON.stringify([
         props.scope,
         props.kind,
         props.name,
-        props.initialValue,
-        props.query,
       ])}
       {...props}
     />
@@ -63,17 +60,15 @@ function ScopedEntityCombobox({
   const queryKey = new URLSearchParams(query).toString();
   const load = useCallback(
     async (search: string, selectedId?: string) => {
-      const result = await withSessionLock(() =>
-        operationsAction(scope, {
-          resource: "lookups",
-          query: {
-            ...Object.fromEntries(new URLSearchParams(queryKey)),
-            kind,
-            search,
-            ...(selectedId ? { selected: selectedId } : {}),
-          },
-        }),
-      );
+      const result = await readClient("operations", scope, {
+        resource: "lookups",
+        query: {
+          ...Object.fromEntries(new URLSearchParams(queryKey)),
+          kind,
+          search,
+          ...(selectedId ? { selected: selectedId } : {}),
+        },
+      });
       if (result.status !== "ready" || result.data.kind !== "lookups")
         throw new Error("Lookup unavailable");
       const option = (row: {

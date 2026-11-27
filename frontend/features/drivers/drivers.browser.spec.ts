@@ -1,3 +1,4 @@
+import { typeWithoutNavigation } from "@/tests/focus-retention";
 import { createServer, type Server } from "node:http";
 import { expect, test, type Page } from "@playwright/test";
 import type { SessionUser } from "@/lib/auth/session.types";
@@ -339,7 +340,7 @@ test("supports backend search, URL pagination, and detail lookup", async ({
   ).toBeVisible();
   await page.getByRole("searchbox", { name: "Search drivers" }).fill("Amina");
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await expect(page).toHaveURL(/search=Amina/);
+  await expect(page.getByRole("searchbox").first()).toHaveValue("Amina");
   await expect(
     page.getByRole("main").getByText("Amina Driver", { exact: true }).first(),
   ).toBeVisible();
@@ -783,4 +784,9 @@ test("renders the real assigned vehicle summary, every status, and unassigned ca
   await expect(
     dialog.getByRole("button", { name: "Change vehicle", exact: true }),
   ).toBeVisible();
+});
+
+ test("UX-01 list search retains focus and updates without navigation", async ({ page }) => {
+ await page.goto("/app/drivers");
+ await typeWithoutNavigation(page, page.getByRole("searchbox", { name: "Search drivers", exact: true }));
 });
