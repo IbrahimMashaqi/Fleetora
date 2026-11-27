@@ -42,6 +42,8 @@
 - Before acceptance, rerunning with the same email reuses the single bootstrap invitation and replaces its expiring token, permitting recovery from email failure. A different email is refused once bootstrap is reserved. After acceptance, bootstrap is permanently refused; additional platform staff are invited by a Super Admin. Tokens are hashed, single-use and expire after 48 hours; activation sets the password and creates a companyless platform identity and explicit grant atomically.
 - The console is `/platform`, with `/platform/login` and public `/platform/activate#token=...`. All team administration and audit reads require a persisted SUPER_ADMIN; the other roles can read their own platform identity. Company administration and billing endpoints are not introduced in PR 1. Changing role or active state revokes existing platform sessions; the last eligible active Super Admin cannot be removed or demoted.
 
+- Local development mail capture (owner approved): base `docker-compose.yml` starts Mailpit and explicitly selects unauthenticated SMTP at `mailpit:1025` outside production. Read captured activation emails at `http://127.0.0.1:8025`; SMTP is not published on the host. The start batch prints this inbox URL in local mode. Neon mode excludes Mailpit and retains its existing mail configuration. Production ignores the local flag, requires real authenticated SMTP and keeps the existing implicit-TLS transport. Activation tokens/links are never printed by bootstrap or SMTP debug logs.
+
 ### UX-01 project-wide audit (2026-11-27)
 
 | Web location | Record/search case | Required implementation |

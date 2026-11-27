@@ -4,6 +4,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { fileURLToPath } from 'url';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
+import { mailTransport } from './mail-transport.js';
 const templatesDir = fileURLToPath(new URL('./templates', import.meta.url));
 @Global()
 @Module({
@@ -15,15 +16,7 @@ const templatesDir = fileURLToPath(new URL('./templates', import.meta.url));
           dir: templatesDir,
           adapter: new HandlebarsAdapter(),
         },
-        transport: {
-          host: config.get<string>('MAIL_HOST'),
-          port: config.get<number>('MAIL_PORT'),
-          secure: true,
-          auth: {
-            user: config.get<string>('MAIL_USER'),
-            pass: config.get<string>('MAIL_PASSWORD'),
-          },
-        },
+        transport: mailTransport(config),
       }),
       inject: [ConfigService],
     }),

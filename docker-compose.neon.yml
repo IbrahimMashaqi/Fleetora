@@ -1,5 +1,7 @@
 # Use with docker-compose.yml. Neon migrations are an explicit operator action.
 services:
+  mailpit:
+    profiles: [local]
   db:
     profiles: [local]
   migrate:
