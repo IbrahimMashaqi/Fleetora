@@ -1,9 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EntityCombobox } from "./entity-combobox";
+import { LocalizedDateInput } from "@/components/ui/localized-date-input";
 import { Label } from "@/components/ui/label";
 import { useLocale, type TranslationKey } from "@/lib/i18n";
 import { useCompanyCurrency } from "@/features/auth/session/session-context";
@@ -567,7 +569,7 @@ export function DirectoryFilters({
   return (
     <form
       role="search"
-      className="mb-6 min-w-0 overflow-hidden rounded-lg border bg-surface"
+      className="mb-6 min-w-0 rounded-lg border bg-surface"
       onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
@@ -639,6 +641,9 @@ export function DirectoryFilters({
             </select>
           </div>
         )}
+      </div>
+      <AdvancedFilters collapsible={resource === "parcels"} open={["merchantId", "workerId", "city", "from", "to", "direction"].some(key => Boolean(query[key]))}>
+        <div className="grid min-w-0 gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
         {resource !== "merchants" && (
           <EntityPicker
             scope={scope}
@@ -664,15 +669,7 @@ export function DirectoryFilters({
           />
         )}
         {(resource === "parcels" || resource === "dashboard") && (
-          <div className="space-y-2">
-            <Label htmlFor="filter-city">{t("City / region")}</Label>
-            <Input
-              id="filter-city"
-              name="city"
-              defaultValue={query.city}
-              maxLength={100}
-            />
-          </div>
+          <EntityCombobox scope={scope} kind="cities" name="city" label="City / region" placeholder="Choose city / region" initialValue={query.city} initialLabel={query.city} />
         )}
         {resource === "returns" && (
           <div className="space-y-2">
@@ -713,10 +710,9 @@ export function DirectoryFilters({
               <Label htmlFor={`filter-${name}`}>
                 {t(name === "from" ? "From date" : "To date")}
               </Label>
-              <Input
+              <LocalizedDateInput
                 id={`filter-${name}`}
                 name={name}
-                type="date"
                 defaultValue={query[name]}
               />
             </div>
@@ -751,6 +747,7 @@ export function DirectoryFilters({
           </div>
         )}
       </div>
+      </AdvancedFilters>
       <div className="flex flex-wrap items-center gap-2 border-t bg-muted/50 px-4 py-3 sm:px-5">
         <Button type="submit">{t("Apply filters")}</Button>
         <Button asChild variant="ghost">
@@ -759,4 +756,13 @@ export function DirectoryFilters({
       </div>
     </form>
   );
+}
+
+function AdvancedFilters({ children, collapsible, open }: { children: ReactNode; collapsible: boolean; open: boolean }) {
+  const { t } = useLocale();
+  if (!collapsible) return <>{children}</>;
+  return <details open={open} className="border-t">
+    <summary className="cursor-pointer px-4 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-primary">{t("Advanced filters")}</summary>
+    {children}
+  </details>;
 }

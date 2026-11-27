@@ -18,7 +18,7 @@ for (const entry of fs.readdirSync(frontend, { withFileTypes: true })) {
   fs.cpSync(path.join(frontend, entry.name), path.join(target, entry.name), { recursive: true, errorOnExist: true });
 }
 fs.symlinkSync(path.join(frontend, 'node_modules'), path.join(target, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir');
-for (const [route, fixture] of [['app/app/test-child', 'protected-child'], ['app/test-ui', 'primitive-probe'], ['app/test-vehicle-brand', 'vehicle-brand-probe']]) {
+for (const [route, fixture] of [['app/app/test-child', 'protected-child'], ['app/test-ui', 'primitive-probe'], ['app/test-combobox', 'combobox-probe'], ['app/test-vehicle-brand', 'vehicle-brand-probe']]) {
   fs.mkdirSync(path.join(target, route), { recursive: true });
   fs.writeFileSync(path.join(target, route, 'page.tsx'), `export { default } from "@/tests/fixtures/${fixture}";\n`, { flag: 'wx' });
 }

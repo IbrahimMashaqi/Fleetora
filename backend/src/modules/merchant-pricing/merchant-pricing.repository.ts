@@ -6,6 +6,7 @@ import {
   type ParcelTransaction,
 } from '../parcels/parcel-store.js';
 import type { PricingPageDto } from './merchant-pricing.dto.js';
+import { normalizeLookupSearch } from '../parcels/lookup-search.js';
 
 export type PricingZone = NonNullable<
   Awaited<ReturnType<ParcelOrm['DeliveryZone']['first']>>
@@ -71,15 +72,39 @@ export class MerchantPricingRepository {
       zoneId,
     }).first();
   }
-  zones(tx: ParcelTransaction, companyId: string, q: PricingPageDto) {
-    return tx.orm.public.DeliveryZone.where({ companyId })
+  async searchIds(tx: ParcelTransaction, companyId: string, kind: 'zones' | 'plans', search: string) {
+    const term = normalizeLookupSearch(search), limit = term ? 20 : 10;
+    const rows = await tx.query(this.store.prisma.db.raw.sql`
+      SELECT id FROM (
+        SELECT id, name, city AS detail FROM delivery_zones WHERE ${kind}='zones' AND "companyId"=${companyId} AND active=true
+        UNION ALL
+        SELECT id, name, '' AS detail FROM merchant_plans WHERE ${kind}='plans' AND "companyId"=${companyId} AND active=true
+      ) choices WHERE strpos(lower(translate(regexp_replace(name || ' ' || detail, '[ؐ-ًؚ-ٰٟۖ-ۭـ]', '', 'g'), 'أإآةى', 'اااهي')), ${term})>0
+      ORDER BY name, id LIMIT ${limit}
+    `.returnsRow({ id: 'pg/text@1' }).build());
+    return rows.map(row => row.id);
+  }
+  async zones(tx: ParcelTransaction, companyId: string, q: PricingPageDto) {
+    let query = tx.orm.public.DeliveryZone.where({ companyId });
+    if (q.search !== undefined) {
+      const ids = await this.searchIds(tx, companyId, 'zones', q.search);
+      if (!ids.length) return [];
+      query = query.where(r => r.id.in(ids));
+    }
+    return query
       .orderBy([(r) => r.city.asc(), (r) => r.name.asc(), (r) => r.id.asc()])
       .offset((q.page - 1) * q.pageSize)
       .limit(q.pageSize + 1)
       .all();
   }
-  plans(tx: ParcelTransaction, companyId: string, q: PricingPageDto) {
-    return tx.orm.public.MerchantPlan.where({ companyId })
+  async plans(tx: ParcelTransaction, companyId: string, q: PricingPageDto) {
+    let query = tx.orm.public.MerchantPlan.where({ companyId });
+    if (q.search !== undefined) {
+      const ids = await this.searchIds(tx, companyId, 'plans', q.search);
+      if (!ids.length) return [];
+      query = query.where(r => r.id.in(ids));
+    }
+    return query
       .orderBy([(r) => r.name.asc(), (r) => r.id.asc()])
       .offset((q.page - 1) * q.pageSize)
       .limit(q.pageSize + 1)

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useLocale, type TranslationKey } from "@/lib/i18n";
 import { withSessionLock } from "@/lib/auth/session-lock";
 import { operationsAction } from "../operations.action";
-import { useOperations } from "../use-operations";
+import { EntityCombobox } from "./entity-combobox";
 import { displayMoney } from "../money";
 import { PricingQuoteField, WarehouseField } from "./parcel-pricing-fields";
 import type {
@@ -391,82 +391,11 @@ const lookupPlaceholders = {
   drivers: "Choose driver",
   parcels: "Choose parcel",
 } as const;
-export function EntityPicker({ scope, field }: { scope: Scope; field: Field }) {
-  const { t } = useLocale();
-  const [search, setSearch] = useState("");
-  const [debounced, setDebounced] = useState("");
-  const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState(String(field.value ?? ""));
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebounced(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-  const { result, retry } = useOperations(scope, {
-    resource: field.lookup ?? "merchants",
-    query: {
-      search: debounced,
-      page: String(page),
-      pageSize: "25",
-      ...field.lookupQuery,
-    },
-  });
-  const data =
-    result?.status === "ready" && result.data.kind === "page"
-      ? result.data.data
-      : null;
-  const id = useId();
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{t(field.label)}</Label>
-      <Input
-        type="search"
-        aria-label={t(
-          field.lookup === "drivers"
-            ? "Find driver"
-            : field.lookup === "parcels"
-              ? "Find parcel"
-              : "Find merchant",
-        )}
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        maxLength={100}
-      />
-      <select
-        id={id}
-        name={field.name}
-        value={selected}
-        onChange={(event) => setSelected(event.target.value)}
-        required={field.required}
-        className={controlStyle}
-      >
-        <option value="">{t(lookupPlaceholders[field.lookup ?? "merchants"])}</option>
-        {selected && !data?.items.some((row) => row.id === selected) && (
-          <option value={selected}>{field.lookupLabel ?? selected}</option>
-        )}
-        {data?.items.map((row) => (
-          <option key={row.id} value={row.id}>
-            {valueText(row, "name") ||
-              valueText(row, "fullName") ||
-              valueText(row, "trackingNumber")}
-          </option>
-        ))}
-      </select>
-      {!result && (
-        <p role="status" className="text-xs text-muted-foreground">
-          {t("Loading operations...")}
-        </p>
-      )}
-      {result && result.status !== "ready" && (
-        <ErrorState status={result.status} retry={retry} />
-      )}
-      {data && (data.page > 1 || data.hasNext) && (
-        <Pager data={data} onPage={setPage} />
-      )}
-    </div>
-  );
+export function EntityPicker({ scope, field, onChange }: { scope: Scope; field: Field; onChange?: (id: string) => void }) {
+  const kind = field.lookup ?? "merchants";
+  return <EntityCombobox scope={scope} kind={kind} name={field.name} label={field.label}
+    placeholder={lookupPlaceholders[kind]} initialValue={String(field.value ?? "")}
+    initialLabel={field.lookupLabel} required={field.required} query={field.lookupQuery} onChange={onChange} />;
 }
 function FormField({ field, scope }: { field: Field; scope: Scope }) {
   const { t } = useLocale();

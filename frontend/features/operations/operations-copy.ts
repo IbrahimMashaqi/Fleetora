@@ -1,5 +1,9 @@
 // Feature vocabulary extends the existing shared locale provider.
 export const operationsArabic = {
+  "Clear selection": "مسح الاختيار",
+  "No results": "لا توجد نتائج",
+  "Advanced filters": "فلاتر متقدمة",
+  "Choose city / region": "اختر المدينة / المنطقة",
   "Business profile": "ملف النشاط التجاري",
   "Nothing to settle yet. Delivered and collected parcels appear here once the cash is remitted.":
     "لا يوجد ما يمكن تسويته بعد. تظهر هنا الطرود المسلّمة والمحصّلة بعد توريد النقد.",

@@ -187,6 +187,14 @@ test.beforeAll(async () => {
         }),
       );
     const url = new URL(req.url ?? "/", "http://fixture.invalid");
+    if (url.pathname === "/operation-lookups") {
+      const kind = url.searchParams.get("kind");
+      const items = kind === "merchants" ? [{ id: merchantId, label: merchant.name, detail: merchant.phone }]
+        : kind === "zones" ? [{ id: pricingZone.id, label: pricingZone.name, detail: pricingZone.city }]
+        : kind === "drivers" ? [{ id: driverId, label: "Fictional Driver", detail: "+000000003" }]
+        : kind === "parcels" ? [{ id: parcelId, label: parcel.trackingNumber, detail: parcel.recipientName }] : [];
+      return res.end(JSON.stringify({ success: true, data: { companyId, items, selected: items.find(item => item.id === url.searchParams.get("selected")) ?? null } }));
+    }
     let raw = "";
     for await (const chunk of req) raw += chunk;
     const body = raw ? JSON.parse(raw) : {};
@@ -484,7 +492,8 @@ test("parcel creation submits recipient, merchant and customer notes", async ({
   });
   await dialog
     .getByLabel("Merchants", { exact: true })
-    .selectOption(merchantId);
+    .click();
+  await page.getByRole("option", { name: /Fictional Parcel Merchant/ }).click();
   for (const [label, value] of [
     ["Recipient name", "Fictional UI recipient"],
     ["Recipient phone", "+000000009"],
@@ -499,7 +508,8 @@ test("parcel creation submits recipient, merchant and customer notes", async ({
   await expect(dialog.getByLabel("City / region", { exact: true })).toHaveCount(0);
   await dialog
     .getByLabel("Destination zone", { exact: true })
-    .selectOption(pricingZone.id);
+    .click();
+  await page.getByRole("option", { name: /Fixture zone/ }).click();
   await dialog
     .getByLabel("Final amount to collect", { exact: true })
     .fill("150.00");
@@ -598,6 +608,32 @@ test("parcel search and pagination preserve URL filters", async ({ page }) => {
     page.getByText("No records match these filters.", { exact: true }),
   ).toBeVisible();
 });
+
+test("parcel advanced filters keep main search visible and submit the selected merchant", async ({ page }) => {
+  await page.goto("/app/parcels");
+  await expect(page.getByLabel("Search parcels", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Status", { exact: true })).toBeVisible();
+  const merchant = page.getByRole("combobox", { name: "Merchants", exact: true });
+  await expect(merchant).not.toBeVisible();
+  await page.getByText("Advanced filters", { exact: true }).click();
+  await merchant.click();
+  await page.getByRole("option", { name: /Fictional Parcel Merchant/ }).click();
+  await page.getByRole("button", { name: "Apply filters", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`merchantId=${merchantId}`));
+  await expect(page.getByRole("combobox", { name: "Merchants", exact: true })).toHaveValue("Fictional Parcel Merchant");
+});
+
+test("collection picker selects a collectable parcel without a duplicate search field", async ({ page }) => {
+  await page.goto("/app/collections");
+  await page.getByRole("button", { name: "Record COD collection", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("combobox", { name: "Parcels", exact: true }).fill("FL");
+  await dialog.getByRole("option", { name: /FL-ISOLATED-UI/ }).click();
+  await expect(dialog.locator('input[name="parcelId"]')).toHaveValue(parcelId);
+  await expect(dialog.getByRole("searchbox")).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  expect(writes).toHaveLength(0);
+});
 test("parcel details display persisted custody and timeline; return cancellation records nothing", async ({
   page,
 }) => {
@@ -658,7 +694,8 @@ test("settlement preview is itemized and draft creation requires explicit confir
   });
   await dialog
     .getByLabel("Merchants", { exact: true })
-    .selectOption(merchantId);
+    .click();
+  await page.getByRole("option", { name: /Fictional Parcel Merchant/ }).click();
   await dialog
     .getByRole("button", { name: "Preview settlement", exact: true })
     .click();
@@ -777,7 +814,7 @@ for (const locale of ["en", "ar"] as const)
         "dir",
         locale === "ar" ? "rtl" : "ltr",
       );
-      await expect(page.getByLabel(t("Drivers"), { exact: true }).locator('option[value=""]')).toHaveText(
+      await expect(page.getByLabel(t("Drivers"), { exact: true })).toHaveAttribute("placeholder",
         locale === "ar" ? "اختر السائق" : "Choose driver",
       );
       await page
@@ -790,10 +827,10 @@ for (const locale of ["en", "ar"] as const)
       await expect(
         dialog.getByLabel(t("Recipient name"), { exact: true }),
       ).toBeVisible();
-      await expect(dialog.getByLabel(t("Merchants"), { exact: true }).locator('option[value=""]')).toHaveText(
+      await expect(dialog.getByLabel(t("Merchants"), { exact: true })).toHaveAttribute("placeholder",
         locale === "ar" ? "اختر التاجر" : "Choose merchant",
       );
-      await expect(dialog.getByLabel(t("Destination zone"), { exact: true }).locator('option[value=""]')).toHaveText(
+      await expect(dialog.getByLabel(t("Destination zone"), { exact: true })).toHaveAttribute("placeholder",
         locale === "ar" ? "اختر المنطقة" : "Choose zone",
       );
       await page.screenshot({
@@ -853,6 +890,8 @@ for (const locale of ["en", "ar"] as const) {
     await save.click();
     await expect(dialog.getByLabel(t("Merchants"), { exact: true })).toBeFocused();
     expect(writes).toHaveLength(0);
+    await dialog.getByLabel(t("Merchants"), { exact: true }).press("Escape");
+    await expect(dialog).toBeVisible();
     await dialog.getByRole("button", { name: t("Cancel"), exact: true }).click();
     await expect(dialog).toHaveCount(0);
     await expect(trigger).toBeFocused();
@@ -892,7 +931,8 @@ test("settlement preview identifies each included parcel", async ({ page }) => {
   });
   await dialog
     .getByLabel("Merchants", { exact: true })
-    .selectOption(merchantId);
+    .click();
+  await page.getByRole("option", { name: /Fictional Parcel Merchant/ }).click();
   await dialog
     .getByRole("button", { name: "Preview settlement", exact: true })
     .click();

@@ -72,6 +72,8 @@ test.beforeAll(async () => {
   server = createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     const url = new URL(req.url ?? "/", "http://fixture.invalid");
+    if (url.pathname === "/operation-lookups")
+      return res.end(JSON.stringify({ success: true, data: { companyId, items: [{ id: "10000000-0000-4000-8000-000000000020", label: "Fixture pickup driver", detail: "0590000000" }], selected: null } }));
     requested.push({
       path: url.pathname,
       bearer: String(req.headers.authorization ?? "").replace(/^Bearer /, ""),
@@ -216,6 +218,8 @@ test("pickup cancellation of the dialog writes nothing, while explicit confirmat
   await dialog
     .getByLabel("Window end", { exact: true })
     .fill("2026-11-01T12:00");
+  await dialog.getByRole("combobox", { name: "Drivers", exact: true }).click();
+  await dialog.getByRole("option", { name: /Fixture pickup driver/ }).click();
   await dialog
     .getByRole("button", { name: "Save reviewed action", exact: true })
     .click();
@@ -225,7 +229,7 @@ test("pickup cancellation of the dialog writes nothing, while explicit confirmat
   expect(writes).toHaveLength(1);
   expect(writes[0]).toMatchObject({
     path: `/pickups/${id}/review`,
-    body: { action: "CONFIRM", revision: 1 },
+    body: { action: "CONFIRM", revision: 1, workerId: "10000000-0000-4000-8000-000000000020" },
   });
   expect(writes[0].body).not.toHaveProperty("companyId");
 });

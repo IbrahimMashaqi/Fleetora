@@ -15,9 +15,12 @@ import {
 import { ParcelDashboardController } from './parcel-dashboard.controller.js';
 import { OverviewController } from './overview.controller.js';
 import { OverviewRepository } from './overview.repository.js';
+import { LookupController } from './lookup.controller.js';
+import { LookupRepository } from './lookup.repository.js';
 @Module({
   imports: [MerchantPricingModule],
   controllers: [
+    LookupController,
     ParcelsController,
     ReturnsController,
     CollectionsController,
@@ -27,6 +30,7 @@ import { OverviewRepository } from './overview.repository.js';
     OverviewController,
   ],
   providers: [
+    LookupRepository,
     ParcelStore,
     ParcelLedger,
     ParcelOperationsRepository,

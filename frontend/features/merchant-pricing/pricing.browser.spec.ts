@@ -64,6 +64,9 @@ test.beforeAll(async () => {
     for await (const chunk of req) raw += chunk;
     const body: Record<string, unknown> = raw ? JSON.parse(raw) : {};
     const url = new URL(req.url ?? "/", "http://fixture.invalid");
+    if (url.pathname === "/operation-lookups") {
+      return res.end(JSON.stringify({ success: true, data: { companyId, items: [{ id: merchantId, label: merchant.name, detail: "" }], selected: null } }));
+    }
     const user = {
       ...admin,
       role,
@@ -264,10 +267,11 @@ test("creates a plan and saves an explicit named promotion tariff", async ({
     name: `Zone tariffs: ${plan.name}`,
     exact: true,
   });
-  await expect(tariffDialog.getByLabel("Destination zone", { exact: true }).locator('option[value=""]')).toHaveText("Choose zone");
+  await expect(tariffDialog.getByLabel("Destination zone", { exact: true })).toHaveAttribute("placeholder","Choose zone");
   await tariffDialog
     .getByLabel("Destination zone", { exact: true })
-    .selectOption(zoneId);
+    .click();
+  await page.getByRole("option", { name: new RegExp(zone.name) }).click();
   await tariffDialog
     .getByLabel("Contractual delivery fee (ILS)", { exact: true })
     .fill("17.00");
@@ -304,16 +308,18 @@ test("selects a business merchant and assigns a same-currency plan", async ({
   await page
     .getByRole("button", { name: "Merchant plan assignment", exact: true })
     .click();
-  await page.getByLabel("Merchant", { exact: true }).selectOption(merchantId);
+  await page.getByLabel("Merchant", { exact: true }).click();
+  await page.getByRole("option", { name: new RegExp(merchant.name) }).click();
   await page.getByRole("button", { name: "Assign plan", exact: true }).click();
   const dialog = page.getByRole("dialog", {
     name: `Assign plan: ${merchant.name}`,
     exact: true,
   });
-  await expect(dialog.getByLabel("Commercial plan", { exact: true }).locator('option[value=""]')).toHaveText("Choose plan");
+  await expect(dialog.getByLabel("Commercial plan", { exact: true })).toHaveAttribute("placeholder","Choose plan");
   await dialog
     .getByLabel("Commercial plan", { exact: true })
-    .selectOption(planId);
+    .click();
+  await page.getByRole("option", { name: new RegExp(plan.name) }).click();
   await dialog
     .getByLabel("Additional merchant discount", { exact: true })
     .fill("0.25");

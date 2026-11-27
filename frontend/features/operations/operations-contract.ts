@@ -1,6 +1,7 @@
 import { validMoneyInput } from "./money";
 export type Scope = { userId: string; companyId: string };
 export type Resource =
+  | "lookups"
   | "config"
   | "merchants"
   | "parcels"
@@ -50,6 +51,7 @@ export type Page = {
   hasNext: boolean;
 };
 export type Data =
+  | { kind: "lookups"; items: { id: string; label: string; detail: string }[]; selected: { id: string; label: string; detail: string } | null }
   | {
       kind: "config";
       capabilities: Record<string, boolean>;
@@ -401,6 +403,11 @@ export function parseData(
   companyId: string,
 ): Data | null {
   if (!object(value) || value.companyId !== companyId) return null;
+  if (operation.resource === "lookups") {
+    const item = (v: unknown): v is { id: string; label: string; detail: string } => object(v) && typeof v.id === "string" && typeof v.label === "string" && typeof v.detail === "string" && (v.companyId === undefined || v.companyId === companyId);
+    if (!Array.isArray(value.items) || value.items.length > 20 || !value.items.every(item) || (value.selected !== null && !item(value.selected))) return null;
+    return { kind: "lookups", items: value.items.map(v => ({ id: v.id, label: v.label, detail: v.detail })), selected: value.selected === null ? null : { id: value.selected.id, label: value.selected.label, detail: value.selected.detail } };
+  }
   const hasForeignOwner = (item: unknown) =>
     object(item) &&
     item.companyId !== undefined &&
@@ -716,13 +723,14 @@ export function operationEndpoint(operation: Operation): string | null {
   if (operation.id !== undefined && !uuid.test(operation.id)) return null;
   const resource = operation.resource;
   if (
-    ["config", "drivers", "dashboard", "events", "statement"].includes(
+    ["lookups", "config", "drivers", "dashboard", "events", "statement"].includes(
       resource,
     ) &&
     operation.action
   )
     return null;
   const base: Record<Resource, string> = {
+    lookups: "operation-lookups",
     config: "parcels/config",
     merchants: "merchants/business",
     parcels: "parcels",
