@@ -15,6 +15,7 @@ import { ParcelDashboardRepository } from '../src/modules/parcels/parcel-dashboa
 import { PageDto } from '../src/modules/parcels/parcel.dto.js';
 import { money } from '../src/modules/parcels/parcel-domain.js';
 import { DriversRepository } from '../src/modules/drivers/drivers.repository.js';
+import { LookupRepository } from '../src/modules/parcels/lookup.repository.js';
 import { DriverIdentityRepository } from '../src/modules/drivers/driver-identity.repository.js';
 import type { TokenPayload } from '../src/modules/auth/token/token.payload.js';
 import {
@@ -172,6 +173,47 @@ describe('parcel operations on disposable PostgreSQL', () => {
     };
   }
   const warehouses = new Map<string, string>();
+  it('lookup normalization, eligibility, limits and tenant boundaries', async () => {
+    const lookup = new LookupRepository(prisma);
+    const own = await merchant(), other = await merchant(foreign), pending = await pendingMerchant();
+    for (const id of [own, other, pending])
+      await prisma.db.orm.public.Merchant.where({ id }).update({ name: 'أَحْـمد', phone: '0595607282' });
+    const result = await lookup.search(actor, { kind: 'merchants', search: 'احمد', activationStatus: 'ACTIVE' });
+    expect(result.items.map(item => item.id)).toEqual([own]);
+    expect((await lookup.search(actor, { kind: 'merchants', search: '0595607282' })).items.map(item => item.id)).toContain(pending);
+    expect((await lookup.search(actor, { kind: 'merchants', selected: other })).selected).toBeNull();
+    for (let i = 0; i < 23; i++) await prisma.Worker.create({ companyId: actor.orgId, fullName: `فاطمة ${i}`, phone: `059000${i}` });
+    expect((await lookup.search(actor, { kind: 'drivers' })).items).toHaveLength(10);
+    expect((await lookup.search(actor, { kind: 'drivers', search: 'فاطمه' })).items).toHaveLength(20);
+    await prisma.db.orm.public.Worker.where({ id: driverId }).update({ status: 'SUSPENDED' });
+    expect((await lookup.search(actor, { kind: 'drivers', active: 'true', selected: driverId })).selected).toBeNull();
+    expect((await lookup.search(actor, { kind: 'drivers', selected: foreignDriverId })).selected).toBeNull();
+    const zone = await prisma.db.orm.public.DeliveryZone.create({ companyId: actor.orgId, name: 'مَدرسة', city: 'رَام الـله', baseFeeMinor: 100n });
+    await prisma.db.orm.public.DeliveryZone.create({ companyId: foreign.orgId, name: 'مدرسة', city: 'رام الله', baseFeeMinor: 100n });
+    expect((await lookup.search(actor, { kind: 'zones', search: 'مدرسه' })).items.map(item => item.id)).toEqual([zone.id]);
+    expect((await lookup.search(actor, { kind: 'cities', search: 'رام الله' })).items.map(item => item.label)).toContain('رَام الـله');
+    const pricing = new MerchantPricingRepository(store);
+    await prisma.db.transaction(async tx => {
+      expect((await pricing.zones(tx, actor.orgId, { page: 1, pageSize: 25, search: 'مدرسه' })).map(row => row.id)).toEqual([zone.id]);
+    });
+    expect((await lookup.search(actor, { kind: 'merchants', search: '%' })).items).toEqual([]);
+    for (const role of ['COMPANY_ADMIN', 'OPERATIONS', 'ACCOUNTANT', 'WAREHOUSE'] as const)
+      expect((await lookup.search({ ...actor, role }, { kind: 'merchants' })).companyId).toBe(actor.orgId);
+    for (const role of ['DRIVER', 'MERCHANT', 'PLATFORM_ADMIN'] as const)
+      await expect(lookup.search({ ...actor, role }, { kind: 'merchants' })).rejects.toMatchObject({ status: 403 });
+    await expect(lookup.search({ ...actor, role: 'OPERATIONS' }, { kind: 'parcels', collectable: 'true' })).rejects.toMatchObject({ status: 403 });
+  });
+  it('collectable lookup excludes undelivered, already collected and foreign parcels', async () => {
+    const lookup = new LookupRepository(prisma), merchantId = await merchant();
+    const fresh = await parcel(merchantId), eligible = await delivered(merchantId);
+    const other = await parcel(await merchant(foreign), foreign);
+    const query = { kind: 'parcels', collectable: 'true' } as const;
+    expect((await lookup.search(actor, { ...query, selected: fresh })).selected).toBeNull();
+    expect((await lookup.search(actor, { ...query, selected: other })).selected).toBeNull();
+    expect((await lookup.search(actor, { ...query, selected: eligible })).selected?.id).toBe(eligible);
+    await finance.collect(actor, { parcelId: eligible, amount: '100.00', method: 'CASH', idempotencyKey: key() });
+    expect((await lookup.search(actor, { ...query, selected: eligible })).selected).toBeNull();
+  });
   for (const role of [
     'COMPANY_ADMIN',
     'OPERATIONS',

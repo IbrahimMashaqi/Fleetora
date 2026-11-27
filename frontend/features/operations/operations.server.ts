@@ -27,6 +27,7 @@ type Jar = Parameters<typeof setSessionTokens>[0] &
     get(name: string): { value: string } | undefined;
   };
 const resources = new Set([
+  "lookups",
   "config",
   "merchants",
   "parcels",
@@ -40,6 +41,7 @@ const resources = new Set([
   "adjustments",
 ]);
 const queryFields = new Set([
+  "kind", "selected",
   "page",
   "pageSize",
   "search",

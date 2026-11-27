@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { useProtectedSession } from "@/features/auth/session/session-context";
 import { useOperationScope } from "@/features/operations/use-operations";
 import { ErrorState } from "@/features/operations/components/operations-ui";
@@ -14,8 +13,9 @@ import {
   PricingPager,
   PricingRead,
 } from "./pricing-forms";
-import { PricingDialog, PricingField, controlStyle } from "./pricing-dialog";
+import { PricingDialog, PricingField } from "./pricing-dialog";
 import type { Plan, Scope, Tariff, Zone } from "./pricing-contract";
+import { PricingPicker } from "./pricing-picker";
 import { usePricing } from "./use-pricing";
 
 export function PricingWorkspace() {
@@ -365,9 +365,7 @@ function TariffEditor({
 }) {
   const { locale } = useLocale();
   const c = locale === "ar" ? pricingArabic : pricingEnglish;
-  const [page, setPage] = useState(1);
   const [zone, setZone] = useState<Zone | null>(null);
-  const read = usePricing(scope, { kind: "zones", page });
   const tariff = tariffs.find((row) => row.zoneId === zone?.id);
   return (
     <PricingDialog
@@ -396,44 +394,8 @@ function TariffEditor({
       }
     >
       <p className="text-sm leading-6 text-muted-foreground">{c.tariffHelp}</p>
-      <PricingRead {...read}>
-        {(data) =>
-          data.kind === "zones" && (
-            <div className="space-y-3">
-              <Label htmlFor="tariff-zone">{c.zone}</Label>
-              <select
-                id="tariff-zone"
-                required
-                className={controlStyle}
-                value={zone?.id ?? ""}
-                onChange={(event) =>
-                  setZone(
-                    data.page.items.find(
-                      (row) => row.id === event.target.value,
-                    ) ?? null,
-                  )
-                }
-              >
-                <option value="">{c.chooseZone}</option>
-                {zone && !data.page.items.some((row) => row.id === zone.id) && (
-                  <option value={zone.id}>
-                    {zone.city} · {zone.name}
-                  </option>
-                )}
-                {data.page.items
-                  .filter((row) => row.active && row.currency === plan.currency)
-                  .map((row) => (
-                    <option key={row.id} value={row.id}>
-                      {row.city} · {row.name}
-                    </option>
-                  ))}
-              </select>
-              <p className="text-xs text-muted-foreground">{c.selectZone}</p>
-              <PricingPager page={data.page} onPage={setPage} />
-            </div>
-          )
-        }
-      </PricingRead>
+      <PricingPicker scope={scope} kind="zones" label={c.zone} placeholder={c.chooseZone}
+        value={zone} onChange={record => setZone(record && "baseFee" in record && record.currency === plan.currency ? record : null)} />
       {zone && (
         <div key={zone.id} className="space-y-5">
           <PricingField

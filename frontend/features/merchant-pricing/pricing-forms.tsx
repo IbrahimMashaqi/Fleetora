@@ -22,6 +22,7 @@ import {
   type Scope,
   type Zone,
 } from "./pricing-contract";
+import { PricingPicker } from "./pricing-picker";
 import { usePricing } from "./use-pricing";
 
 export function PricingRead({
@@ -201,50 +202,10 @@ function PlanSelector({
 }) {
   const { locale } = useLocale();
   const c = locale === "ar" ? pricingArabic : pricingEnglish;
-  const [page, setPage] = useState(1);
-  const read = usePricing(scope, { kind: "plans", page });
-  return (
-    <PricingRead {...read}>
-      {(data) =>
-        data.kind === "plans" && (
-          <div className="space-y-3">
-            <Label htmlFor="assign-plan">{c.plan}</Label>
-            <select
-              id="assign-plan"
-              required
-              className={controlStyle}
-              value={selected?.id ?? ""}
-              onChange={(event) =>
-                onSelect(
-                  data.page.items.find(
-                    (plan) => plan.id === event.target.value,
-                  ) ?? null,
-                )
-              }
-            >
-              <option value="">{c.choosePlan}</option>
-              {selected &&
-                !data.page.items.some((plan) => plan.id === selected.id) && (
-                  <option value={selected.id}>{selected.name}</option>
-                )}
-              {data.page.items
-                .filter(
-                  (plan) => plan.active && plan.currency === requiredCurrency,
-                )
-                .map((plan) => (
-                  <option key={plan.id} value={plan.id}>
-                    {plan.name} · {plan.currency}
-                  </option>
-                ))}
-            </select>
-            <p className="text-xs text-muted-foreground">{c.selectPlan}</p>
-            <PricingPager page={data.page} onPage={setPage} />
-          </div>
-        )
-      }
-    </PricingRead>
-  );
+  return <PricingPicker scope={scope} kind="plans" label={c.plan} placeholder={c.choosePlan}
+    value={selected} onChange={plan => onSelect(plan?.currency === requiredCurrency ? plan : null)} />;
 }
+
 export function AssignPlan({
   scope,
   merchant,
@@ -312,18 +273,10 @@ export function MerchantAssignment({
     <section className="space-y-5 rounded-lg border bg-surface p-5 sm:p-6">
       <h3 className="font-semibold">{c.assignment}</h3>
       <p className="text-sm text-muted-foreground">{c.assignmentHelp}</p>
-      <div
-        onChange={(event) => {
-          const target = event.target;
-          if (
-            target instanceof HTMLSelectElement &&
-            target.name === "merchantId"
-          )
-            setMerchantId(target.value);
-        }}
-      >
+      <div>
         <EntityPicker
           scope={scope}
+          onChange={setMerchantId}
           field={{
             name: "merchantId",
             label: "Merchant",

@@ -1,19 +1,15 @@
 "use client";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { unstable_rethrow } from "next/navigation";
-import { Label } from "@/components/ui/label";
+import { EntityCombobox } from "./entity-combobox";
 import { useLocale } from "@/lib/i18n";
 import { withSessionLock } from "@/lib/auth/session-lock";
 import { operationalPricingAction as pricingAction } from "@/features/merchant-pricing/pricing.action";
-import type { Quote, Zone } from "@/features/merchant-pricing/pricing-contract";
-import { readWarehousesAction } from "@/features/warehouses/warehouses.action";
-import type { Warehouse } from "@/features/warehouses/warehouses.types";
+import type { Quote } from "@/features/merchant-pricing/pricing-contract";
 import type { Scope } from "../operations-contract";
 import { displayMoney } from "../money";
 import type { Field } from "./operations-ui";
 
-const controlStyle =
-  "min-h-10 w-full rounded-md border border-[var(--control-border)] bg-surface px-3 py-2 text-start text-sm focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50";
 const amountPattern = /^\d{1,14}(?:\.\d{1,3})?$/;
 type QuoteState =
   | { status: "idle" }
@@ -34,32 +30,11 @@ export function PricingQuoteField({
   field: Field;
 }) {
   const { t, locale } = useLocale();
-  const id = useId();
   const anchor = useRef<HTMLDivElement>(null);
-  const [zones, setZones] = useState<Zone[] | null>(null);
-  const [zonesFailed, setZonesFailed] = useState(false);
   const [state, setState] = useState<QuoteState>({ status: "idle" });
   const request = useRef(0);
   // Last merchant/zone/amount quoted; blur "change" events must not re-quote.
   const quotedKey = useRef("");
-
-  useEffect(() => {
-    let active = true;
-    void withSessionLock(() => pricingAction(scope, { kind: "zones", page: 1 }))
-      .then((result) => {
-        if (!active) return;
-        if (result.status === "ready" && result.data.kind === "zones")
-          setZones(result.data.page.items.filter((zone) => zone.active));
-        else setZonesFailed(true);
-      })
-      .catch((error) => {
-        unstable_rethrow(error);
-        if (active) setZonesFailed(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, [scope]);
 
   useEffect(() => {
     const form = anchor.current?.closest("form");
@@ -116,37 +91,14 @@ export function PricingQuoteField({
       form.removeEventListener("input", update);
       form.removeEventListener("change", update);
     };
-  }, [scope, zones]);
+  }, [scope]);
 
   const money = (amount: string, currency: string) =>
     displayMoney(amount, currency, locale);
   return (
     <div ref={anchor} className="space-y-3">
-      <div className="space-y-2">
-        <Label htmlFor={id}>{t("Destination zone")}</Label>
-        <select
-          id={id}
-          name="zoneId"
-          required
-          defaultValue={typeof field.value === "string" ? field.value : ""}
-          className={controlStyle}
-          disabled={!zones}
-        >
-          <option value="">
-            {zones ? t("Choose zone") : t("Loading operations...")}
-          </option>
-          {zones?.map((zone) => (
-            <option key={zone.id} value={zone.id}>
-              {zone.name} ({zone.city})
-            </option>
-          ))}
-        </select>
-        {zonesFailed && (
-          <p role="alert" className="text-xs text-danger-foreground">
-            {t("Operations are temporarily unavailable. Try again.")}
-          </p>
-        )}
-      </div>
+      <EntityCombobox scope={scope} kind="zones" name="zoneId" label="Destination zone"
+        placeholder="Choose zone" required initialValue={typeof field.value === "string" ? field.value : ""} />
       <input
         type="hidden"
         name="pricingVersion"
@@ -210,63 +162,6 @@ export function WarehouseField({
   scope: Scope;
   field: Field;
 }) {
-  const { t } = useLocale();
-  const id = useId();
-  const [warehouses, setWarehouses] = useState<Warehouse[] | null>(null);
-  const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    let active = true;
-    void withSessionLock(() =>
-      readWarehousesAction(scope, {
-        search: "",
-        status: "ACTIVE",
-        page: 1,
-        pageSize: 50,
-      }),
-    )
-      .then((result) => {
-        if (!active) return;
-        if (result.status === "list") setWarehouses(result.data.items);
-        else setFailed(true);
-      })
-      .catch((error) => {
-        unstable_rethrow(error);
-        if (active) setFailed(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, [scope]);
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{t(field.label)}</Label>
-      <select
-        id={id}
-        name={field.name}
-        required
-        className={controlStyle}
-        disabled={!warehouses?.length}
-        defaultValue=""
-      >
-        <option value="">
-          {warehouses ? t("Choose warehouse") : t("Loading warehouses...")}
-        </option>
-        {warehouses?.map((warehouse) => (
-          <option key={warehouse.id} value={warehouse.id}>
-            {warehouse.name}
-          </option>
-        ))}
-      </select>
-      {warehouses?.length === 0 && (
-        <p role="alert" className="text-xs text-danger-foreground">
-          {t("No active warehouses. Add one under Warehouses first.")}
-        </p>
-      )}
-      {failed && (
-        <p role="alert" className="text-xs text-danger-foreground">
-          {t("Operations are temporarily unavailable. Try again.")}
-        </p>
-      )}
-    </div>
-  );
+  return <EntityCombobox scope={scope} kind="warehouses" name={field.name} label={field.label}
+    placeholder="Choose warehouse" required={field.required} initialValue={String(field.value ?? "")} />;
 }

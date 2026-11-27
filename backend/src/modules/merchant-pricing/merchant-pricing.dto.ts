@@ -16,6 +16,7 @@ import {
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
 export class PricingPageDto {
+  @IsOptional() @IsString() @MaxLength(100) search?: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(100000) page = 1;
   @Type(() => Number) @IsInt() @Min(1) @Max(100) pageSize = 25;
 }

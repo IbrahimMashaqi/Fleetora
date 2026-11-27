@@ -36,7 +36,7 @@ export type PricingPage<T> = {
 export type PlanInput = { name: string; currency: Currency; active: boolean };
 export type ZoneInput = PlanInput & { city: string; baseFee: string };
 export type PricingOperation =
-  | { kind: "zones" | "plans"; page: number }
+  | { kind: "zones" | "plans"; page: number; search?: string }
   | { kind: "plan"; id: string }
   | { kind: "save-zone"; id?: string; input: ZoneInput & { revision?: number } }
   | { kind: "save-plan"; id?: string; input: PlanInput & { revision?: number } }
@@ -127,12 +127,13 @@ export function preparePricingOperation(
     };
   if (
     (value.kind === "zones" || value.kind === "plans") &&
-    only(value, ["kind", "page"]) &&
+    only(value, ["kind", "page", "search"]) &&
+    (value.search === undefined || (typeof value.search === "string" && value.search.length <= 100)) &&
     revision(value.page) &&
     value.page <= 100000
   )
     return {
-      path: `merchant-pricing/${value.kind}?page=${value.page}&pageSize=25`,
+      path: `merchant-pricing/${value.kind}?page=${value.page}&pageSize=25${typeof value.search === "string" ? `&search=${encodeURIComponent(value.search)}` : ""}`,
       method: "GET",
     };
   if (!pricingId(value.id) && value.id !== undefined) return null;

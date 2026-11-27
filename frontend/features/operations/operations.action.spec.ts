@@ -14,6 +14,7 @@ let responseCompany: string;
 let status: number;
 let disconnect: boolean;
 let sessionStatus: number;
+let lookupSelected: Record<string, unknown> | null;
 let requests: {
   path: string;
   search?: string;
@@ -73,6 +74,7 @@ test.beforeAll(async () => {
         data: {
           companyId: responseCompany,
           items: [],
+          selected: lookupSelected,
           page: 1,
           pageSize: 25,
           hasNext: false,
@@ -102,6 +104,7 @@ test.beforeEach(() => {
   sessionStatus = 200;
   disconnect = false;
   requests = [];
+  lookupSelected = null;
 });
 test("OD-13/BR-093: forwards the ACTIVE merchant filter for operational pickers", async () => {
   const result = await operationsForSession(jar, scope, {
@@ -292,4 +295,22 @@ test("lookups can ask for collectable parcels and eligible drivers only", async 
       query: { includeLegacyPricing: "true" },
     }),
   ).toEqual({ status: "invalid" });
+});
+
+test("shared combobox lookup forwards server search and selected ID without tenant input", async () => {
+  const result = await operationsForSession(jar, scope, { resource: "lookups", query: { kind: "merchants", search: "احمد", activationStatus: "ACTIVE", selected: parcelId } });
+  expect(result).toEqual({ status: "ready", data: { kind: "lookups", items: [], selected: null } });
+  const url = new URL(requests[1].search ?? "", "http://fixture.invalid");
+  expect(url.searchParams.get("search")).toBe("احمد");
+  expect(url.searchParams.get("selected")).toBe(parcelId);
+  expect(requests[1].path).toBe("/operation-lookups");
+  expect(await operationsForSession(jar, scope, { resource: "lookups", query: { kind: "merchants", companyId: "other" } })).toEqual({ status: "invalid" });
+});
+test("shared combobox refuses foreign selected records and changed sessions", async () => {
+  lookupSelected = { id: parcelId, label: "Other company", detail: "", companyId: "other" };
+  expect(await operationsForSession(jar, scope, { resource: "lookups", query: { kind: "merchants" } })).toEqual({ status: "unavailable" });
+  sessionCompany = "other";
+  requests = [];
+  expect(await operationsForSession(jar, scope, { resource: "lookups", query: { kind: "merchants" } })).toEqual({ status: "changed" });
+  expect(requests).toHaveLength(1);
 });

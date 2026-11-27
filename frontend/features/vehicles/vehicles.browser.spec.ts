@@ -682,6 +682,7 @@ async function choose(page: Page, label: string, option: string) {
     .getByRole("dialog")
     .getByRole("combobox", { name: label, exact: true })
     .click();
+  await page.getByRole("dialog").getByRole("combobox", { name: label, exact: true }).fill(option);
   await page.getByRole("option", { name: option, exact: true }).click();
 }
 
@@ -693,26 +694,27 @@ test("dependent searchable options clear stale models and submit the selected pa
   const dialog = page.getByRole("dialog");
   await expect(
     dialog.getByRole("combobox", { name: "Manufacturer", exact: true }),
-  ).toHaveText(/Toyota/);
+  ).toHaveValue(/Toyota/);
   await expect(
     dialog.getByRole("combobox", { name: "Model", exact: true }),
-  ).toHaveText(/Corolla/);
+  ).toHaveValue(/Corolla/);
   await dialog
     .getByRole("combobox", { name: "Manufacturer", exact: true })
     .click();
   await dialog
-    .getByRole("searchbox", { name: "Search manufacturer" })
+    .getByRole("combobox", { name: "Manufacturer", exact: true })
     .fill("skoda");
   await expect(
     dialog.getByRole("option", { name: "Toyota", exact: true }),
   ).toHaveCount(0);
+  await expect(dialog.getByRole("option", { name: /koda/ })).toBeVisible();
   await page.keyboard.press("Enter");
   await expect(
     dialog.getByRole("combobox", { name: "Manufacturer", exact: true }),
-  ).toHaveText(/koda/);
+  ).toHaveValue(/koda/);
   await expect(
     dialog.getByRole("combobox", { name: "Model", exact: true }),
-  ).toHaveText(/Not recorded/);
+  ).toHaveValue(/Not recorded/);
   await dialog.getByRole("combobox", { name: "Model", exact: true }).click();
   for (const name of choices[0].models)
     await expect(
@@ -721,7 +723,8 @@ test("dependent searchable options clear stale models and submit the selected pa
   await expect(
     dialog.getByRole("option", { name: "Corolla", exact: true }),
   ).toHaveCount(0);
-  await dialog.getByRole("searchbox", { name: "Search model" }).fill("super");
+  await dialog.getByRole("combobox", { name: "Model", exact: true }).fill("super");
+  await expect(dialog.getByRole("option", { name: "Superb", exact: true })).toBeVisible();
   await page.keyboard.press("Enter");
   await dialog.getByRole("button", { name: "Save changes" }).click();
   await expect(dialog).not.toBeVisible();
@@ -760,7 +763,7 @@ test("changing manufacturer submits no stale model and choosing none disables mo
     page
       .getByRole("dialog")
       .getByRole("combobox", { name: "Model", exact: true }),
-  ).toHaveText(/Not recorded/);
+  ).toHaveValue(/Not recorded/);
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
   expect(vehicles[0]).toMatchObject({ manufacturer: "BMW", model: null });
@@ -898,7 +901,7 @@ test("blank legacy identity does not block an unrelated edit", async ({
   const dialog = page.getByRole("dialog");
   await expect(
     dialog.getByRole("combobox", { name: "Manufacturer", exact: true }),
-  ).toHaveText(/Not recorded/);
+  ).toHaveValue(/Not recorded/);
   await expect(
     dialog.getByRole("combobox", { name: "Model", exact: true }),
   ).toBeDisabled();
@@ -923,7 +926,7 @@ test("mobile keyboard selection, escape and dark-mode colors remain usable", asy
     .focus();
   await page.keyboard.press("ArrowDown");
   await expect(
-    dialog.getByRole("searchbox", { name: "Search manufacturer" }),
+    dialog.getByRole("combobox", { name: "Manufacturer", exact: true }),
   ).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(dialog).toBeVisible();
@@ -931,12 +934,13 @@ test("mobile keyboard selection, escape and dark-mode colors remain usable", asy
     dialog.getByRole("combobox", { name: "Manufacturer", exact: true }),
   ).toBeFocused();
   await dialog.getByRole("combobox", { name: "Model", exact: true }).click();
-  await dialog.getByRole("searchbox", { name: "Search model" }).fill("rav");
+  await dialog.getByRole("combobox", { name: "Model", exact: true }).fill("rav");
+  await expect(dialog.getByRole("option", { name: "RAV4", exact: true })).toBeVisible();
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
   await expect(
     dialog.getByRole("combobox", { name: "Model", exact: true }),
-  ).toHaveText(/RAV4/);
+  ).toHaveValue(/RAV4/);
   expect(
     await dialog.evaluate(
       (element) => element.scrollWidth <= element.clientWidth,
