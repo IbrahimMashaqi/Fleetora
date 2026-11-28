@@ -154,11 +154,13 @@ for (const locale of ['en', 'ar'] as const) {
     await expect(page.locator('iframe')).toHaveCount(0);
     await expect(page.getByLabel(locale === 'en' ? 'Activation code' : 'رمز التفعيل', { exact: true })).toBeHidden();
     expect(await page.locator('body').innerText()).not.toContain(token);
-    await expect(page.getByRole('link', { name: locale === 'en' ? 'Open Merchant app' : 'فتح تطبيق التاجر', exact: true })).toHaveAttribute('href', `fleetora-merchant://app/activate?token=${token}`);
+    const openApp = page.getByRole('link', { name: locale === 'en' ? 'Open Fleetora app' : 'فتح تطبيق Fleetora', exact: true });
+    await expect(openApp).toHaveAttribute('href', `fleetora-merchant://app/activate?token=${token}`);
+    await expect(openApp).toHaveAccessibleDescription(locale === 'en' ? /Install Fleetora Merchant on your phone/ : /ثبّت تطبيق Fleetora Merchant على هاتفك/);
     await page.getByRole('button', { name: locale === 'en' ? 'Copy activation code' : 'نسخ رمز التفعيل', exact: true }).click();
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(token);
     await expect(page.getByRole('status')).toHaveText(locale === 'en' ? 'Code copied.' : 'تم نسخ الرمز.');
-    await expect(page.getByText(locale === 'en' ? /Install the Fleetora Merchant app/ : /ثبّت تطبيق Fleetora Merchant/)).toBeVisible();
+    await expect(page.getByText(locale === 'en' ? /^Install the Fleetora Merchant app/ : /^ثبّت تطبيق Fleetora Merchant/)).toBeVisible();
     const reveal = page.getByRole('button', { name: locale === 'en' ? 'Show code' : 'إظهار الرمز', exact: true });
     await expect(reveal).toHaveAttribute('aria-expanded', 'false');
     await reveal.click();
@@ -176,8 +178,9 @@ test('public merchant activation rejects malformed and duplicate fragment tokens
     await page.goto(`/merchant/activate#${fragment}`);
     await expect(page.getByRole('region', { name: 'Activate Fleetora Merchant', exact: true }).getByRole('alert')).toContainText('Ask your company for a new invitation link.');
     await expect(page.locator('iframe')).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Open Merchant app', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Back to sign in', exact: true })).toHaveAttribute('href', '/login');
+    await expect(page.getByRole('link', { name: 'Open Fleetora app', exact: true })).toHaveAttribute('href', 'fleetora-merchant://app/activate');
+    await expect(page.getByText(/ask your company for a new invitation\./)).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Activate Fleetora Merchant', exact: true }).locator('a[href="/login"]')).toHaveCount(0);
   }
   expect(writes).toEqual([]);
 });

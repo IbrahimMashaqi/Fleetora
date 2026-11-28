@@ -80,14 +80,18 @@ test("renders verified account details and the password form", async ({ page }) 
   await expect(main).not.toContainText(companyUser.orgId!);
 });
 
-test("renders companyless platform context and missing email truthfully", async ({ page }) => {
+test("OD-15: platform staff are sent to the platform console instead of a company account page", async ({ page }) => {
   user = { ...companyUser, role: "PLATFORM_ADMIN", email: null, orgId: null, company: null };
   await page.goto("/app/account");
-  const main = page.getByRole("main");
-  await expect(main.getByText("Platform administrator", { exact: true })).toBeVisible();
-  await expect(main.getByText("Platform administration", { exact: true })).toBeVisible();
-  await expect(main.getByText("Email not provided", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/platform$/, { timeout: 15_000 });
   await expect(page.getByText("Amina Logistics")).toHaveCount(0);
+  expect(updates).toHaveLength(0);
+});
+
+test("renders a missing email truthfully", async ({ page }) => {
+  user = { ...companyUser, email: null };
+  await page.goto("/app/account");
+  await expect(page.getByRole("main").getByText("Email not provided", { exact: true })).toBeVisible();
 });
 
 test("redirects unauthenticated account entry without rendering identity", async ({ page, context }) => {

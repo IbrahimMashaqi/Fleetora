@@ -1,7 +1,6 @@
 "use client";
 
 import { useId, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,12 +13,15 @@ const words = {
     help: "Install the Fleetora Merchant app, then open it with the button below. If it doesn't open, copy the activation code and paste it under Activate account in the app.",
     opening: "Preparing your invitation…",
     invalid: "Ask your company for a new invitation link.",
-    open: "Open Merchant app",
+    open: "Open Fleetora app",
     code: "Activation code",
     copy: "Copy activation code",
     show: "Show code",
     hide: "Hide code",
-    back: "Back to sign in",
+    installHint:
+      "Don't have the app yet? Install Fleetora Merchant on your phone, then open this link again.",
+    invalidHint:
+      "Don't have the app yet? Install Fleetora Merchant on your phone, then ask your company for a new invitation.",
     copied: "Code copied.",
     failed: "Select the code and copy it manually.",
   },
@@ -28,12 +30,15 @@ const words = {
     help: "ثبّت تطبيق Fleetora Merchant ثم افتحه بالزر أدناه. إذا لم يفتح، انسخ رمز التفعيل والصقه في خيار تفعيل الحساب داخل التطبيق.",
     opening: "جارٍ تجهيز الدعوة…",
     invalid: "اطلب رابط دعوة جديداً من شركتك.",
-    open: "فتح تطبيق التاجر",
+    open: "فتح تطبيق Fleetora",
     code: "رمز التفعيل",
     copy: "نسخ رمز التفعيل",
     show: "إظهار الرمز",
     hide: "إخفاء الرمز",
-    back: "العودة إلى تسجيل الدخول",
+    installHint:
+      "ليس لديك التطبيق؟ ثبّت تطبيق Fleetora Merchant على هاتفك ثم افتح هذا الرابط مجدداً.",
+    invalidHint:
+      "ليس لديك التطبيق؟ ثبّت تطبيق Fleetora Merchant على هاتفك ثم اطلب دعوة جديدة من شركتك.",
     copied: "تم نسخ الرمز.",
     failed: "حدد الرمز وانسخه يدوياً.",
   },
@@ -64,6 +69,9 @@ export function MerchantActivationPage() {
   const [feedback, setFeedback] = useState<"copied" | "failed">();
   const [showCode, setShowCode] = useState(false);
   const codeId = useId();
+  const hintId = useId();
+  // The app's activation intent accepts this path; without a token it opens normally.
+  const appHome = "fleetora-merchant://app/activate";
   const appLink = token
     ? `fleetora-merchant://app/activate?token=${token}`
     : "";
@@ -97,9 +105,15 @@ export function MerchantActivationPage() {
             >
               {copy.invalid}
             </p>
+            {/* Opens the app on its start screen; it only launches on tap. */}
             <Button asChild variant="outline">
-              <Link href="/login">{copy.back}</Link>
+              <a href={appHome} rel="noreferrer">
+                {copy.open}
+              </a>
             </Button>
+            <p className="text-sm leading-6 text-muted-foreground">
+              {copy.invalidHint}
+            </p>
           </div>
         ) : (
           <>
@@ -108,10 +122,13 @@ export function MerchantActivationPage() {
             </p>
             {/* Opening the app needs an explicit user gesture; nothing launches on page load. */}
             <Button asChild className="w-full">
-              <a href={appLink} rel="noreferrer">
+              <a href={appLink} rel="noreferrer" aria-describedby={hintId}>
                 {copy.open}
               </a>
             </Button>
+            <p id={hintId} className="text-sm leading-6 text-muted-foreground">
+              {copy.installHint}
+            </p>
             <Button
               variant="outline"
               className="w-full"

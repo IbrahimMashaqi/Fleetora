@@ -89,7 +89,9 @@ for (const role of ['PLATFORM_ADMIN', 'MERCHANT', 'ACCOUNTANT'] as const) {
   test(`denies ${role} directory entry and hides operational navigation`, async ({ page }) => {
     user = { ...admin, role, ...(role === 'PLATFORM_ADMIN' ? { orgId: null, company: null } : {}) };
     await page.goto('/app/merchants/accounts');
-    await expect(page.getByRole('heading', { name: "You don't have access to this page" })).toBeVisible();
+    // OD-15: platform staff have no company workspace and land in the platform console.
+    if (role === 'PLATFORM_ADMIN') await expect(page).toHaveURL(/\/platform$/, { timeout: 15_000 });
+    else await expect(page.getByRole('heading', { name: "You don't have access to this page" })).toBeVisible();
     if (role === 'ACCOUNTANT') await expect(page.getByRole('link', { name: 'Merchants', exact: true })).toHaveAttribute('href', '/app/merchants');
     else await expect(page.getByRole('link', { name: 'Merchants', exact: true })).toHaveCount(0);
     await expect(page.locator('a[href="/app/merchants/accounts"]')).toHaveCount(0);
@@ -104,7 +106,7 @@ test('redirects missing credentials and removes stale tenant data after identity
   await expect(page.getByRole('main').getByText('Alpha Supplies', { exact: true }).first()).toBeVisible();
   user = { ...admin, role: 'PLATFORM_ADMIN', orgId: null, company: null };
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await expect(page.getByRole('heading', { name: "You don't have access to this page" })).toBeVisible();
+  await expect(page).toHaveURL(/\/platform$/, { timeout: 15_000 });
   await expect(page.getByText('Alpha Supplies')).toHaveCount(0);
 });
 test('handles API authentication rejection without retaining merchant data', async ({ page, context }) => {
