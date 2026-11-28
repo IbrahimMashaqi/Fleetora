@@ -69,6 +69,113 @@ export async function handlePlatform(request: NextRequest) {
     ) {
       path = `platform/invitations/${input.id}`;
       method = "DELETE";
+    } else if (input.action === "companies") {
+      const page = input.page ?? 1,
+        size = input.pageSize ?? 25;
+      if (
+        typeof page !== "number" ||
+        !Number.isInteger(page) ||
+        page < 1 ||
+        typeof size !== "number" ||
+        !Number.isInteger(size) ||
+        size < 1 ||
+        size > 100 ||
+        typeof input.search !== "string" ||
+        input.search.length > 100 ||
+        typeof input.status !== "string" ||
+        !["", "PENDING", "ACTIVE", "REJECTED", "SUSPENDED"].includes(
+          input.status,
+        )
+      )
+        return reply("invalid", 400);
+      path = `platform/companies?${new URLSearchParams({ page: String(page), pageSize: String(size), search: input.search, ...(input.status ? { status: input.status } : {}) })}`;
+      method = "GET";
+    } else if (input.action === "createCompany") {
+      if (
+        Object.keys(input).some(
+          (key) =>
+            ![
+              "action",
+              "userId",
+              "name",
+              "phone",
+              "address",
+              "currency",
+              "adminName",
+              "adminEmail",
+            ].includes(key),
+        ) ||
+        typeof input.name !== "string" ||
+        input.name.trim().length < 2 ||
+        input.name.length > 160 ||
+        typeof input.adminName !== "string" ||
+        input.adminName.trim().length < 2 ||
+        input.adminName.length > 120 ||
+        typeof input.adminEmail !== "string" ||
+        input.adminEmail.length > 254 ||
+        !["ILS", "USD", "EUR", "JOD"].includes(String(input.currency)) ||
+        (input.phone !== undefined &&
+          (typeof input.phone !== "string" || input.phone.length > 40)) ||
+        (input.address !== undefined &&
+          (typeof input.address !== "string" || input.address.length > 500))
+      )
+        return reply("invalid", 400);
+      path = "platform/companies";
+      method = "POST";
+      body = {
+        name: input.name,
+        phone: input.phone,
+        address: input.address,
+        currency: input.currency,
+        adminName: input.adminName,
+        adminEmail: input.adminEmail,
+      };
+    } else if (
+      ["company", "transitionCompany", "reissueCompanyAdmin"].includes(
+        String(input.action),
+      ) &&
+      typeof input.id === "string" &&
+      uuid.test(input.id)
+    ) {
+      path = `platform/companies/${input.id}`;
+      method = "GET";
+      if (input.action === "transitionCompany") {
+        if (
+          Object.keys(input).some(
+            (key) =>
+              ![
+                "action",
+                "userId",
+                "id",
+                "transition",
+                "reason",
+                "revision",
+              ].includes(key),
+          ) ||
+          !["approve", "reject", "suspend", "reactivate"].includes(
+            String(input.transition),
+          ) ||
+          typeof input.revision !== "number" ||
+          !Number.isInteger(input.revision) ||
+          input.revision < 1 ||
+          (input.reason !== undefined &&
+            (typeof input.reason !== "string" ||
+              input.reason.trim().length < 1 ||
+              input.reason.length > 500))
+        )
+          return reply("invalid", 400);
+        path += "/transitions";
+        method = "POST";
+        body = {
+          action: input.transition,
+          reason: input.reason,
+          revision: input.revision,
+        };
+      } else if (input.action === "reissueCompanyAdmin") {
+        path += "/admin-invitation";
+        method = "POST";
+        body = {};
+      }
     } else return reply("invalid", 400);
     const jar = {
       get: (name: string) => request.cookies.get(name),

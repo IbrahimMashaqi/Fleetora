@@ -56,9 +56,9 @@ export async function lockedFleetWrite<T>(
       .select('id', 'role', 'companyId', 'isActive', 'isEmailVerified')
       .first();
     const tenant = await tx.orm.public.Company.where({ id: companyId })
-      .select('id', 'suspended')
+      .select('id', 'suspended', 'approvalStatus', 'accessVersion')
       .first();
-    if (!user?.isActive || !user.isEmailVerified || !tenant || tenant.suspended)
+    if (!user?.isActive || !user.isEmailVerified || !tenant || tenant.suspended || tenant.approvalStatus !== 'ACTIVE' || tenant.accessVersion !== (actor.companyVersion ?? 0))
       throw new UnauthorizedException();
     if (user.role !== actor.role || user.companyId !== companyId)
       throw new ForbiddenException('Session context changed');

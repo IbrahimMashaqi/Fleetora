@@ -20,6 +20,14 @@
       "model": "Company",
       "namespace": "public"
     },
+    "company_access_events": {
+      "model": "CompanyAccessEvent",
+      "namespace": "public"
+    },
+    "company_admin_invitations": {
+      "model": "CompanyAdminInvitation",
+      "namespace": "public"
+    },
     "company_headquarters": {
       "model": "CompanyHeadquarters",
       "namespace": "public"
@@ -232,6 +240,23 @@
               {
                 "name": "FAILED",
                 "value": "FAILED"
+              }
+            ]
+          },
+          "CompanyApproval": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "PENDING",
+                "value": "PENDING"
+              },
+              {
+                "name": "ACTIVE",
+                "value": "ACTIVE"
+              },
+              {
+                "name": "REJECTED",
+                "value": "REJECTED"
               }
             ]
           },
@@ -1059,6 +1084,33 @@
           },
           "Company": {
             "fields": {
+              "accessVersion": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "address": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "approvalStatus": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "CompanyApproval",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -1087,6 +1139,13 @@
                   "kind": "scalar"
                 }
               },
+              "phone": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "plan": {
                 "nullable": false,
                 "type": {
@@ -1098,6 +1157,27 @@
                   "entityName": "Plan",
                   "namespaceId": "public",
                   "plane": "domain"
+                }
+              },
+              "primaryAdminId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "rejectionReason": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "revision": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
                 }
               },
               "suspended": {
@@ -1116,6 +1196,36 @@
               }
             },
             "relations": {
+              "accessEvents": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "CompanyAccessEvent",
+                  "namespace": "public"
+                }
+              },
+              "adminInvitations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "CompanyAdminInvitation",
+                  "namespace": "public"
+                }
+              },
               "allocations": {
                 "cardinality": "1:N",
                 "on": {
@@ -1615,6 +1725,24 @@
                   "namespace": "public"
                 }
               },
+              "primaryAdmin": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "primaryAdminId",
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
               "settlementLines": {
                 "cardinality": "1:N",
                 "on": {
@@ -1768,6 +1896,15 @@
             },
             "storage": {
               "fields": {
+                "accessVersion": {
+                  "column": "accessVersion"
+                },
+                "address": {
+                  "column": "address"
+                },
+                "approvalStatus": {
+                  "column": "approvalStatus"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
@@ -1780,8 +1917,20 @@
                 "name": {
                   "column": "name"
                 },
+                "phone": {
+                  "column": "phone"
+                },
                 "plan": {
                   "column": "plan"
+                },
+                "primaryAdminId": {
+                  "column": "primaryAdminId"
+                },
+                "rejectionReason": {
+                  "column": "rejectionReason"
+                },
+                "revision": {
+                  "column": "revision"
                 },
                 "suspended": {
                   "column": "suspended"
@@ -1792,6 +1941,230 @@
               },
               "namespaceId": "public",
               "table": "companies"
+            }
+          },
+          "CompanyAccessEvent": {
+            "fields": {
+              "action": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "actorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "companyId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "details": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/json@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "company": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "action": {
+                  "column": "action"
+                },
+                "actorId": {
+                  "column": "actorId"
+                },
+                "companyId": {
+                  "column": "companyId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "details": {
+                  "column": "details"
+                },
+                "id": {
+                  "column": "id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "company_access_events"
+            }
+          },
+          "CompanyAdminInvitation": {
+            "fields": {
+              "acceptedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "companyId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "expiresAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "issuedById": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "revokedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "kind": "scalar"
+                }
+              },
+              "tokenHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "userId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "company": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "userId",
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "id",
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "acceptedAt": {
+                  "column": "acceptedAt"
+                },
+                "companyId": {
+                  "column": "companyId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "expiresAt": {
+                  "column": "expiresAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "issuedById": {
+                  "column": "issuedById"
+                },
+                "revokedAt": {
+                  "column": "revokedAt"
+                },
+                "tokenHash": {
+                  "column": "tokenHash"
+                },
+                "userId": {
+                  "column": "userId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "company_admin_invitations"
             }
           },
           "CompanyHeadquarters": {
@@ -8655,6 +9028,40 @@
                   "namespace": "public"
                 }
               },
+              "primaryAdminFor": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "primaryAdminId",
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Company",
+                  "namespace": "public"
+                }
+              },
+              "primaryAdminInvitations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id",
+                    "companyId"
+                  ],
+                  "targetFields": [
+                    "userId",
+                    "companyId"
+                  ]
+                },
+                "to": {
+                  "model": "CompanyAdminInvitation",
+                  "namespace": "public"
+                }
+              },
               "requestedShipments": {
                 "cardinality": "1:N",
                 "on": {
@@ -9885,17 +10292,61 @@
             "companies": {
               "checks": [
                 {
+                  "expression": "\"approvalStatus\" IN ('PENDING', 'ACTIVE', 'REJECTED')",
+                  "name": "companies_approvalStatus_check_ef53a045",
+                  "prefix": "companies_approvalStatus_check"
+                },
+                {
                   "expression": "\"plan\" IN ('TRIAL', 'BASIC', 'PRO', 'ENTERPRISE')",
                   "name": "companies_plan_check_16898502",
                   "prefix": "companies_plan_check"
                 },
                 {
+                  "expression": "\"revision\" > 0 AND \"accessVersion\" >= 0",
+                  "name": "company_access_revision_20c85f47",
+                  "prefix": "company_access_revision"
+                },
+                {
                   "expression": "\"currency\" IN ('ILS','USD','EUR','JOD')",
                   "name": "company_currency_de87c3c6",
                   "prefix": "company_currency"
+                },
+                {
+                  "expression": "\"approvalStatus\" <> 'REJECTED' OR (\"rejectionReason\" IS NOT NULL AND length(btrim(\"rejectionReason\")) BETWEEN 1 AND 500)",
+                  "name": "company_rejection_reason_d624501c",
+                  "prefix": "company_rejection_reason"
                 }
               ],
               "columns": {
+                "accessVersion": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "address": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "approvalStatus": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "ACTIVE"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "CompanyApproval",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-temporal@1",
                   "default": {
@@ -9924,6 +10375,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "phone": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "plan": {
                   "codecId": "pg/text@1",
                   "default": {
@@ -9938,6 +10394,25 @@
                     "namespaceId": "public",
                     "plane": "storage"
                   }
+                },
+                "primaryAdminId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "rejectionReason": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "revision": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 1
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
                 },
                 "suspended": {
                   "codecId": "pg/bool@1",
@@ -9954,8 +10429,38 @@
                   "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "primaryAdminId",
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "primaryAdminId",
+                    "id"
+                  ],
+                  "name": "companies_primaryAdminId_id_idx_617b35ba",
+                  "prefix": "companies_primaryAdminId_id_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -9966,6 +10471,226 @@
                   "columns": [
                     "id",
                     "currency"
+                  ]
+                }
+              ]
+            },
+            "company_access_events": {
+              "columns": {
+                "action": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "actorId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "companyId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "details": {
+                  "codecId": "pg/json@1",
+                  "nativeType": "json",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "company_access_events"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "companyId",
+                    "createdAt"
+                  ],
+                  "name": "company_access_events_companyId_createdAt_idx_5377e5d5",
+                  "prefix": "company_access_events_companyId_createdAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "companyId"
+                  ],
+                  "name": "company_access_events_companyId_idx_33acc5ed",
+                  "prefix": "company_access_events_companyId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "company_admin_invitations": {
+              "checks": [
+                {
+                  "expression": "NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL)",
+                  "name": "company_admin_invitation_state_dec73fa1",
+                  "prefix": "company_admin_invitation_state"
+                }
+              ],
+              "columns": {
+                "acceptedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "companyId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "expiresAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "issuedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "revokedAt": {
+                  "codecId": "pg/timestamptz-temporal@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "tokenHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "userId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "company_admin_invitations"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "companies"
+                  }
+                },
+                {
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "userId",
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "company_admin_invitations"
+                  },
+                  "target": {
+                    "columns": [
+                      "id",
+                      "companyId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "companyId",
+                    "createdAt"
+                  ],
+                  "name": "company_admin_invitations_companyId_createdAt_idx_5377e5d5",
+                  "prefix": "company_admin_invitations_companyId_createdAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "companyId"
+                  ],
+                  "name": "company_admin_invitations_companyId_idx_33acc5ed",
+                  "prefix": "company_admin_invitations_companyId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "userId",
+                    "companyId"
+                  ],
+                  "name": "company_admin_invitations_userId_companyId_idx_172f3a40",
+                  "prefix": "company_admin_invitations_userId_companyId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "tokenHash"
                   ]
                 }
               ]
@@ -16505,6 +17230,14 @@
                 "FAILED"
               ]
             },
+            "CompanyApproval": {
+              "kind": "valueSet",
+              "values": [
+                "PENDING",
+                "ACTIVE",
+                "REJECTED"
+              ]
+            },
             "MembershipPrincipalType": {
               "kind": "valueSet",
               "values": [
@@ -16622,10 +17355,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "229f7301133a8fb5405ab776de74cea418da9d41a4044c6c44b57ef3c54910f4"
+    "storageHash": "c1cc3cc93a8d782d6855b05baf59d3f135515ee225fa0f23c3cb1e6d17c885a4"
   },
   "execution": {
-    "executionHash": "08de8a4be05efc62dd97299d2a17c108d203dcd9175c1efeb1f1141ff81ec04f",
+    "executionHash": "dea9e12fbb15344f398516bf14f8c9983041ae8ad1b0af2d3e6e8addc032a2c5",
     "mutations": {
       "defaults": [
         {
@@ -16700,6 +17433,28 @@
             "column": "updatedAt",
             "namespace": "public",
             "table": "companies"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "company_access_events"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "company_admin_invitations"
           }
         },
         {

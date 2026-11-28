@@ -254,6 +254,7 @@ function Console() {
             Fleetora
           </Link>
           <div className="flex items-center gap-4">
+            {identity && identity.role !== "BILLING" && <Link href="/platform/companies">{c("Companies", "الشركات")}</Link>}
             <LanguageSwitcher />
             <LogoutControl />
           </div>

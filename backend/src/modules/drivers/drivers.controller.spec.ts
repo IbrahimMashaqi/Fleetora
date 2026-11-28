@@ -95,7 +95,7 @@ describe('Company Admin driver directory API (isolated fixtures)', () => {
         },
         {
           provide: AuthRepository,
-          useValue: { findUserById, isCompanyActiveForUser },
+          useValue: { findUserById, isCompanyActiveForUser, findCompanyAccess: async () => ({approvalStatus:'ACTIVE',suspended:false,accessVersion:0}) },
         },
       ],
     })

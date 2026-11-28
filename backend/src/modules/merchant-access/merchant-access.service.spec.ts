@@ -92,7 +92,7 @@ describe('merchant invitation and access security', () => {
       ] as const)
         q[method].mockReturnValue(q);
     orm.User.first.mockResolvedValue({ ...user });
-    orm.Company.first.mockResolvedValue({ id: 'company', suspended: false });
+    orm.Company.first.mockResolvedValue({ id: 'company', approvalStatus: 'ACTIVE', accessVersion: 0, suspended: false });
     orm.Merchant.first.mockResolvedValue({
       id: 'merchant',
       companyId: 'company',

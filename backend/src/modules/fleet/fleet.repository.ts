@@ -109,13 +109,13 @@ export class FleetRepository {
       .select('id', 'role', 'companyId', 'isActive', 'isEmailVerified')
       .first();
     const company = await tx.orm.public.Company.where({ id: companyId })
-      .select('id', 'suspended')
+      .select('id', 'suspended', 'approvalStatus', 'accessVersion')
       .first();
     if (
       !user?.isActive ||
       !user.isEmailVerified ||
       !company ||
-      company.suspended
+      company.suspended || company.approvalStatus !== 'ACTIVE' || company.accessVersion !== (actor.companyVersion ?? 0)
     )
       throw new UnauthorizedException();
     if (user.role !== 'COMPANY_ADMIN' || user.companyId !== companyId)

@@ -288,9 +288,9 @@ export class StaffRepository {
             .build(),
         );
         const company = await tx.orm.public.Company.where({ id: companyId })
-          .select('id', 'suspended')
+          .select('id', 'suspended', 'approvalStatus')
           .first();
-        if (!company || company.suspended) return null;
+        if (!company || company.suspended || company.approvalStatus !== 'ACTIVE') return null;
         await this.lockInvitation(tx, invitationId, companyId);
         const invitation = await tx.orm.public.StaffInvitation.where({
           id: invitationId,

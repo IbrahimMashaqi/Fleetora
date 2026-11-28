@@ -19,6 +19,15 @@ describe('TokenService real JWT issuance', () => {
   }));
   afterEach(() => vi.useRealTimers());
 
+  it('preserves platform and company revocation versions without signing display-only approval claims', async () => {
+    const company = jwt.decode(await service.generateAccessToken({...payload, companyVersion: 7, companyStatus: 'ACTIVE'}));
+    expect(company).toMatchObject({companyVersion: 7});
+    expect(company).not.toHaveProperty('companyStatus');
+    const platform = jwt.decode(await service.generateAccessToken({...payload, role:'PLATFORM_ADMIN',orgId:'',sessionVersion:4,companyVersion:7}));
+    expect(platform).toMatchObject({sessionVersion:4});
+    expect(platform).not.toHaveProperty('companyVersion');
+  });
+
   it('issues distinct refresh tokens even within one second', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-13T10:00:00Z'));

@@ -92,7 +92,7 @@ describe('fleet mutation transaction workflow (isolated ORM fixture, no database
         isEmailVerified: true,
       },
     ];
-    companies = [{ id: 'company-a', suspended: false }];
+    companies = [{ id: 'company-a', approvalStatus: 'ACTIVE', accessVersion: 0, suspended: false }];
     workers = [
       { id: 'driver-a', companyId: 'company-a', vehicleId: null },
       { id: 'driver-b', companyId: 'company-a', vehicleId: null },

@@ -44,7 +44,7 @@ describe('Company Admin merchant-account API (isolated fixtures)', () => {
       providers: [
         MerchantsService, AccessTokenStrategy,
         { provide: ConfigService, useValue: new ConfigService({ ACCESS_TOKEN_SECRET: secret }) },
-        { provide: AuthRepository, useValue: { findUserById, isCompanyActiveForUser } },
+        { provide: AuthRepository, useValue: { findUserById, isCompanyActiveForUser, findCompanyAccess: async () => ({approvalStatus:'ACTIVE',suspended:false,accessVersion:0}) } },
         { provide: MerchantsRepository, useValue: { findPage, findOne } },
       ],
     }).compile();

@@ -3,6 +3,7 @@ import type { TokenPayload, UserRole } from '../auth/token/token.payload.js';
 import { FleetTicketsService } from './fleet-tickets.service.js';
 
 const actor: TokenPayload = {
+  companyVersion:0,
   sub: 'admin-a',
   email: 'admin@example.test',
   role: 'COMPANY_ADMIN',
@@ -15,7 +16,7 @@ const user = {
   companyId: actor.orgId,
   isActive: true,
   isEmailVerified: true,
-  company: { id: actor.orgId, suspended: false },
+  company: { id: actor.orgId, approvalStatus: 'ACTIVE', accessVersion: 0, suspended: false },
 };
 
 describe('FleetTicketsService', () => {
@@ -93,7 +94,7 @@ describe('FleetTicketsService', () => {
     { ...user, isEmailVerified: false },
     { ...user, companyId: 'company-b' },
     { ...user, company: null },
-    { ...user, company: { id: 'company-b', suspended: false } },
+    { ...user, company: { id: 'company-b', approvalStatus: 'ACTIVE', accessVersion: 0, suspended: false } },
     { ...user, company: { id: actor.orgId, suspended: true } },
   ])('denies persisted unauthorized contexts %j', async (context) => {
     findSessionContextById.mockResolvedValue(context);

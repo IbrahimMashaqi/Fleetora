@@ -32,6 +32,7 @@ describe('AccessTokenStrategy account status enforcement', () => {
   let accessTokenStrategy: AccessTokenStrategy;
   let authRepository: {
     findUserById: ReturnType<typeof vi.fn>;
+    findCompanyAccess: ReturnType<typeof vi.fn>;
     isCompanyActiveForUser: ReturnType<typeof vi.fn>;
   };
   let authService: { getSessionUser: ReturnType<typeof vi.fn>; updatePassword: ReturnType<typeof vi.fn> };
@@ -39,6 +40,7 @@ describe('AccessTokenStrategy account status enforcement', () => {
   beforeAll(async () => {
     authRepository = {
       findUserById: vi.fn().mockResolvedValue({ ...user }),
+      findCompanyAccess: vi.fn().mockResolvedValue({approvalStatus:'ACTIVE',suspended:false,accessVersion:0}),
       isCompanyActiveForUser: vi.fn().mockResolvedValue(true),
     };
     authService = {
@@ -133,7 +135,7 @@ describe('AccessTokenStrategy account status enforcement', () => {
       sub: user.id,
       email: 'new-address@example.com',
       role: 'ACCOUNTANT',
-      orgId: 'company-2',
+      orgId: 'company-2', companyStatus: 'ACTIVE', companyVersion: 0,
     });
   });
 

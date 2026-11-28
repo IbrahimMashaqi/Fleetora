@@ -26,6 +26,7 @@ describe('AuthService signin', () => {
   };
   const repository = {
     findUserByEmail: vi.fn(), updateRefreshToken: vi.fn(),
+    findCompanyAccess: async () => ({approvalStatus:'ACTIVE', suspended:false, accessVersion:0}),
     isCompanyActiveForUser: vi.fn().mockResolvedValue(true),
     findUserById: vi.fn(),
     findSessionContextById: vi.fn(),

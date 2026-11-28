@@ -124,6 +124,7 @@ export class MerchantAccessService {
     if (
       !company ||
       company.suspended ||
+      company.approvalStatus !== 'ACTIVE' || company.accessVersion !== (actor.companyVersion ?? 0) ||
       !merchant?.active ||
       merchant.activationStatus !== 'ACTIVE'
     )
@@ -185,7 +186,7 @@ export class MerchantAccessService {
     if (user.role !== 'COMPANY_ADMIN' || !user.companyId)
       throw new ForbiddenException('Company administrator access required');
     const company = await orm.Company.where({ id: user.companyId }).first();
-    if (!company || company.suspended)
+    if (!company || company.suspended || company.approvalStatus !== 'ACTIVE' || company.accessVersion !== (actor.companyVersion ?? 0))
       throw new ForbiddenException('Company is inactive');
     return { userId: user.id, companyId: user.companyId };
   }

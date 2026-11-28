@@ -320,7 +320,7 @@ export class DriverIdentityRepository {
         const tenant = await tx.orm.public.Company.where({
           id: companyId,
         }).first();
-        if (!tenant || tenant.suspended) return 'INVALID';
+        if (!tenant || tenant.suspended || tenant.approvalStatus !== 'ACTIVE') return 'INVALID';
         const worker = await this.lockWorker(tx, workerId, companyId);
         await tx.execute(
           this.prisma.db.raw
@@ -451,6 +451,7 @@ export class DriverIdentityRepository {
       companyId: string,
       workerId: string,
       version: number,
+      companyVersion: number,
     ) => Promise<{ result: T; refreshVerifier: string }>,
   ): Promise<T> {
     return guarded(() =>
@@ -484,6 +485,7 @@ export class DriverIdentityRepository {
         if (
           !tenant ||
           tenant.suspended ||
+          tenant.approvalStatus !== 'ACTIVE' ||
           !account ||
           !user?.isActive ||
           !user.isEmailVerified ||
@@ -496,6 +498,7 @@ export class DriverIdentityRepository {
           companyId,
           account.workerId,
           user.authVersion,
+          tenant.accessVersion,
         );
         await tx.orm.public.User.where({ id: user.id, companyId }).update({
           refreshToken: issued.refreshVerifier,

@@ -62,6 +62,7 @@ describe('lookup HTTP persisted authority (isolated persistence)', () => {
               authVersion: 1,
             }),
             hasDriverIdentity: async () => true,
+            findCompanyAccess: async () => ({approvalStatus:'ACTIVE', suspended:false, accessVersion:0}),
             isCompanyActiveForUser: async () => true,
           },
         },

@@ -143,14 +143,14 @@ export class ParcelStore {
             .select('id', 'role', 'companyId', 'isActive', 'isEmailVerified')
             .first(),
           tx.orm.public.Company.where({ id: companyId })
-            .select('id', 'suspended')
+            .select('id', 'suspended', 'approvalStatus', 'accessVersion')
             .first(),
         ]);
         if (
           !user?.isActive ||
           !user.isEmailVerified ||
           !tenant ||
-          tenant.suspended
+          tenant.suspended || tenant.approvalStatus !== 'ACTIVE' || tenant.accessVersion !== (actor.companyVersion ?? 0)
         )
           throw new UnauthorizedException();
         if (user.companyId !== companyId || user.role !== actor.role)

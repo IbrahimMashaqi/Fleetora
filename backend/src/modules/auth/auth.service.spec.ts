@@ -30,6 +30,7 @@ describe('AuthService email verification', () => {
   let authRepository: {
     findUserByEmail: ReturnType<typeof vi.fn>;
     findUserById: ReturnType<typeof vi.fn>;
+    findCompanyAccess: ReturnType<typeof vi.fn>;
     isCompanyActiveForUser: ReturnType<typeof vi.fn>;
     saveVerificationTokenVerifier: ReturnType<typeof vi.fn>;
     consumeEmailVerificationToken: ReturnType<typeof vi.fn>;
@@ -63,6 +64,7 @@ describe('AuthService email verification', () => {
         id: 'user-1', email: 'amina@example.com', fullName: 'Amina Hassan',
       }),
       findUserById: vi.fn().mockResolvedValue(user),
+      findCompanyAccess: vi.fn().mockResolvedValue({approvalStatus:'ACTIVE',suspended:false,accessVersion:0}),
       isCompanyActiveForUser: vi.fn().mockResolvedValue(true),
       saveVerificationTokenVerifier: vi.fn().mockImplementation(
         async (_userId: string, verifier: string, expiresAt: Date) => {

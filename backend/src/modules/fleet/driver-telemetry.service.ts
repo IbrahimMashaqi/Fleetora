@@ -76,7 +76,7 @@ export class DriverTelemetryService {
         const company = await tx.orm.public.Company.where({
           id: actor.companyId,
         })
-          .select('id', 'suspended')
+          .select('id', 'suspended', 'approvalStatus')
           .first();
         const worker = await tx.orm.public.Worker.where({
           id: actor.workerId,
@@ -84,7 +84,7 @@ export class DriverTelemetryService {
         })
           .select('id', 'status')
           .first();
-        if (!company || company.suspended) throw new UnauthorizedException();
+        if (!company || company.suspended || company.approvalStatus !== 'ACTIVE') throw new UnauthorizedException();
         // Driver access changes also lock this company. Recheck after taking the
         // lock so a verifier result cannot survive concurrent security revocation.
         const current = await this.identity.verify(proof);

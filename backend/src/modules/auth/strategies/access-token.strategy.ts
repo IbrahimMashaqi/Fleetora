@@ -4,6 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthRepository } from '../auth.repository.js';
 import { TokenPayload } from '../token/token.payload.js';
+import { COMPANY_APPROVALS } from '../../companies/company-policy.js';
 import {
   hasTokenType,
   JWT_ALGORITHM,
@@ -37,12 +38,15 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
     if ((payload.role === 'DRIVER') !== (user.role === 'DRIVER')) throw new UnauthorizedException();
     if (user.role === 'DRIVER' && (payload.sessionVersion !== user.authVersion || !(await this.authRepository.hasDriverIdentity(user.id, user.companyId)))) throw new UnauthorizedException();
     if (user.role === 'PLATFORM_ADMIN' && (payload.sessionVersion ?? 0) !== (user.authVersion ?? 0)) throw new UnauthorizedException();
+    const tenant = user.role === 'PLATFORM_ADMIN' ? null : await this.authRepository.findCompanyAccess(user.companyId ?? '');
+    if (user.role !== 'PLATFORM_ADMIN' && (!tenant || tenant.suspended || !COMPANY_APPROVALS.some(status => status === tenant.approvalStatus) || tenant.accessVersion !== (payload.companyVersion ?? 0) || user.role === 'DRIVER' && tenant.approvalStatus !== 'ACTIVE')) throw new UnauthorizedException();
     return {
       sub: user.id,
       email: user.email ?? '',
       role: user.role,
       orgId: user.companyId ?? '',
       ...(['DRIVER', 'PLATFORM_ADMIN'].includes(user.role) ? { sessionVersion: user.authVersion ?? 0 } : {}),
+      ...(tenant ? { companyStatus: tenant.approvalStatus, companyVersion: tenant.accessVersion } : {}),
     };
   }
 }

@@ -7,6 +7,6 @@ import { PlatformController } from './platform.controller.js';
   imports: [AuthModule],
   controllers: [PlatformController],
   providers: [PlatformRepository, PlatformService],
-  exports: [PlatformService],
+  exports: [PlatformService, PlatformRepository],
 })
 export class PlatformModule {}

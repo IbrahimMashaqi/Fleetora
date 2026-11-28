@@ -98,6 +98,7 @@ describe('vehicle HTTP boundary with isolated persistence', () => {
               isActive: active,
               isEmailVerified: verified,
             }),
+            findCompanyAccess: async () => ({approvalStatus:'ACTIVE', suspended:false, accessVersion:0}),
             isCompanyActiveForUser: async () => true,
           },
         },

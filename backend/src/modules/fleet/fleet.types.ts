@@ -52,6 +52,7 @@ export type FleetHeadquartersEvent = {
   headquarters: Headquarters;
 };
 export type FleetEvent =
+  | { name: 'fleet:company-access-revoked'; data: { companyId: string } }
   | {
       name: 'fleet:location-updated' | 'fleet:driver-status-changed';
       data: FleetTrackingEvent;

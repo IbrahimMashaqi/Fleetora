@@ -42,6 +42,10 @@ export class AuthRepository {
     return this.prisma.User.where({ id: userId }).first();
   }
 
+  findCompanyAccess(companyId: string) {
+    return this.prisma.Company.where({ id: companyId }).select('id','approvalStatus','suspended','accessVersion').first();
+  }
+
   async hasDriverIdentity(userId: string, companyId: string | null) {
     if (!companyId) return false;
     return !!await this.prisma.db.orm.public.DriverAccount.where({ userId, companyId }).select('id').first();
@@ -59,7 +63,7 @@ export class AuthRepository {
         'isEmailVerified',
       )
       .include('company', (company) =>
-        company.select('id', 'name', 'suspended', 'currency'),
+        company.select('id', 'name', 'suspended', 'currency', 'approvalStatus', 'accessVersion'),
       )
       .first();
   }
@@ -81,6 +85,7 @@ export class AuthRepository {
       user: Awaited<ReturnType<AuthRepository['findUserById']>>,
       saveRefreshToken: (refreshToken: string | null) => Promise<void>,
       companyIsActive: boolean,
+      companyVersion: number,
     ) => Promise<T>,
   ): Promise<T> {
     return this.prisma.db.transaction(async (tx) => {
@@ -92,16 +97,17 @@ export class AuthRepository {
           .build(),
       );
       const user = await tx.orm.public.User.where({ id: userId }).first();
+      const tenant = user?.role !== 'PLATFORM_ADMIN' && user?.companyId ? await tx.orm.public.Company.where({ id: user.companyId }).first() : null;
       const companyIsActive = user
         ? user.role === 'PLATFORM_ADMIN'
           ? user.companyId === null
           : user.companyId
-            ? (await tx.orm.public.Company.where({ id: user.companyId }).first())?.suspended === false
+            ? tenant?.suspended === false
             : false
         : false;
       return operation(user, async (refreshToken) => {
         await tx.orm.public.User.where({ id: userId }).update({ refreshToken });
-      }, companyIsActive);
+      }, companyIsActive, tenant?.accessVersion ?? 0);
     });
   }
 
@@ -253,6 +259,7 @@ export class AuthRepository {
           name: name ? `${name}'s Company` : `User's Company`,
           plan: 'TRIAL',
           suspended: false,
+          approvalStatus: 'PENDING',
           currency,
         });
         const user = await tx.orm.public.User.create({
@@ -264,6 +271,8 @@ export class AuthRepository {
           isActive: true,
           isEmailVerified: false,
         });
+        await tx.orm.public.Company.where({ id: company.id }).update({ primaryAdminId: user.id });
+        await tx.orm.public.CompanyAccessEvent.create({ companyId: company.id, actorId: user.id, action: 'COMPANY_REGISTRATION_REQUESTED', details: {} });
         return { user, company };
       });
     } catch (error: any) {

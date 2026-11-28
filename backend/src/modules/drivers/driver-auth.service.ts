@@ -34,13 +34,14 @@ export class DriverAuthService {
       throw new UnauthorizedException('Invalid credentials');
     return this.repository.session(
       credential,
-      async (userId, companyId, workerId, sessionVersion) => {
+      async (userId, companyId, workerId, sessionVersion, companyVersion) => {
         const payload: TokenPayload = {
           sub: userId,
           email: '',
           role: 'DRIVER',
           orgId: companyId,
           sessionVersion,
+          companyVersion,
         };
         const [accessToken, refreshToken] = await Promise.all([
           this.tokens.generateAccessToken(payload),

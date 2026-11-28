@@ -30,6 +30,7 @@ const navigation: NavigationItem[] = [
   { href: "/app/drivers", label: "Drivers", icon: UserRoundCheck, group: "Company resources" },
   { href: "/app/vehicles", label: "Vehicles", icon: TruckElectric, group: "Company resources" },
   { href: "/app/warehouses", label: "Warehouses", icon: Warehouse, group: "Company resources" },
+  { href: "/app/settings", label: "Company settings", icon: Settings2, group: "Company resources" },
   { href: "/app/team", label: "Team", icon: UsersRound, group: "Company resources" },
   { href: "/app/returns", label: "Returns", icon: RotateCcw, group: "Returns & finance" },
   { href: "/app/collections", label: "COD & collections", icon: Banknote, group: "Returns & finance" },

@@ -1,0 +1,944 @@
+[
+  {
+    "id": "table.company_access_events",
+    "label": "Create table \"company_access_events\"",
+    "summary": "Creates table \"company_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "company_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"company_access_events\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_access_events\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"company_access_events\"",
+        "sql": "CREATE TABLE \"public\".\"company_access_events\" (\n  \"action\" text NOT NULL,\n  \"actorId\" text NOT NULL,\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"details\" json NOT NULL,\n  \"id\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"company_access_events\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_access_events\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.company_admin_invitations",
+    "label": "Create table \"company_admin_invitations\"",
+    "summary": "Creates table \"company_admin_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "company_admin_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"company_admin_invitations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_admin_invitations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"company_admin_invitations\"",
+        "sql": "CREATE TABLE \"public\".\"company_admin_invitations\" (\n  \"acceptedAt\" timestamptz,\n  \"companyId\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"expiresAt\" timestamptz NOT NULL,\n  \"id\" text NOT NULL,\n  \"issuedById\" text NOT NULL,\n  \"revokedAt\" timestamptz,\n  \"tokenHash\" text NOT NULL,\n  \"userId\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"company_admin_invitation_state_dec73fa1\" CHECK (NOT (\"acceptedAt\" IS NOT NULL AND \"revokedAt\" IS NOT NULL))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"company_admin_invitations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_admin_invitations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companies.accessVersion",
+    "label": "Add column \"accessVersion\" to \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "accessVersion",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"accessVersion\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "accessVersion"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"accessVersion\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD COLUMN \"accessVersion\" int4 DEFAULT 0 NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"accessVersion\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "accessVersion"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companies.address",
+    "label": "Add column \"address\" to \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "address",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"address\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "address"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"address\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD COLUMN \"address\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"address\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "address"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companies.approvalStatus",
+    "label": "Add column \"approvalStatus\" to \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "approvalStatus",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"approvalStatus\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "approvalStatus"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"approvalStatus\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD COLUMN \"approvalStatus\" text DEFAULT 'ACTIVE' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"approvalStatus\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "approvalStatus"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companies.phone",
+    "label": "Add column \"phone\" to \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "phone",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"phone\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "phone"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"phone\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD COLUMN \"phone\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"phone\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "phone"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companies.primaryAdminId",
+    "label": "Add column \"primaryAdminId\" to \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "primaryAdminId",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"primaryAdminId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "primaryAdminId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"primaryAdminId\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD COLUMN \"primaryAdminId\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"primaryAdminId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "primaryAdminId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companies.rejectionReason",
+    "label": "Add column \"rejectionReason\" to \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "rejectionReason",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"rejectionReason\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "rejectionReason"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"rejectionReason\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD COLUMN \"rejectionReason\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"rejectionReason\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "rejectionReason"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.companies.revision",
+    "label": "Add column \"revision\" to \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "revision",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"revision\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "revision"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"revision\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD COLUMN \"revision\" int4 DEFAULT 1 NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"revision\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "companies",
+          "revision"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.companies.companies_approvalStatus_check_ef53a045",
+    "label": "Add check constraint \"companies_approvalStatus_check_ef53a045\" on \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "companies_approvalStatus_check_ef53a045",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"companies_approvalStatus_check_ef53a045\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companies_approvalStatus_check_ef53a045",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"companies_approvalStatus_check_ef53a045\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD CONSTRAINT \"companies_approvalStatus_check_ef53a045\" CHECK (\"approvalStatus\" IN ('PENDING', 'ACTIVE', 'REJECTED'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"companies_approvalStatus_check_ef53a045\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companies_approvalStatus_check_ef53a045",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.companies.company_access_revision_20c85f47",
+    "label": "Add check constraint \"company_access_revision_20c85f47\" on \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "company_access_revision_20c85f47",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"company_access_revision_20c85f47\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_access_revision_20c85f47",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"company_access_revision_20c85f47\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD CONSTRAINT \"company_access_revision_20c85f47\" CHECK (\"revision\" > 0 AND \"accessVersion\" >= 0)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"company_access_revision_20c85f47\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_access_revision_20c85f47",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.companies.company_rejection_reason_d624501c",
+    "label": "Add check constraint \"company_rejection_reason_d624501c\" on \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "company_rejection_reason_d624501c",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"company_rejection_reason_d624501c\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_rejection_reason_d624501c",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"company_rejection_reason_d624501c\"",
+        "sql": "ALTER TABLE \"public\".\"companies\" ADD CONSTRAINT \"company_rejection_reason_d624501c\" CHECK (\"approvalStatus\" <> 'REJECTED' OR (\"rejectionReason\" IS NOT NULL AND length(btrim(\"rejectionReason\")) BETWEEN 1 AND 500))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"company_rejection_reason_d624501c\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_rejection_reason_d624501c",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.company_admin_invitations.company_admin_invitations_tokenHash_key",
+    "label": "Add unique constraint on \"company_admin_invitations\" (tokenHash)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "company_admin_invitations_tokenHash_key",
+        "table": "company_admin_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"company_admin_invitations_tokenHash_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_admin_invitations_tokenHash_key",
+          "public",
+          "\"public\".\"company_admin_invitations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"company_admin_invitations_tokenHash_key\"",
+        "sql": "ALTER TABLE \"public\".\"company_admin_invitations\" ADD CONSTRAINT \"company_admin_invitations_tokenHash_key\" UNIQUE (\"tokenHash\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"company_admin_invitations_tokenHash_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_admin_invitations_tokenHash_key",
+          "public",
+          "\"public\".\"company_admin_invitations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.companies.companies_primaryAdminId_id_idx_617b35ba",
+    "label": "Create index \"companies_primaryAdminId_id_idx_617b35ba\" on \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "companies_primaryAdminId_id_idx_617b35ba",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"companies_primaryAdminId_id_idx_617b35ba\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companies_primaryAdminId_id_idx_617b35ba\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"companies_primaryAdminId_id_idx_617b35ba\"",
+        "sql": "CREATE INDEX \"companies_primaryAdminId_id_idx_617b35ba\" ON \"public\".\"companies\" (\"primaryAdminId\", \"id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"companies_primaryAdminId_id_idx_617b35ba\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"companies_primaryAdminId_id_idx_617b35ba\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.company_access_events.company_access_events_companyId_createdAt_idx_5377e5d5",
+    "label": "Create index \"company_access_events_companyId_createdAt_idx_5377e5d5\" on \"company_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "company_access_events_companyId_createdAt_idx_5377e5d5",
+        "table": "company_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"company_access_events_companyId_createdAt_idx_5377e5d5\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_access_events_companyId_createdAt_idx_5377e5d5\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"company_access_events_companyId_createdAt_idx_5377e5d5\"",
+        "sql": "CREATE INDEX \"company_access_events_companyId_createdAt_idx_5377e5d5\" ON \"public\".\"company_access_events\" (\"companyId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"company_access_events_companyId_createdAt_idx_5377e5d5\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_access_events_companyId_createdAt_idx_5377e5d5\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.company_access_events.company_access_events_companyId_idx_33acc5ed",
+    "label": "Create index \"company_access_events_companyId_idx_33acc5ed\" on \"company_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "company_access_events_companyId_idx_33acc5ed",
+        "table": "company_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"company_access_events_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_access_events_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"company_access_events_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"company_access_events_companyId_idx_33acc5ed\" ON \"public\".\"company_access_events\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"company_access_events_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_access_events_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.company_admin_invitations.company_admin_invitations_companyId_createdAt_idx_5377e5d5",
+    "label": "Create index \"company_admin_invitations_companyId_createdAt_idx_5377e5d5\" on \"company_admin_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "company_admin_invitations_companyId_createdAt_idx_5377e5d5",
+        "table": "company_admin_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"company_admin_invitations_companyId_createdAt_idx_5377e5d5\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_admin_invitations_companyId_createdAt_idx_5377e5d5\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"company_admin_invitations_companyId_createdAt_idx_5377e5d5\"",
+        "sql": "CREATE INDEX \"company_admin_invitations_companyId_createdAt_idx_5377e5d5\" ON \"public\".\"company_admin_invitations\" (\"companyId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"company_admin_invitations_companyId_createdAt_idx_5377e5d5\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_admin_invitations_companyId_createdAt_idx_5377e5d5\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.company_admin_invitations.company_admin_invitations_companyId_idx_33acc5ed",
+    "label": "Create index \"company_admin_invitations_companyId_idx_33acc5ed\" on \"company_admin_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "company_admin_invitations_companyId_idx_33acc5ed",
+        "table": "company_admin_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"company_admin_invitations_companyId_idx_33acc5ed\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_admin_invitations_companyId_idx_33acc5ed\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"company_admin_invitations_companyId_idx_33acc5ed\"",
+        "sql": "CREATE INDEX \"company_admin_invitations_companyId_idx_33acc5ed\" ON \"public\".\"company_admin_invitations\" (\"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"company_admin_invitations_companyId_idx_33acc5ed\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_admin_invitations_companyId_idx_33acc5ed\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.company_admin_invitations.company_admin_invitations_userId_companyId_idx_172f3a40",
+    "label": "Create index \"company_admin_invitations_userId_companyId_idx_172f3a40\" on \"company_admin_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "company_admin_invitations_userId_companyId_idx_172f3a40",
+        "table": "company_admin_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"company_admin_invitations_userId_companyId_idx_172f3a40\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_admin_invitations_userId_companyId_idx_172f3a40\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"company_admin_invitations_userId_companyId_idx_172f3a40\"",
+        "sql": "CREATE INDEX \"company_admin_invitations_userId_companyId_idx_172f3a40\" ON \"public\".\"company_admin_invitations\" (\"userId\", \"companyId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"company_admin_invitations_userId_companyId_idx_172f3a40\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"company_admin_invitations_userId_companyId_idx_172f3a40\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.companies.companies_primaryAdminId_id_fkey",
+    "label": "Add foreign key \"companies_primaryAdminId_id_fkey\" on \"companies\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "companies_primaryAdminId_id_fkey",
+        "table": "companies"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"companies_primaryAdminId_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companies_primaryAdminId_id_fkey",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"companies_primaryAdminId_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"companies\"\nADD CONSTRAINT \"companies_primaryAdminId_id_fkey\"\nFOREIGN KEY (\"primaryAdminId\", \"id\")\nREFERENCES \"public\".\"users\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"companies_primaryAdminId_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "companies_primaryAdminId_id_fkey",
+          "public",
+          "\"public\".\"companies\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.company_access_events.company_access_events_companyId_fkey",
+    "label": "Add foreign key \"company_access_events_companyId_fkey\" on \"company_access_events\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "company_access_events_companyId_fkey",
+        "table": "company_access_events"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"company_access_events_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_access_events_companyId_fkey",
+          "public",
+          "\"public\".\"company_access_events\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"company_access_events_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"company_access_events\"\nADD CONSTRAINT \"company_access_events_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"company_access_events_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_access_events_companyId_fkey",
+          "public",
+          "\"public\".\"company_access_events\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.company_admin_invitations.company_admin_invitations_companyId_fkey",
+    "label": "Add foreign key \"company_admin_invitations_companyId_fkey\" on \"company_admin_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "company_admin_invitations_companyId_fkey",
+        "table": "company_admin_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"company_admin_invitations_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_admin_invitations_companyId_fkey",
+          "public",
+          "\"public\".\"company_admin_invitations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"company_admin_invitations_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"company_admin_invitations\"\nADD CONSTRAINT \"company_admin_invitations_companyId_fkey\"\nFOREIGN KEY (\"companyId\")\nREFERENCES \"public\".\"companies\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"company_admin_invitations_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_admin_invitations_companyId_fkey",
+          "public",
+          "\"public\".\"company_admin_invitations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.company_admin_invitations.company_admin_invitations_userId_companyId_fkey",
+    "label": "Add foreign key \"company_admin_invitations_userId_companyId_fkey\" on \"company_admin_invitations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "company_admin_invitations_userId_companyId_fkey",
+        "table": "company_admin_invitations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"company_admin_invitations_userId_companyId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_admin_invitations_userId_companyId_fkey",
+          "public",
+          "\"public\".\"company_admin_invitations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"company_admin_invitations_userId_companyId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"company_admin_invitations\"\nADD CONSTRAINT \"company_admin_invitations_userId_companyId_fkey\"\nFOREIGN KEY (\"userId\", \"companyId\")\nREFERENCES \"public\".\"users\" (\"id\", \"companyId\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"company_admin_invitations_userId_companyId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "company_admin_invitations_userId_companyId_fkey",
+          "public",
+          "\"public\".\"company_admin_invitations\""
+        ]
+      }
+    ]
+  }
+]
