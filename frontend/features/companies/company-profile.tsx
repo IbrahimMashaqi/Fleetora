@@ -4,7 +4,9 @@ import { useProtectedSession } from "@/features/auth/session/session-context";
 import { notifySessionChange } from "@/features/auth/session/session-events";
 import { LogoutControl } from "@/features/auth/logout/logout-control";
 import { LanguageSwitcher, useLocale } from "@/lib/i18n";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { NoAccess } from "@/components/shared/no-access";
 import { record } from "@/features/platform/platform-contract";
 import { isCompany, type Company } from "./company-contract";
 import { useCompanyRequest } from "./company-client";
@@ -74,26 +76,14 @@ function Profile({ statusOnly }: { statusOnly: boolean }) {
       setSaved(true);
     } else setError(String(result.status));
   }
+  if (!statusOnly && user.role !== "COMPANY_ADMIN") return <NoAccess />;
   const title = statusOnly
     ? company?.approvalStatus === "REJECTED"
       ? c("Your company registration was rejected", "رُفض تسجيل شركتك")
       : c("Your company is awaiting approval", "شركتك بانتظار الموافقة")
     : c("Company settings", "إعدادات الشركة");
-  return (
-    <main
-      className={
-        statusOnly
-          ? "mx-auto max-w-xl space-y-6 p-6 sm:p-8"
-          : "max-w-2xl space-y-6"
-      }
-    >
-      {statusOnly && (
-        <div className="flex items-center justify-between gap-4">
-          <span className="font-semibold">Fleetora</span>
-          <LanguageSwitcher />
-          <LogoutControl />
-        </div>
-      )}
+  const content = (
+    <>
       <h1 className="text-2xl font-semibold">{title}</h1>
       {error && (
         <p role="alert">
@@ -145,9 +135,6 @@ function Profile({ statusOnly }: { statusOnly: boolean }) {
             </fieldset>
           </form>
         )}
-      {!statusOnly && user.role !== "COMPANY_ADMIN" && (
-        <p role="alert">{c(...companyErrors.forbidden)}</p>
-      )}
       {saved && (
         <p role="status">
           {c("Company profile saved.", "تم حفظ بيانات الشركة.")}
@@ -164,6 +151,36 @@ function Profile({ statusOnly }: { statusOnly: boolean }) {
           {c("Check status", "تحديث الحالة")}
         </Button>
       )}
-    </main>
+    </>
+  );
+  if (!statusOnly)
+    return <main className="max-w-2xl space-y-6">{content}</main>;
+  return (
+    <div className="min-h-svh bg-background text-foreground">
+      <header className="flex h-16 items-center justify-between gap-3 border-b border-border bg-surface px-4 sm:px-8">
+        <span className="flex min-w-0 items-center gap-3">
+          <Image
+            src="/fleetora-logo.png"
+            alt=""
+            aria-hidden="true"
+            width={36}
+            height={36}
+            className="size-9 shrink-0 object-contain"
+          />
+          <span className="truncate text-lg font-semibold tracking-tight">
+            Fleetora
+          </span>
+        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <LanguageSwitcher />
+          <LogoutControl tone="surface" />
+        </div>
+      </header>
+      <main className="flex justify-center px-4 py-10 sm:px-8 sm:py-16">
+        <section className="w-full max-w-xl space-y-5 rounded-xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+          {content}
+        </section>
+      </main>
+    </div>
   );
 }

@@ -182,7 +182,7 @@ export function SignupForm() {
 
                     <div className="signup-field space-y-2">
                     <Label htmlFor="signup-password" className="text-sm font-semibold">{t("Password")}</Label>
-                    <div className="relative">
+                    <div dir="ltr" className="relative">
                       <Input
                         id="signup-password"
                         name="password"

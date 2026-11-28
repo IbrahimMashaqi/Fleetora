@@ -30,6 +30,58 @@ import {
 import { CompanyFields, basicCompanyInput } from "./company-fields";
 import { companyErrors, companyStatuses, companyEvents } from "./company-copy";
 type PageData = { items: Company[]; page: number; hasNext: boolean };
+type CompanyTransition = "approve" | "reject" | "suspend" | "reactivate";
+type Copy = [string, string];
+const transitionCopy: Record<
+  CompanyTransition,
+  { title: Copy; description: Copy; confirm: Copy; done: Copy }
+> = {
+  approve: {
+    title: ["Approve company", "الموافقة على الشركة"],
+    description: [
+      "The company and its administrators will be able to operate immediately.",
+      "ستتمكن الشركة ومديروها من العمل فوراً.",
+    ],
+    confirm: ["Confirm approval", "تأكيد الموافقة"],
+    done: [
+      "Company approved. Its administrators can now use the workspace.",
+      "تمت الموافقة على الشركة. يمكن لمديريها الآن استخدام مساحة العمل.",
+    ],
+  },
+  reject: {
+    title: ["Reject company", "رفض الشركة"],
+    description: [
+      "Explain what the company administrator needs to correct before resubmitting.",
+      "وضّح ما يجب على مدير الشركة تصحيحه قبل إعادة التقديم.",
+    ],
+    confirm: ["Confirm reject", "تأكيد الرفض"],
+    done: [
+      "Registration rejected. The administrator can see your reason and resubmit.",
+      "رُفض التسجيل. يمكن للمدير رؤية السبب وإعادة التقديم.",
+    ],
+  },
+  suspend: {
+    title: ["Suspend company", "إيقاف الشركة"],
+    description: [
+      "Access will be revoked immediately. Existing parcels and financial obligations will be preserved.",
+      "سيُلغى الوصول فورًا مع الاحتفاظ بالطرود والالتزامات المالية الحالية.",
+    ],
+    confirm: ["Confirm suspend", "تأكيد الإيقاف"],
+    done: [
+      "Company suspended. Access stays blocked until it is reactivated.",
+      "أُوقفت الشركة. يبقى الوصول محظوراً حتى إعادة تفعيلها.",
+    ],
+  },
+  reactivate: {
+    title: ["Reactivate company", "إعادة تفعيل الشركة"],
+    description: [
+      "Company access will be restored immediately.",
+      "سيُستعاد وصول الشركة فوراً.",
+    ],
+    confirm: ["Confirm reactivation", "تأكيد إعادة التفعيل"],
+    done: ["Company reactivated.", "أُعيد تفعيل الشركة."],
+  },
+};
 export function PlatformCompanies({ id }: { id?: string }) {
   const { locale } = useLocale();
   return (
@@ -68,9 +120,10 @@ function Companies({ id }: { id?: string }) {
     [status, setStatus] = useState(""),
     [reload, setReload] = useState(0),
     [create, setCreate] = useState(false),
-    [reasonAction, setReasonAction] = useState<"reject" | "suspend" | null>(
+    [confirmAction, setConfirmAction] = useState<CompanyTransition | null>(
       null,
     ),
+    [notice, setNotice] = useState<CompanyTransition | null>(null),
     [invitation, setInvitation] = useState<{
       url?: string;
       delivery: string;
@@ -201,11 +254,9 @@ function Companies({ id }: { id?: string }) {
       setCreate(false);
     }
   }
-  async function transition(
-    action: "approve" | "reject" | "suspend" | "reactivate",
-    reason?: string,
-  ) {
+  async function transition(action: CompanyTransition, reason?: string) {
     if (!details) return;
+    setNotice(null);
     if (
       await mutate({
         action: "transitionCompany",
@@ -214,8 +265,10 @@ function Companies({ id }: { id?: string }) {
         revision: details.company.revision,
         ...(reason ? { reason } : {}),
       })
-    )
-      setReasonAction(null);
+    ) {
+      setConfirmAction(null);
+      setNotice(action);
+    }
   }
   const statusLabel = (value: string) =>
     c(...(companyStatuses[value] ?? [value, value]));
@@ -228,7 +281,7 @@ function Companies({ id }: { id?: string }) {
           </Link>
           <nav className="flex flex-wrap items-center gap-4">
             <Link href="/platform/companies">{c("Companies", "الشركات")}</Link>
-            <LanguageSwitcher />
+            <LanguageSwitcher tone="inverse" />
             <LogoutControl />
           </nav>
         </div>
@@ -378,20 +431,28 @@ function Companies({ id }: { id?: string }) {
                   </div>
                 ))}
               </dl>
+              {notice && (
+                <p
+                  role="status"
+                  className="rounded-md border border-success-border bg-success-background p-3 text-sm"
+                >
+                  {c(...transitionCopy[notice].done)}
+                </p>
+              )}
               {writable && (
                 <div className="flex flex-wrap gap-3">
                   {details.company.status === "PENDING" && (
                     <>
                       <Button
                         disabled={busy}
-                        onClick={() => transition("approve")}
+                        onClick={() => setConfirmAction("approve")}
                       >
                         {c("Approve company", "الموافقة على الشركة")}
                       </Button>
                       <Button
                         variant="outline"
                         disabled={busy}
-                        onClick={() => setReasonAction("reject")}
+                        onClick={() => setConfirmAction("reject")}
                       >
                         {c("Reject company", "رفض الشركة")}
                       </Button>
@@ -401,7 +462,7 @@ function Companies({ id }: { id?: string }) {
                     <Button
                       variant="outline"
                       disabled={busy}
-                      onClick={() => setReasonAction("suspend")}
+                      onClick={() => setConfirmAction("suspend")}
                     >
                       {c("Suspend company", "إيقاف الشركة")}
                     </Button>
@@ -409,7 +470,7 @@ function Companies({ id }: { id?: string }) {
                   {details.company.status === "SUSPENDED" && (
                     <Button
                       disabled={busy}
-                      onClick={() => transition("reactivate")}
+                      onClick={() => setConfirmAction("reactivate")}
                     >
                       {c("Reactivate company", "إعادة تفعيل الشركة")}
                     </Button>
@@ -596,52 +657,58 @@ function Companies({ id }: { id?: string }) {
           </form>
         </CompanyDialog>
         <CompanyDialog
-          title={
-            reasonAction === "reject"
-              ? c("Reject company", "رفض الشركة")
-              : c("Suspend company", "إيقاف الشركة")
-          }
+          title={confirmAction ? c(...transitionCopy[confirmAction].title) : ""}
           description={
-            reasonAction === "suspend"
-              ? c(
-                  "Access will be revoked immediately. Existing parcels and financial obligations will be preserved.",
-                  "سيُلغى الوصول فورًا مع الاحتفاظ بالطرود والالتزامات المالية الحالية.",
-                )
-              : c(
-                  "Explain what the company administrator needs to correct before resubmitting.",
-                  "وضّح ما يجب على مدير الشركة تصحيحه قبل إعادة التقديم.",
-                )
+            confirmAction ? c(...transitionCopy[confirmAction].description) : ""
           }
           busy={busy}
-          open={!!reasonAction}
+          open={!!confirmAction}
           onOpenChange={(open) => {
-            if (!open && !busy) setReasonAction(null);
+            if (!open && !busy) setConfirmAction(null);
           }}
         >
           <form
-            key={`${reasonAction}:${details?.company.revision}`}
+            key={`${confirmAction}:${details?.company.revision}`}
             onSubmit={(event) => {
               event.preventDefault();
+              if (!confirmAction) return;
+              const needsReason =
+                confirmAction === "reject" || confirmAction === "suspend";
               const reason = String(
                 new FormData(event.currentTarget).get("reason") ?? "",
               ).trim();
-              if (reason && reasonAction) void transition(reasonAction, reason);
+              if (needsReason && !reason) return;
+              void transition(confirmAction, needsReason ? reason : undefined);
             }}
             className="space-y-4"
           >
-            <Label htmlFor="company-reason">{c("Reason", "السبب")}</Label>
-            <Input
-              id="company-reason"
-              name="reason"
-              required
-              maxLength={500}
-              disabled={busy}
-            />
-            <Button type="submit" disabled={busy}>
-              {reasonAction === "reject"
-                ? c("Confirm reject", "تأكيد الرفض")
-                : c("Confirm suspend", "تأكيد الإيقاف")}
-            </Button>
+            {(confirmAction === "reject" || confirmAction === "suspend") && (
+              <>
+                <Label htmlFor="company-reason">{c("Reason", "السبب")}</Label>
+                <Input
+                  id="company-reason"
+                  name="reason"
+                  required
+                  maxLength={500}
+                  disabled={busy}
+                />
+              </>
+            )}
+            <div className="flex flex-wrap gap-3">
+              <Button type="submit" disabled={busy}>
+                {confirmAction
+                  ? c(...transitionCopy[confirmAction].confirm)
+                  : ""}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={busy}
+                onClick={() => setConfirmAction(null)}
+              >
+                {c("Cancel", "إلغاء")}
+              </Button>
+            </div>
             {error && (
               <p role="alert">
                 {c(...(companyErrors[error] ?? companyErrors.unavailable))}

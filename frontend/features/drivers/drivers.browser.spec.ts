@@ -409,7 +409,7 @@ for (const role of ["PLATFORM_ADMIN", "MERCHANT", "ACCOUNTANT"] as const) {
     await page.goto("/app/drivers");
     await expect(
       page.getByRole("heading", {
-        name: "Company administrator access required",
+        name: "You don't have access to this page",
       }),
     ).toBeVisible();
     await expect(
@@ -441,7 +441,7 @@ test("redirects missing credentials and removes stale tenant data after identity
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(
     page.getByRole("heading", {
-      name: "Company administrator access required",
+      name: "You don't have access to this page",
     }),
   ).toBeVisible();
   await expect(page.getByText("Amina Driver")).toHaveCount(0);
@@ -610,7 +610,7 @@ for (const code of [404, 503, 403]) {
     if (code === 403)
       await expect(
         dialog.getByRole("heading", {
-          name: "Company administrator access required",
+          name: "You don't have access to this page",
         }),
       ).toBeVisible();
     else await expect(dialog.getByRole("alert")).toBeVisible();

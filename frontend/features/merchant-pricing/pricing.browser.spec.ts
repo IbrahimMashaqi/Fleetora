@@ -413,6 +413,13 @@ for (const denied of ["PLATFORM_ADMIN", "ACCOUNTANT", "MERCHANT"])
   test(`denies pricing management for ${denied}`, async ({ page }) => {
     role = denied;
     await page.goto("/app/pricing");
-    await expect(page.getByRole("main").getByRole("alert")).toBeVisible();
+    if (denied === "PLATFORM_ADMIN")
+      await expect(page.getByRole("main").getByRole("alert")).toBeVisible();
+    else
+      await expect(
+        page.getByRole("main").getByRole("heading", {
+          name: "You don't have access to this page",
+        }),
+      ).toBeVisible();
     expect(requests).toHaveLength(0);
   });

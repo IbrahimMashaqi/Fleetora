@@ -11,7 +11,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <SessionGate>
       {(user) => user.role === 'PLATFORM_ADMIN' ? <PlatformRedirect /> : ['PENDING','REJECTED'].includes(user.company?.approvalStatus ?? '') ? <CompanyProfile key={user.id} statusOnly/> : (
-        <AppShell user={user} accountActions={<LogoutControl className="mt-3" />}>
+        <AppShell user={user} accountActions={<LogoutControl className="mt-1" />}>
           {children}
         </AppShell>
       )}

@@ -10,6 +10,7 @@ import type { SessionUser } from "@/lib/auth/session.types";
 import { useLocale } from "@/lib/i18n";
 import { useFleet } from "../use-fleet";
 import { countDriverLocationStates } from "../fleet-state";
+import { visibleFleetError } from "../fleet-alert";
 import { relativeLocation } from "../fleet-display";
 
 const FleetMap = dynamic(() => import("./fleet-map"), { ssr: false });
@@ -21,6 +22,7 @@ export function FleetPreview({ user }: { user: SessionUser }) {
   const [mapAvailable, setMapAvailable] = useState(false);
   const snapshot = fleet.snapshot;
   const drivers = snapshot?.drivers ?? [];
+  const fleetError = visibleFleetError(fleet.error, snapshot ? drivers.length : null);
   const counts = countDriverLocationStates(drivers, fleet.now, snapshot?.freshnessSeconds ?? 60);
   const locations = drivers.flatMap(driver => driver.tracking.location ? [driver.tracking.location.receivedAt] : []);
   const lastUpdate = locations.length ? locations.reduce((latest, value) => Date.parse(value) > Date.parse(latest) ? value : latest) : null;
@@ -66,7 +68,7 @@ export function FleetPreview({ user }: { user: SessionUser }) {
           <p className="pointer-events-none absolute inset-x-4 top-4 mx-auto max-w-lg rounded-md border bg-surface px-4 py-3 text-center text-xs leading-6 text-foreground shadow-sm">{t("Driver locations will appear here once location sharing is enabled in the driver app.")}</p>
         )}
       </div>
-      {(snapshot && !snapshot.headquarters || fleet.loading || fleet.error) && (
+      {(snapshot && !snapshot.headquarters || fleet.loading || fleetError) && (
         <div className="space-y-3 border-t p-4 sm:px-6">
           {snapshot && !snapshot.headquarters && (
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -80,10 +82,10 @@ export function FleetPreview({ user }: { user: SessionUser }) {
             </div>
           )}
           {fleet.loading && <p role="status" className="text-xs leading-5 text-muted-foreground">{t("Loading fleet data...")}</p>}
-          {fleet.error && (
+          {fleetError && (
             <div role="alert" className="flex flex-wrap items-center gap-3 rounded-md border border-danger-border bg-danger-background px-4 py-3 text-xs leading-5">
               <AlertCircle aria-hidden="true" className="size-4 shrink-0 text-danger-foreground" />
-              <p className="min-w-0 flex-1 basis-40">{t(fleet.error === "unavailable" ? "Fleet tracking is temporarily unavailable. Please try again." : fleet.error === "access" ? "Your company access changed. Reload the page to continue." : "Live updates are disconnected. Showing the latest locations.")}</p>
+              <p className="min-w-0 flex-1 basis-40">{t(fleetError === "unavailable" ? "Fleet tracking is temporarily unavailable. Please try again." : fleetError === "access" ? "Your company access changed. Reload the page to continue." : "Live updates are disconnected. Showing the latest locations.")}</p>
               <Button variant="outline" size="sm" className="min-h-10 shrink-0 bg-surface shadow-none" onClick={fleet.retry}>{t("Retry")}</Button>
             </div>
           )}

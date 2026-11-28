@@ -195,8 +195,8 @@ for (const locale of ["en", "ar"] as const) {
     await context.addCookies([{ name: "fleetora_locale", value: locale, url: "http://localhost:3100" }]);
     await page.goto(`/driver/activate#token=${token}`);
     const rules = page.getByRole("list", { name: locale === "en" ? "Password requirements" : "شروط كلمة المرور", exact: true });
-    await expect(rules.getByRole("listitem")).toHaveCount(3);
-    await expect(rules).toContainText("72");
+    await expect(rules.getByRole("listitem")).toHaveCount(2);
+    await expect(rules).not.toContainText("UTF-8");
     await expect(rules).toContainText("A–Z");
     await page.getByLabel(locale === "en" ? "Password" : "كلمة المرور", { exact: true }).fill("weak");
     await page.getByLabel(locale === "en" ? "Confirm password" : "تأكيد كلمة المرور", { exact: true }).fill("weak");

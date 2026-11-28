@@ -92,8 +92,8 @@ function Activation({
       "محاولات كثيرة. انتظر بضع دقائق ثم حاول مجدداً.",
     ],
     "password-rules": [
-      "Use at least 6 characters, including an uppercase Latin letter; at most 72 UTF-8 bytes.",
-      "استخدم 6 أحرف على الأقل، منها حرف إنجليزي كبير، وبحد أقصى 72 بايت UTF-8.",
+      "Use at least 6 characters, including an uppercase English letter (A–Z).",
+      "استخدم 6 أحرف على الأقل، منها حرف إنجليزي كبير (A–Z).",
     ],
     unavailable: [
       "We could not confirm activation. Try again or ask a Super Admin for help.",
@@ -114,6 +114,9 @@ function Activation({
       "تعذّر تأكيد التفعيل. حاول مجددًا أو اطلب مساعدة فريق المنصة.",
     ];
   }
+  const signInHref = kind === "company" ? "/login" : "/platform/login";
+  const linkFailed =
+    (ready && !token) || state === "invalid" || state === "expired";
   return (
     <PasswordRecoveryShell>
       <section className="w-full max-w-md rounded-xl border border-border bg-surface p-6 sm:p-8">
@@ -138,6 +141,22 @@ function Activation({
               </Link>
             </Button>
           </div>
+        ) : linkFailed ? (
+          <div className="mt-5 space-y-4">
+            <p
+              role="alert"
+              className="rounded-md border border-danger-border bg-danger-background p-3 text-sm text-foreground"
+            >
+              {c(
+                ...(state === "expired" ? messages.expired : messages.invalid),
+              )}
+            </p>
+            <Button asChild variant="outline">
+              <Link href={signInHref}>
+                {c("Back to sign in", "العودة إلى تسجيل الدخول")}
+              </Link>
+            </Button>
+          </div>
         ) : (
           <>
             <p
@@ -156,62 +175,58 @@ function Activation({
                 {c("Passwords do not match.", "كلمتا المرور غير متطابقتين.")}
               </p>
             )}
-            {ready && !token ? (
-              <p role="alert">{c(...messages.invalid)}</p>
-            ) : (
-              <form onSubmit={submit} className="space-y-4">
-                <fieldset
-                  disabled={!ready || state === "pending"}
-                  className="space-y-4"
-                >
-                  <div className="space-y-2">
-                    <Label htmlFor="platform-name">
-                      {c("Full name", "الاسم الكامل")}
-                    </Label>
-                    <Input
-                      id="platform-name"
-                      name="name"
-                      autoComplete="name"
-                      minLength={2}
-                      maxLength={120}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="platform-password">
-                      {c("Password", "كلمة المرور")}
-                    </Label>
-                    <Input
-                      id="platform-password"
-                      name="password"
-                      type="password"
-                      autoComplete="new-password"
-                      aria-describedby="platform-password-rules"
-                      required
-                      minLength={6}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="platform-confirm">
-                      {c("Confirm password", "تأكيد كلمة المرور")}
-                    </Label>
-                    <Input
-                      id="platform-confirm"
-                      name="confirmPassword"
-                      type="password"
-                      autoComplete="new-password"
-                      required
-                      minLength={6}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full">
-                    {state === "pending"
-                      ? c("Activating…", "جارٍ التفعيل…")
-                      : c("Activate account", "تفعيل الحساب")}
-                  </Button>
-                </fieldset>
-              </form>
-            )}
+            <form onSubmit={submit} className="space-y-4">
+              <fieldset
+                disabled={!ready || state === "pending"}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="platform-name">
+                    {c("Full name", "الاسم الكامل")}
+                  </Label>
+                  <Input
+                    id="platform-name"
+                    name="name"
+                    autoComplete="name"
+                    minLength={2}
+                    maxLength={120}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="platform-password">
+                    {c("Password", "كلمة المرور")}
+                  </Label>
+                  <Input
+                    id="platform-password"
+                    name="password"
+                    type="password"
+                    autoComplete="new-password"
+                    aria-describedby="platform-password-rules"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="platform-confirm">
+                    {c("Confirm password", "تأكيد كلمة المرور")}
+                  </Label>
+                  <Input
+                    id="platform-confirm"
+                    name="confirmPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  {state === "pending"
+                    ? c("Activating…", "جارٍ التفعيل…")
+                    : c("Activate account", "تفعيل الحساب")}
+                </Button>
+              </fieldset>
+            </form>
           </>
         )}
       </section>

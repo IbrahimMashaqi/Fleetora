@@ -67,7 +67,7 @@ function Dashboard({
   const dashboard = useOperations(scope, { resource: "dashboard", query: { ...query, search: searchState.search } });
   return (
     <>
-      <PageIntro title="Parcel operations">
+      <PageIntro title="Operations dashboard">
         <Button asChild variant="outline">
           <Link href="/app/parcels">{t("Parcels")}</Link>
         </Button>

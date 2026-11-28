@@ -75,6 +75,9 @@ test("verifies the email and shows the success state on a narrow viewport", asyn
   expect(requests).toHaveLength(0);
   await confirmVerification(page);
   await expect(page.getByRole("heading", { name: "Email verified" })).toBeVisible();
+  await expect(page.getByText(/A newly registered company can operate once Fleetora approves it\./)).toBeVisible();
+  await expect(page.getByText("Your Fleetora account is ready", { exact: false })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Create an account" })).toHaveCount(0);
   await expect(page.locator("[class*=\"auth-success-mark\"]")).toHaveCSS("animation-name", /(?:^|_)auth-success-mark(?:__[A-Za-z0-9_-]+)?$/);
   await expect(page.locator("[class*=\"auth-success-state\"]")).toHaveCSS("animation-name", /(?:^|_)auth-success-state(?:__[A-Za-z0-9_-]+)?$/);
   await expect(

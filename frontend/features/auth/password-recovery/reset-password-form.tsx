@@ -33,12 +33,12 @@ export function ResetPasswordForm({
     <PasswordRecoveryShell>
       <section aria-labelledby="reset-password-title" className={`${authStyles["auth-enter"]} w-full max-w-[432px] overflow-hidden rounded-xl border border-border bg-surface shadow-sm`}>
         <div className="p-6 sm:p-8">
-          <h1 id="reset-password-title" className="text-[28px] font-semibold leading-9 tracking-tight">{t("Choose a new password")}</h1>
-          <p className="mt-2 mb-6 text-sm leading-5 text-muted-foreground">{t("Use at least 6 characters, including an uppercase letter.")}</p>
+          <h1 id="reset-password-title" className="text-[28px] font-semibold leading-9 tracking-tight">{tokenSnapshot.ready && !validLink ? t("This link isn’t valid") : t("Choose a new password")}</h1>
+          {(!tokenSnapshot.ready || validLink) && <p className="mt-2 mb-6 text-sm leading-5 text-muted-foreground">{t("Use at least 6 characters, including an uppercase letter.")}</p>}
           {!tokenSnapshot.ready ? (
             <p role="status" className="text-sm text-muted-foreground">{t("Preparing the reset form...")}</p>
           ) : !validLink ? (
-            <div className="space-y-4">
+            <div className="mt-4 space-y-4">
               <p role="alert" className={`${authStyles["auth-feedback"]} rounded-md border border-danger-border bg-danger-background p-3 text-sm text-foreground`}>{t("This reset link is invalid or expired. Request a new one to continue.")}</p>
               <Link href="/forgot-password" className={`${authStyles["auth-text-link"]} inline-flex min-h-11 items-center font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`}>{t("Request a new link")}</Link>
             </div>

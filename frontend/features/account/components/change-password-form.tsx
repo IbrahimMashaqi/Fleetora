@@ -39,7 +39,7 @@ export function ChangePasswordForm({ userId }: { userId: string }) {
   return (
     <section aria-labelledby="change-password-title" className="min-w-0 rounded-lg border border-border bg-surface p-5 sm:p-6">
       <h2 id="change-password-title" className="text-lg font-semibold tracking-tight">{t("Change password")}</h2>
-      <p id="password-requirements" className="mt-2 text-sm leading-6 text-muted-foreground">{t("Use at least 6 characters, including an uppercase letter, and no more than 72 UTF-8 bytes.")}</p>
+      <p id="password-requirements" className="mt-2 text-sm leading-6 text-muted-foreground">{t("Use at least 6 characters, including an uppercase letter.")}</p>
       <form ref={formRef} action={action} noValidate aria-busy={pending} className="mt-6 space-y-5"
         onSubmit={event => {
           if (submitting.current) event.preventDefault();

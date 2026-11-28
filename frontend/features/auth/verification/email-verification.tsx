@@ -130,7 +130,7 @@ export function EmailVerification({
     description = "Continue to confirm your email address and activate your Fleetora account.";
   } else if (displayState.status === "verified") {
     title = "Email verified";
-    description = "Your Fleetora account is ready. You may now sign in.";
+    description = "Your email is confirmed. Sign in to continue. A newly registered company can operate once Fleetora approves it.";
   } else if (displayState.status === "already-verified") {
     title = "Email already verified";
     description = "This Fleetora account is already verified. You may sign in.";
@@ -247,6 +247,7 @@ export function EmailVerification({
             </div>
           )}
 
+          {displayState.status !== "verified" && displayState.status !== "already-verified" && (
           <p className="mt-8 border-t border-border pt-5 text-sm text-muted-foreground">
             {t("Need to start over?")}{" "}
             <Link
@@ -256,6 +257,7 @@ export function EmailVerification({
               {t("Create an account")}
             </Link>
           </p>
+          )}
         </div>
       </section>
     </main>

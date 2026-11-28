@@ -100,8 +100,12 @@ test("admin invites an accountant, sees the one-time link, and revokes it", asyn
   await expect(page.getByLabel("Activation link")).toHaveValue(`http://localhost:3100/auth/accept-invitation#token=${token}`);
   await expect(page.getByText(/Email not sent\. Copy the link instead/)).toBeVisible();
   await expect(page.getByText("Accountant · Pending")).toBeVisible();
+  const issue = page.getByRole("button", { name: "Create invitation" });
+  await expect(issue).toBeDisabled();
+  await expect(issue).toHaveAccessibleDescription("Copy the invitation link below, then dismiss it to create another invitation.");
   await page.getByRole("button", { name: "Dismiss invitation link" }).click();
   await expect(page.getByLabel("Activation link")).toHaveCount(0);
+  await expect(page.getByText("Copy the invitation link below, then dismiss it to create another invitation.")).toHaveCount(0);
   await page.getByRole("button", { name: "Revoke invitation for accountant@example.com" }).click();
   await expect(page.getByText("Invitation revoked.")).toBeVisible();
   await expect(page.getByText("Accountant · Revoked")).toBeVisible();
@@ -150,7 +154,7 @@ test("load failures are distinct from an empty team and can retry", async ({ pag
 test("accountants get no team page or navigation entry", async ({ page }) => {
   role = "ACCOUNTANT";
   await page.goto("/app/team");
-  await expect(page.getByRole("heading", { name: "Company administrator access required" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "You don't have access to this page" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Team" })).toHaveCount(0);
   expect(writes).toEqual([]);
 });

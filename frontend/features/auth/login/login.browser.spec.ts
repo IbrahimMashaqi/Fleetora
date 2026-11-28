@@ -549,5 +549,7 @@ test("does not accept a legacy query-string reset token", async ({ page }) => {
   await page.goto(`/auth/reset-password?token=${token}&userId=${userId}`);
   await expect(page.locator("p[role='alert']")).toContainText("This reset link is invalid or expired.");
   await expect(page.getByRole("link", { name: "Request a new link" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "This link isn’t valid" })).toBeVisible();
+  await expect(page.getByText("Use at least 6 characters, including an uppercase letter.")).toHaveCount(0);
   expect(requests.some((request) => request.path === "/auth/reset-password")).toBe(false);
 });

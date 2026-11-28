@@ -64,6 +64,8 @@ const words = {
     copied: "Copied",
     copyFailed: "Copy failed. Select the field and copy it manually.",
     dismiss: "Dismiss invitation link",
+    locked:
+      "Copy the invitation link below, then dismiss it to create another invitation.",
     membersTitle: "Members",
     inactive: "Inactive",
     you: "You",
@@ -139,6 +141,7 @@ const words = {
     copied: "تم النسخ",
     copyFailed: "تعذر النسخ. حدد النص وانسخه يدوياً.",
     dismiss: "إخفاء رابط الدعوة",
+    locked: "انسخ رابط الدعوة أدناه ثم أغلقه لإنشاء دعوة أخرى.",
     membersTitle: "الأعضاء",
     inactive: "غير نشط",
     you: "أنت",
@@ -433,10 +436,19 @@ function TeamWorkspace({ scope }: { scope: StaffScope }) {
             <Button
               type="submit"
               disabled={busy || !result || !email.trim() || Boolean(issued)}
+              aria-describedby={issued ? `${id}-invite-locked` : undefined}
             >
               <UserPlus aria-hidden="true" />
               {busy ? copy.working : copy.issue}
             </Button>
+            {issued && (
+              <p
+                id={`${id}-invite-locked`}
+                className="text-xs leading-5 text-muted-foreground"
+              >
+                {copy.locked}
+              </p>
+            )}
           </form>
           {failure && (
             <p
