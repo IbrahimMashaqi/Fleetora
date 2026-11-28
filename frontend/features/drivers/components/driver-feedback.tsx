@@ -1,28 +1,12 @@
 import Link from "next/link";
-import { CircleAlert, LockKeyhole } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
+import { NoAccess } from "@/components/shared/no-access";
 import type { DriverResult } from "../drivers.types";
 
 export function DriverAccessDenied() {
-  const { t } = useLocale();
-  return (
-    <section
-      className="mx-auto max-w-3xl rounded-lg border border-border bg-surface p-6 sm:p-8"
-      aria-labelledby="driver-access-title"
-    >
-      <LockKeyhole aria-hidden="true" className="mb-4 size-6 text-muted-foreground" />
-      <h2 id="driver-access-title" className="text-xl font-semibold">
-        {t("Company administrator access required")}
-      </h2>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">
-        {t("This directory is available to company administrators in their own workspace.")}
-      </p>
-      <Button asChild variant="outline" className="mt-5">
-        <Link href="/app">{t("Back to Overview")}</Link>
-      </Button>
-    </section>
-  );
+  return <NoAccess />;
 }
 
 export function DriverReadError({

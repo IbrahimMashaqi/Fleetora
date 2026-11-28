@@ -186,7 +186,6 @@ const english = {
   "Current password": "Current password",
   "New password": "New password",
   "Confirm new password": "Confirm new password",
-  "Use at least 6 characters, including an uppercase letter, and no more than 72 UTF-8 bytes.": "Use at least 6 characters, including an uppercase letter, and no more than 72 UTF-8 bytes.",
   "Changing password...": "Changing password...",
   "Signing out...": "Signing out...",
   "Log out": "Log out",
@@ -433,14 +432,14 @@ const english = {
   "We couldn't send a reset link. Please try again later.": "We couldn't send a reset link. Please try again later.",
   "We couldn't reset your password. Please try again later.": "We couldn't reset your password. Please try again later.",
   "We couldn't confirm your password reset. Please try again later.": "We couldn't confirm your password reset. Please try again later.",
-  "Use a password of at most 72 UTF-8 bytes.": "Use a password of at most 72 UTF-8 bytes.",
+  "This password is too long. Use a shorter password.": "This password is too long. Use a shorter password.",
   "Passwords do not match.": "Passwords do not match.",
   "Account verification": "Account verification",
   "We couldn’t verify your email": "We couldn’t verify your email",
   "There was a temporary problem checking this link. Try again, or request a new email.": "There was a temporary problem checking this link. Try again, or request a new email.",
   "Verify your email": "Verify your email",
   "Continue to confirm your email address and activate your Fleetora account.": "Continue to confirm your email address and activate your Fleetora account.",
-  "Your Fleetora account is ready. You may now sign in.": "Your Fleetora account is ready. You may now sign in.",
+  "Your email is confirmed. Sign in to continue. A newly registered company can operate once Fleetora approves it.": "Your email is confirmed. Sign in to continue. A newly registered company can operate once Fleetora approves it.",
   "Email already verified": "Email already verified",
   "This Fleetora account is already verified. You may sign in.": "This Fleetora account is already verified. You may sign in.",
   "This link has expired": "This link has expired",
@@ -486,6 +485,9 @@ const english = {
   "Vehicle icon: {name}, {type}": "Vehicle icon: {name}, {type}",
   "Vehicle type icon: {type}": "Vehicle type icon: {type}",
   "Vehicle brand logo: {name}": "Vehicle brand logo: {name}",
+  "You don't have access to this page": "You don't have access to this page",
+  "Your role doesn't include this area. Ask your company administrator if you need access.": "Your role doesn't include this area. Ask your company administrator if you need access.",
+  "Monitor parcel status, exceptions and pending returns.": "Monitor parcel status, exceptions and pending returns.",
 } as const;
 
 export type TranslationKey = keyof typeof english;
@@ -665,7 +667,6 @@ const arabic: Record<TranslationKey, string> = {
   "Current password": "كلمة المرور الحالية",
   "New password": "كلمة المرور الجديدة",
   "Confirm new password": "تأكيد كلمة المرور الجديدة",
-  "Use at least 6 characters, including an uppercase letter, and no more than 72 UTF-8 bytes.": "استخدم 6 أحرف على الأقل، تتضمن حرفاً كبيراً، وبحد أقصى 72 بايت UTF-8.",
   "Changing password...": "جارٍ تغيير كلمة المرور...",
   "Signing out...": "جارٍ تسجيل الخروج...",
   "Log out": "تسجيل الخروج",
@@ -912,14 +913,14 @@ const arabic: Record<TranslationKey, string> = {
   "We couldn't send a reset link. Please try again later.": "تعذر إرسال رابط إعادة التعيين. يرجى المحاولة لاحقاً.",
   "We couldn't reset your password. Please try again later.": "تعذر إعادة تعيين كلمة المرور. يرجى المحاولة لاحقاً.",
   "We couldn't confirm your password reset. Please try again later.": "تعذر تأكيد إعادة تعيين كلمة المرور. يرجى المحاولة لاحقاً.",
-  "Use a password of at most 72 UTF-8 bytes.": "استخدم كلمة مرور لا تتجاوز 72 بايت بترميز UTF-8.",
+  "This password is too long. Use a shorter password.": "كلمة المرور طويلة جداً. استخدم كلمة مرور أقصر.",
   "Passwords do not match.": "كلمتا المرور غير متطابقتين.",
   "Account verification": "التحقق من الحساب",
   "We couldn’t verify your email": "تعذر التحقق من بريدك الإلكتروني",
   "There was a temporary problem checking this link. Try again, or request a new email.": "حدثت مشكلة مؤقتة أثناء التحقق من الرابط. أعد المحاولة أو اطلب رسالة جديدة.",
   "Verify your email": "تحقق من بريدك الإلكتروني",
   "Continue to confirm your email address and activate your Fleetora account.": "تابع لتأكيد بريدك الإلكتروني وتفعيل حساب Fleetora.",
-  "Your Fleetora account is ready. You may now sign in.": "أصبح حساب Fleetora جاهزاً. يمكنك تسجيل الدخول الآن.",
+  "Your email is confirmed. Sign in to continue. A newly registered company can operate once Fleetora approves it.": "تم تأكيد بريدك الإلكتروني. سجّل الدخول للمتابعة. يمكن للشركة المسجّلة حديثاً العمل بعد موافقة Fleetora عليها.",
   "Email already verified": "تم التحقق من البريد الإلكتروني مسبقاً",
   "This Fleetora account is already verified. You may sign in.": "تم التحقق من حساب Fleetora هذا مسبقاً. يمكنك تسجيل الدخول.",
   "This link has expired": "انتهت صلاحية هذا الرابط",
@@ -965,6 +966,9 @@ const arabic: Record<TranslationKey, string> = {
   "Vehicle icon: {name}, {type}": "أيقونة مركبة: {name}، {type}",
   "Vehicle type icon: {type}": "أيقونة نوع المركبة: {type}",
   "Vehicle brand logo: {name}": "شعار الشركة المصنّعة للمركبة: {name}",
+  "You don't have access to this page": "ليس لديك صلاحية للوصول إلى هذه الصفحة",
+  "Your role doesn't include this area. Ask your company administrator if you need access.": "دورك لا يشمل هذا القسم. اطلب الصلاحية من مسؤول شركتك إذا احتجت إليها.",
+  "Monitor parcel status, exceptions and pending returns.": "تابع حالة الطرود والاستثناءات والمرتجعات المعلّقة.",
 };
 
 type LocaleContextValue = {
@@ -1022,7 +1026,8 @@ export function useLocale() {
   return context;
 }
 
-export function LanguageSwitcher() {
+/** `inverse` is for dark navy headers; the default suits light surfaces. */
+export function LanguageSwitcher({ tone = "surface" }: { tone?: "surface" | "inverse" }) {
   const { locale, setLocale, t } = useLocale();
   const tooltipId = useId();
   const tooltipRef = useRef<HTMLSpanElement>(null);
@@ -1049,7 +1054,7 @@ export function LanguageSwitcher() {
     >
       <DropdownMenu dir={locale === "ar" ? "rtl" : "ltr"} onOpenChange={open => { menuOpen.current = open; if (open) setTooltipDismissed(true); }}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label={t("Language")} aria-describedby={tooltipId} title={t("Language")} onBlur={() => { if (!menuOpen.current) setTooltipDismissed(false); }} className="size-10 shrink-0 text-foreground hover:bg-primary-subtle hover:text-primary-hover [&_svg]:size-5">
+          <Button variant="ghost" size="icon" aria-label={t("Language")} aria-describedby={tooltipId} title={t("Language")} onBlur={() => { if (!menuOpen.current) setTooltipDismissed(false); }} className={`size-10 shrink-0 [&_svg]:size-5 ${tone === "inverse" ? "text-sidebar-foreground hover:bg-white/10 hover:text-sidebar-foreground focus-visible:ring-offset-sidebar-navy" : "text-foreground hover:bg-primary-subtle hover:text-primary-hover"}`}>
             <Globe aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>

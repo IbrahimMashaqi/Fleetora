@@ -1,6 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { expect, test } from "@playwright/test";
 import { typeWithoutNavigation } from "@/tests/focus-retention";
+import { contrastRatio } from "@/tests/ui-assertions";
 const companyId = "10000000-0000-4000-8000-000000000001";
 const userId = "10000000-0000-4000-8000-000000000002";
 const base = {
@@ -274,6 +275,12 @@ for (const locale of ["en", "ar"] as const)
         name: locale === "ar" ? "التنقل الرئيسي" : "Primary navigation",
       }),
     ).toHaveCount(0);
+    const signOut = page.getByRole("button", {
+      name: locale === "ar" ? "تسجيل الخروج" : "Log out",
+      exact: true,
+    });
+    await expect(signOut).toBeVisible();
+    expect(await contrastRatio(signOut)).toBeGreaterThanOrEqual(4.5);
     company.approvalStatus = "REJECTED";
     company.rejectionReason = "Confirm address";
     company.revision = 2;
@@ -303,6 +310,28 @@ for (const locale of ["en", "ar"] as const)
     ).toBeVisible();
     expect(writes.at(-1)?.path).toBe("/company/status/resubmit");
   });
+for (const locale of ["en", "ar"] as const)
+  test(`platform header language and sign-out controls are readable on navy in ${locale}`, async ({
+    page,
+    context,
+  }) => {
+    await context.addCookies([
+      { name: "fleetora_locale", value: locale, url: "http://localhost:3100" },
+    ]);
+    await page.goto("/platform/companies");
+    const language = page
+      .getByRole("banner")
+      .getByRole("button", { name: locale === "ar" ? "اللغة" : "Language" });
+    await expect(language).toBeVisible();
+    expect(await contrastRatio(language)).toBeGreaterThanOrEqual(4.5);
+    expect(
+      await contrastRatio(
+        page.getByRole("button", {
+          name: locale === "ar" ? "تسجيل الخروج" : "Log out",
+        }),
+      ),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
 test("company search keeps focus, fetches suggestions/results and never navigates while typing", async ({
   page,
 }) => {
@@ -323,7 +352,23 @@ test("Company manager can approve; Support can read without actions; Billing is 
   await page
     .getByRole("button", { name: "Approve company", exact: true })
     .click();
+  const confirm = page.getByRole("dialog", { name: "Approve company" });
+  await expect(confirm).toBeVisible();
+  expect(writes).toHaveLength(0);
+  await confirm.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(confirm).toBeHidden();
+  expect(writes).toHaveLength(0);
+  await page
+    .getByRole("button", { name: "Approve company", exact: true })
+    .click();
+  await confirm
+    .getByRole("button", { name: "Confirm approval", exact: true })
+    .click();
   await expect(page.getByText("Active", { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Company approved." }),
+  ).toBeVisible();
+  expect(writes).toHaveLength(1);
   platformRole = "SUPPORT";
   await page.reload();
   await expect(
@@ -357,6 +402,9 @@ test("suspension requires a reason and records the selected revision", async ({
   ).toBeVisible();
   await expect(
     page.getByText("Security review", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Company suspended." }),
   ).toBeVisible();
   expect(writes[0].body).toMatchObject({
     action: "suspend",

@@ -8,6 +8,8 @@ import { Banknote, Building2, ChevronDown, ClipboardList, LayoutDashboard, MapPi
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher, useLocale, type TranslationKey } from "@/lib/i18n";
 import type { SessionUser } from "@/lib/auth/session.types";
+import { NoAccess } from "@/components/shared/no-access";
+import { canAccessWorkspaceRoute, matchesWorkspaceRoute, workspaceRoutesFor } from "./workspace-access";
 import styles from "./app-shell.module.css";
 
 type NavigationItem = {
@@ -21,7 +23,7 @@ type NavigationItem = {
 const navigation: NavigationItem[] = [
   { href: "/app", label: "Overview", icon: LayoutDashboard, group: "Workspace" },
   { href: "/app/live-map", label: "Live Tracking", icon: MapPin, group: "Workspace" },
-  { href: "/app/operations", label: "Operations dashboard", title: "Parcel operations", icon: ClipboardList, group: "Parcel operations" },
+  { href: "/app/operations", label: "Operations dashboard", icon: ClipboardList, group: "Parcel operations" },
   { href: "/app/parcels", label: "Parcels", icon: Package, group: "Parcel operations" },
   { href: "/app/pickups", label: "Pickup requests", icon: Truck, group: "Parcel operations" },
   { href: "/app/requests", label: "Merchant requests", icon: ReceiptText, group: "Parcel operations" },
@@ -40,8 +42,19 @@ const navigation: NavigationItem[] = [
 
 const navigationGroups = ["Workspace", "Parcel operations", "Company resources", "Returns & finance"] as const;
 
-function matchesRoute(pathname: string, href: string) {
-  return pathname === href || href !== "/app" && pathname.startsWith(`${href}/`);
+const matchesRoute = matchesWorkspaceRoute;
+
+/** Header titles for pages below a navigation section. */
+const detailTitles: { match: (pathname: string) => boolean; title: TranslationKey }[] = [
+  { match: pathname => pathname === "/app/merchants/accounts", title: "Merchant accounts" },
+  { match: pathname => /^\/app\/merchants\/[^/]+$/.test(pathname), title: "Merchant details" },
+  { match: pathname => /^\/app\/parcels\/[^/]+$/.test(pathname), title: "Parcel details" },
+  { match: pathname => pathname === "/app/settlements/new", title: "Preview settlement" },
+  { match: pathname => /^\/app\/settlements\/[^/]+$/.test(pathname), title: "Settlement details" },
+];
+
+function navigationLabel(item: NavigationItem, user: SessionUser): NavigationItem {
+  return user.role === "OPERATIONS" && item.href === "/app/vehicles" ? { ...item, label: "Vehicle assignment" } : item;
 }
 
 function NavigationLink({ item, onNavigate }: { item: NavigationItem; onNavigate?: () => void }) {
@@ -122,12 +135,13 @@ function FleetoraBrand({ lightSurface = false }: { lightSurface?: boolean }) {
 
 function WorkspaceNavigation({ user, onNavigate }: { user: SessionUser; onNavigate?: () => void }) {
   const { t } = useLocale();
-  const visible = navigation.filter(item => ["/app", "/app/account"].includes(item.href) || user.company !== null && (user.role === "COMPANY_ADMIN" || user.role === "OPERATIONS" && ["/app/operations", "/app/parcels", "/app/drivers", "/app/pickups", "/app/returns", "/app/requests", "/app/merchants", "/app/vehicles"].includes(item.href) || user.role === "WAREHOUSE" && ["/app/operations", "/app/parcels", "/app/pickups", "/app/returns"].includes(item.href) || user.role === "ACCOUNTANT" && ["/app/operations", "/app/parcels", "/app/merchants", "/app/returns", "/app/collections", "/app/settlements", "/app/requests"].includes(item.href)));
+  const routes = workspaceRoutesFor(user);
+  const visible = navigation.filter(item => routes.includes(item.href)).map(item => navigationLabel(item, user));
   return (
     <nav aria-label={t("Primary navigation")} className={styles.navigation}>
       {navigationGroups.map(label => {
         const items = visible.filter(item => item.group === label);
-        return items.length > 0 ? <NavigationGroup key={label} label={label} items={items.map(item => user.role === "OPERATIONS" && item.href === "/app/vehicles" ? { ...item, label: "Vehicle assignment" as const } : item)} onNavigate={onNavigate} /> : null;
+        return items.length > 0 ? <NavigationGroup key={label} label={label} items={items} onNavigate={onNavigate} /> : null;
       })}
     </nav>
   );
@@ -143,8 +157,8 @@ function SidebarAccount({ user, accountActions, onNavigate }: { user: SessionUse
         ? t("Merchant")
         : user.role === "OPERATIONS" ? t("Operations") : user.role === "WAREHOUSE" ? t("Warehouse staff") : t("Accountant");
   return (
-    <div className="min-w-0 shrink-0 border-t border-white/10 px-3 pt-4 pb-4">
-      <div className="mb-3 flex min-w-0 items-center gap-3 px-3">
+    <div className="min-w-0 shrink-0 border-t border-white/10 px-3 pt-3 pb-3">
+      <div className="mb-2 flex min-w-0 items-center gap-3 px-3">
         <span aria-hidden="true" className={styles.accountAvatar}>{user.name.trim().split(/\s+/).slice(0, 2).map(part => Array.from(part)[0]).join("")}</span>
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-white" title={user.name}>{user.name}</p>
@@ -263,8 +277,10 @@ function WorkspaceContext({ user }: { user: SessionUser }) {
 export function AppShell({ user, accountActions, children }: { user: SessionUser; accountActions: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
   const { t, locale } = useLocale();
-  const page = navigation.find(item => matchesRoute(pathname, item.href));
-  const pageTitle = t(page?.title ?? page?.label ?? "Overview");
+  const section = navigation.find(item => matchesRoute(pathname, item.href));
+  const page = section ? navigationLabel(section, user) : undefined;
+  const pageTitle = t(detailTitles.find(entry => entry.match(pathname))?.title ?? page?.title ?? page?.label ?? "Overview");
+  const allowed = canAccessWorkspaceRoute(user, pathname);
   const mapPage = pathname === "/app/live-map";
   useEffect(() => {
     document.title = `${pageTitle} | Fleetora`;
@@ -294,7 +310,7 @@ export function AppShell({ user, accountActions, children }: { user: SessionUser
           </div>
         </header>
         <main id="main-content" tabIndex={-1} className={`min-w-0 flex-1 outline-none ${mapPage ? "min-h-0 overflow-hidden" : "px-4 py-6 sm:px-6 lg:px-8"}`}>
-          {children}
+          {allowed ? children : <div className={mapPage ? "px-4 py-6 sm:px-6 lg:px-8" : undefined}><NoAccess /></div>}
         </main>
       </div>
     </div>

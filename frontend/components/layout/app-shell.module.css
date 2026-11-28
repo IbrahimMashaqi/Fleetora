@@ -27,7 +27,14 @@
   overscroll-behavior: contain;
   padding: .5rem .75rem 1rem;
   scrollbar-width: thin;
-  scrollbar-color: rgb(255 255 255 / .2) transparent;
+  scrollbar-color: rgb(255 255 255 / .35) transparent;
+  /* Scroll shadows: the edge glow appears only while more items are hidden in that direction. */
+  background:
+    linear-gradient(var(--sidebar-navy) 30%, rgb(11 31 51 / 0)) top / 100% 2.5rem no-repeat local,
+    linear-gradient(rgb(11 31 51 / 0), var(--sidebar-navy) 70%) bottom / 100% 2.5rem no-repeat local,
+    linear-gradient(rgb(255 255 255 / .16), rgb(255 255 255 / 0)) top / 100% 1rem no-repeat scroll,
+    linear-gradient(rgb(255 255 255 / 0), rgb(255 255 255 / .16)) bottom / 100% 1rem no-repeat scroll;
+  background-color: var(--sidebar-navy);
 }
 
 .navigationGroup {
@@ -159,8 +166,14 @@
 
 @media (min-width: 1024px) {
   .navigation .sidebarItem {
-    min-height: 40px;
-    padding-block: .5rem;
+    min-height: 36px;
+    padding-block: .375rem;
+  }
+
+  .navigation .navigationGroup {
+    min-height: 32px;
+    margin-top: .25rem;
+    padding-block: .375rem;
   }
 
 }

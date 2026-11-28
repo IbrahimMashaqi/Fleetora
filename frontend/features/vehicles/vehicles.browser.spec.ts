@@ -514,7 +514,8 @@ test("catalog search, pagination, loading, empty and retry states", async ({
 test("OD-14 Operations assigns and unassigns from Vehicles without vehicle management controls", async ({ page }) => {
   user = { ...admin, role: "OPERATIONS" };
   await page.goto("/app/vehicles");
-  await expect(page.getByRole("heading", { name: "Vehicle assignment", exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("heading", { name: "Vehicle assignment", exact: true })).toBeVisible();
+  await expect(page.getByRole("banner").getByRole("heading", { name: "Vehicle assignment", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /Register|Edit vehicle|Delete vehicle/ })).toHaveCount(0);
   await page.getByRole("combobox", { name: "Drivers", exact: true }).click();
   await page.getByRole("option", { name: "Fictional Driver +970599000001" }).click();

@@ -224,7 +224,7 @@ test("denies non company-admin users without loading warehouses", async ({ page 
   user = { ...admin, role: "MERCHANT" };
   await page.goto("/app/warehouses");
   await expect(
-    page.getByRole("heading", { name: "Company administrator access required" }),
+    page.getByRole("heading", { name: "You don't have access to this page" }),
   ).toBeVisible();
 });
 

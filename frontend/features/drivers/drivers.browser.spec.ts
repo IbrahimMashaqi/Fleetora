@@ -407,11 +407,15 @@ for (const role of ["PLATFORM_ADMIN", "MERCHANT", "ACCOUNTANT"] as const) {
       ...(role === "PLATFORM_ADMIN" ? { orgId: null, company: null } : {}),
     };
     await page.goto("/app/drivers");
-    await expect(
-      page.getByRole("heading", {
-        name: "Company administrator access required",
-      }),
-    ).toBeVisible();
+    // OD-15: platform staff have no company workspace and land in the platform console.
+    if (role === "PLATFORM_ADMIN")
+      await expect(page).toHaveURL(/\/platform$/, { timeout: 15_000 });
+    else
+      await expect(
+        page.getByRole("heading", {
+          name: "You don't have access to this page",
+        }),
+      ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Drivers", exact: true }),
     ).toHaveCount(0);
@@ -439,11 +443,7 @@ test("redirects missing credentials and removes stale tenant data after identity
   ).toBeVisible();
   user = { ...admin, role: "PLATFORM_ADMIN", orgId: null, company: null };
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect(
-    page.getByRole("heading", {
-      name: "Company administrator access required",
-    }),
-  ).toBeVisible();
+  await expect(page).toHaveURL(/\/platform$/, { timeout: 15_000 });
   await expect(page.getByText("Amina Driver")).toHaveCount(0);
 });
 test("handles API authentication rejection without retaining driver data", async ({
@@ -610,7 +610,7 @@ for (const code of [404, 503, 403]) {
     if (code === 403)
       await expect(
         dialog.getByRole("heading", {
-          name: "Company administrator access required",
+          name: "You don't have access to this page",
         }),
       ).toBeVisible();
     else await expect(dialog.getByRole("alert")).toBeVisible();

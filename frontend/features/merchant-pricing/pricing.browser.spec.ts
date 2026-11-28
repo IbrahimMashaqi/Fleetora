@@ -413,6 +413,15 @@ for (const denied of ["PLATFORM_ADMIN", "ACCOUNTANT", "MERCHANT"])
   test(`denies pricing management for ${denied}`, async ({ page }) => {
     role = denied;
     await page.goto("/app/pricing");
-    await expect(page.getByRole("main").getByRole("alert")).toBeVisible();
-    expect(requests).toHaveLength(0);
+    // OD-15: platform staff have no company workspace and land in the platform console.
+    if (denied === "PLATFORM_ADMIN") await expect(page).toHaveURL(/\/platform$/, { timeout: 15_000 });
+    else
+      await expect(
+        page.getByRole("main").getByRole("heading", {
+          name: "You don't have access to this page",
+        }),
+      ).toBeVisible();
+    expect(
+      requests.filter((request) => !request.path.startsWith("/platform")),
+    ).toHaveLength(0);
   });

@@ -255,7 +255,7 @@ function Console() {
           </Link>
           <div className="flex items-center gap-4">
             {identity && identity.role !== "BILLING" && <Link href="/platform/companies">{c("Companies", "الشركات")}</Link>}
-            <LanguageSwitcher />
+            <LanguageSwitcher tone="inverse" />
             <LogoutControl />
           </div>
         </div>

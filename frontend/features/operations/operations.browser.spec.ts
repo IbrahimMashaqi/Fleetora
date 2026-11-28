@@ -869,11 +869,14 @@ for (const role of ["MERCHANT", "PLATFORM_ADMIN"])
   }) => {
     activeRole = role;
     await page.goto("/app/parcels");
-    await expect(
-      page
-        .getByRole("alert")
-        .filter({ hasText: "Your account cannot perform this operation." }),
-    ).toBeVisible();
+    if (role === "MERCHANT")
+      await expect(
+        page.getByRole("heading", {
+          name: "You don't have access to this page",
+        }),
+      ).toBeVisible();
+    // OD-15: platform staff have no company workspace and land in the platform console.
+    else await expect(page).toHaveURL(/\/platform$/, { timeout: 15_000 });
     await expect(
       page.getByRole("button", { name: "Create parcel", exact: true }),
     ).toHaveCount(0);

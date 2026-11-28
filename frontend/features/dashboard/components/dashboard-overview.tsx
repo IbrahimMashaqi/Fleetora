@@ -6,7 +6,7 @@ import { FleetPreview } from "@/features/fleet/components/fleet-preview";
 import { OverviewSection } from "./overview-section";
 
 const workspaceLinks = [
-  { href: "/app/operations", label: "Operations dashboard", description: "Parcels", icon: ClipboardList },
+  { href: "/app/operations", label: "Operations dashboard", description: "Monitor parcel status, exceptions and pending returns.", icon: ClipboardList },
   { href: "/app/drivers", label: "Drivers", description: "Find and view the delivery drivers in your company.", icon: UsersRound },
   { href: "/app/vehicles", label: "Vehicles", description: "Keep your company fleet ready for assignment.", icon: Truck },
 ] as const;

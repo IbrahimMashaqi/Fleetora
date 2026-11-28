@@ -1,4 +1,5 @@
 "use client";
+import { NoAccess } from "@/components/shared/no-access";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { unstable_rethrow } from "next/navigation";
@@ -165,6 +166,8 @@ export function ReadState({
         ))}
       </div>
     </div>
+  ) : result.status === "forbidden" ? (
+    <NoAccess />
   ) : result.status !== "ready" ? (
     <ErrorState status={result.status} retry={retry} />
   ) : (

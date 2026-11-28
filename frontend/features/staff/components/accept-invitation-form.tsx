@@ -165,11 +165,13 @@ export function AcceptInvitationForm() {
             </>
           )}
         </div>
-        <div className="border-t border-border bg-surface-secondary px-6 py-4 text-center text-[13px] leading-5 text-secondary-foreground">
-          <Link href="/login" className={`${authStyles["auth-text-link"]} font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`}>
-            {copy.back}
-          </Link>
-        </div>
+        {state.status !== "accepted" && (
+          <div className="border-t border-border bg-surface-secondary px-6 py-4 text-center text-[13px] leading-5 text-secondary-foreground">
+            <Link href="/login" className={`${authStyles["auth-text-link"]} font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`}>
+              {copy.back}
+            </Link>
+          </div>
+        )}
       </section>
     </PasswordRecoveryShell>
   );

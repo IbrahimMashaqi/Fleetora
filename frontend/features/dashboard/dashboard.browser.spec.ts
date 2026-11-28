@@ -101,7 +101,8 @@ for (const locale of ["en", "ar"] as const) for (const width of [1920, 1440, 128
     const nav = sidebar.getByRole("navigation");
     await expandNavigationGroups(nav);
     const labels = await sidebar.locator("a > span").evaluateAll(elements => elements.map(element => ({ height: element.getBoundingClientRect().height, line: parseFloat(getComputedStyle(element).lineHeight), overflow: element.scrollWidth > element.clientWidth })));
-    expect(labels.length).toBe(16);
+    // 16 grouped company-admin destinations (including Company settings, BR-068) plus Account & security.
+    expect(labels.length).toBe(17);
     expect(labels.every(label => label.height <= label.line + 1 && !label.overflow)).toBe(true);
     await expect(sidebar.getByRole("link", { name: translate(locale, "Account & security"), exact: true })).toBeInViewport();
     await expect(sidebar.getByRole("button", { name: translate(locale, "Log out"), exact: true })).toBeInViewport();
@@ -376,7 +377,7 @@ test("shows validated company identity and only implemented navigation", async (
   const destinations = await page.locator("a[href^='/']").evaluateAll((links) =>
     [...new Set(links.map((link) => link.getAttribute("href")))],
   );
-  expect(destinations).toEqual(["/app", "/app/live-map", "/app/operations", "/app/parcels", "/app/pickups", "/app/requests", "/app/pricing", "/app/merchants", "/app/drivers", "/app/vehicles", "/app/warehouses", "/app/team", "/app/returns", "/app/collections", "/app/settlements", "/app/account"]);
+  expect(destinations).toEqual(["/app", "/app/live-map", "/app/operations", "/app/parcels", "/app/pickups", "/app/requests", "/app/pricing", "/app/merchants", "/app/drivers", "/app/vehicles", "/app/warehouses", "/app/settings", "/app/team", "/app/returns", "/app/collections", "/app/settlements", "/app/account"]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   const browserStorage = await page.evaluate(() => JSON.stringify({
     cookies: document.cookie,
@@ -386,7 +387,7 @@ test("shows validated company identity and only implemented navigation", async (
   expect(browserStorage).not.toMatch(/fleetora_(access|refresh)|accessToken|refreshToken/);
 });
 
-test("shows a company-free platform administrator workspace", async ({ page }) => {
+test("OD-15: sends platform administrators to the platform console instead of a company workspace", async ({ page }) => {
   await page.route("**/api/auth/session", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -395,9 +396,8 @@ test("shows a company-free platform administrator workspace", async ({ page }) =
 
   await page.goto("/app");
 
-  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
-  await expect(page.getByText("Platform administrator", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("You are signed in with platform-level access and no company workspace.", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/platform$/, { timeout: 15_000 });
+  await expect(page.getByRole("complementary", { name: "Workspace sidebar" })).toHaveCount(0);
   await expect(page.getByText("Amina Logistics")).toHaveCount(0);
 });
 

@@ -4,6 +4,6 @@ export function newPasswordError(password: string): string | undefined {
     return "Use at least 6 characters, including an uppercase letter.";
   }
   if (new TextEncoder().encode(password).length > 72) {
-    return "Use a password of at most 72 UTF-8 bytes.";
+    return "This password is too long. Use a shorter password.";
   }
 }

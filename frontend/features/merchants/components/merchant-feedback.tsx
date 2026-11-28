@@ -1,17 +1,11 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useLocale } from '@/lib/i18n';
+import { NoAccess } from '@/components/shared/no-access';
 import type { MerchantResult } from '../merchants.types';
 
 export function MerchantAccessDenied() {
-  const { t } = useLocale();
-  return (
-    <section className="mx-auto max-w-3xl" aria-labelledby="merchant-access-title">
-      <h2 id="merchant-access-title" className="text-xl font-semibold">{t("Company administrator access required")}</h2>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("This directory is available to company administrators in their own workspace.")}</p>
-      <Button asChild variant="outline" className="mt-5"><Link href="/app">{t("Back to Overview")}</Link></Button>
-    </section>
-  );
+  return <NoAccess />;
 }
 
 export function MerchantReadError({ status, retry }: { status: MerchantResult['status']; retry: () => void }) {

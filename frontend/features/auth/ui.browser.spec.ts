@@ -24,13 +24,14 @@ test("workspace captions and dashboard supporting text remain readable on the pa
     contentType: "application/json",
     body: JSON.stringify({ user: { id: "contrast-reader", name: "Contrast Reader", email: null, role: company ? "COMPANY_ADMIN" : "PLATFORM_ADMIN", orgId: company?.id ?? null, company } }),
   }));
-  for (const hasCompany of [true, false]) {
-    if (!hasCompany) company = null;
-    await page.goto("/app");
-    const description = hasCompany ? page.getByRole("complementary", { name: "Workspace sidebar" }).getByText("Company administrator", { exact: true }) : page.getByText("You are signed in with platform-level access and no company workspace.", { exact: true });
-    await expect(description).toBeVisible();
-    expect(await contrastRatio(description)).toBeGreaterThanOrEqual(4.5);
-  }
+  await page.goto("/app");
+  const description = page.getByRole("complementary", { name: "Workspace sidebar" }).getByText("Company administrator", { exact: true });
+  await expect(description).toBeVisible();
+  expect(await contrastRatio(description)).toBeGreaterThanOrEqual(4.5);
+  // OD-15: platform staff have no company workspace; /app sends them to the platform console.
+  company = null;
+  await page.goto("/app");
+  await expect(page).toHaveURL(/\/platform$/, { timeout: 15_000 });
 });
 
 test("signup keeps controls and progress readable at 200 percent text size on narrow and short desktop screens", async ({ page }) => {

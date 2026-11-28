@@ -200,12 +200,6 @@ function DriverActivationForm({
                     "حرف إنجليزي كبير واحد على الأقل (A–Z).",
                   )}
                 </li>
-                <li>
-                  {c(
-                    "At most 72 UTF-8 bytes.",
-                    "بحد أقصى 72 بايت بترميز UTF-8.",
-                  )}
-                </li>
               </ul>
               <div className="space-y-2">
                 <Label htmlFor="driver-confirm-password">

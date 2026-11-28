@@ -1,10 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/i18n";
+import { NoAccess } from "@/components/shared/no-access";
 import { useProtectedSession } from "@/features/auth/session/session-context";
 import type { SessionUser } from "@/lib/auth/session.types";
 import { useFleet } from "../use-fleet";
@@ -20,8 +20,7 @@ const FleetMap = dynamic(() => import("./fleet-map"), { ssr: false });
 
 export function LiveFleetPage() {
   const { user } = useProtectedSession();
-  const { locale, t } = useLocale();
-  if (user.role !== "COMPANY_ADMIN" || !user.company) return <div dir={locale === "ar" ? "rtl" : "ltr"} lang={locale} className="m-6 rounded-lg border bg-surface p-6"><h2 className="text-lg font-semibold">{t("Live Tracking")}</h2><p className="mt-3 text-muted-foreground">{t("This area is available to company administrators to view their fleet.")}</p><Button asChild variant="outline" className="mt-4"><Link href="/app">{t("Back to Overview")}</Link></Button></div>;
+  if (user.role !== "COMPANY_ADMIN" || !user.company) return <div className="p-4 sm:p-6 lg:p-8"><NoAccess /></div>;
   return <LiveFleet key={`${user.id}:${user.company.id}`} user={user} />;
 }
 
